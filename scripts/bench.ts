@@ -1,0 +1,54 @@
+import { parseDiffRows } from "../src/lib/diff-lines";
+import { gitShow, gitStaged, gitUnstaged, twoFile } from "../src/loaders/index";
+import { getRepoRoot, isRepo } from "../src/vcs/git";
+
+async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  const start = performance.now();
+  const result = await fn();
+  const ms = (performance.now() - start).toFixed(1);
+  console.log(`${label.padEnd(36)} ${ms.padStart(8)} ms`);
+  return result;
+}
+
+async function runOnce(root: string, hasHeadCommit: boolean): Promise<void> {
+  const staged = await time("gitStaged", () => gitStaged(root));
+  const unstaged = await time("gitUnstaged", () => gitUnstaged(root));
+  await time("parseDiffRows (all files)", () => {
+    let rows = 0;
+    for (const f of [...staged.files, ...unstaged.files]) {
+      if (f.diff) {
+        rows += parseDiffRows(f.diff).length;
+      }
+    }
+    return Promise.resolve(rows);
+  });
+  if (hasHeadCommit) {
+    await time("gitShow HEAD", () => gitShow("HEAD", root));
+    await time("twoFile HEAD HEAD", () => twoFile("HEAD", "HEAD", root));
+  }
+}
+
+async function main(): Promise<void> {
+  const cwd = process.cwd();
+  if (!(await isRepo(cwd))) {
+    console.error("bench: run from inside a git repository");
+    process.exit(1);
+  }
+  const root = await getRepoRoot(cwd);
+  const hasHeadCommit =
+    (await Bun.spawn(["git", "rev-parse", "--verify", "HEAD"], {
+      cwd: root,
+      stderr: "ignore",
+      stdout: "ignore",
+    }).exited) === 0;
+
+  console.log(`benchmarking loaders in ${root}\n`);
+  await runOnce(root, hasHeadCommit);
+  await runOnce(root, hasHeadCommit);
+  await runOnce(root, hasHeadCommit);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
