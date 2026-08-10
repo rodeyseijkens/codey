@@ -23,10 +23,30 @@ import {
 } from "./icons";
 
 function truncatePath(path: string, max: number): string {
+  if (max <= 1) {
+    return max <= 0 ? "" : "…";
+  }
   if (path.length <= max) {
     return path;
   }
-  return `…${path.slice(path.length - max + 1)}`;
+  return `${path.slice(0, max - 1)}…`;
+}
+
+const FILE_CHROME = { base: 8, comment: 4 };
+const DIR_CHROME = 7;
+
+function fileNameMax(
+  width: number,
+  depth: number,
+  hasComment: boolean
+): number {
+  return (
+    width - FILE_CHROME.base - (hasComment ? FILE_CHROME.comment : 0) - depth
+  );
+}
+
+function dirNameMax(width: number, depth: number): number {
+  return width - DIR_CHROME - depth;
 }
 
 function FileRow(props: {
@@ -38,9 +58,19 @@ function FileRow(props: {
   name: string;
   scope: Changeset["id"];
   selected: boolean;
+  width: number;
 }) {
-  const { commentCount, depth, file, focused, index, name, scope, selected } =
-    props;
+  const {
+    commentCount,
+    depth,
+    file,
+    focused,
+    index,
+    name,
+    scope,
+    selected,
+    width,
+  } = props;
   const { ui: C, icons } = useColors();
   const letter =
     file.status === "added" && file.notice === "untracked"
@@ -61,7 +91,7 @@ function FileRow(props: {
         backgroundColor: selected ? C.selection : undefined,
         flexDirection: "row",
         height: 1,
-        paddingLeft: 2 + depth * 2,
+        paddingLeft: 1 + depth * 1,
         paddingRight: 1,
       }}
     >
@@ -75,7 +105,7 @@ function FileRow(props: {
           overflow: "hidden",
         }}
       >
-        {truncatePath(name, 40)}
+        {truncatePath(name, fileNameMax(width, depth, commentCount > 0))}
       </text>
       {commentCount > 0 ? (
         <text style={{ fg: C.commentFg, width: 4 }}> ◆{commentCount}</text>
@@ -100,8 +130,9 @@ function DirRow(props: {
   node: TreeNode;
   scope: Changeset["id"];
   selected: boolean;
+  width: number;
 }) {
-  const { collapsed, depth, focused, node, scope, selected } = props;
+  const { collapsed, depth, focused, node, scope, selected, width } = props;
   const { ui: C, icons } = useColors();
   const chevron = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;
 
@@ -135,7 +166,7 @@ function DirRow(props: {
           overflow: "hidden",
         }}
       >
-        {truncatePath(node.name, 40)}
+        {truncatePath(node.name, dirNameMax(width, depth))}
       </text>
       <text style={{ width: 1 }}> </text>
     </box>
@@ -146,8 +177,9 @@ function ListBody(props: {
   cs: Changeset;
   focused: boolean;
   sel: ReturnType<typeof useAppState>["selection"];
+  width: number;
 }) {
-  const { cs, focused, sel } = props;
+  const { cs, focused, sel, width } = props;
   const { ui: C } = useColors();
   if (cs.files.length === 0) {
     return (
@@ -171,6 +203,7 @@ function ListBody(props: {
           selected={
             sel?.kind === "file" && sel.scope === cs.id && sel.index === index
           }
+          width={width}
         />
       ))}
     </>
@@ -182,8 +215,9 @@ function TreeBody(props: {
   collapsedTree: Record<string, boolean>;
   focused: boolean;
   sel: ReturnType<typeof useAppState>["selection"];
+  width: number;
 }) {
-  const { cs, collapsedTree, focused, sel } = props;
+  const { cs, collapsedTree, focused, sel, width } = props;
   const { ui: C } = useColors();
   if (cs.files.length === 0) {
     return (
@@ -211,6 +245,7 @@ function TreeBody(props: {
                 sel.scope === cs.id &&
                 sel.path === v.node.path
               }
+              width={width}
             />
           );
         }
@@ -232,6 +267,7 @@ function TreeBody(props: {
             selected={
               sel?.kind === "file" && sel.scope === cs.id && sel.index === index
             }
+            width={width}
           />
         );
       })}
@@ -239,8 +275,8 @@ function TreeBody(props: {
   );
 }
 
-function Section(props: { cs: Changeset }) {
-  const { cs } = props;
+function Section(props: { cs: Changeset; width: number }) {
+  const { cs, width } = props;
   const state = useAppState();
   const { ui: C } = useColors();
   const collapsed = Boolean(state.collapsed[cs.id]);
@@ -264,10 +300,18 @@ function Section(props: { cs: Changeset }) {
         cs={cs}
         focused={state.focus === "sidebar"}
         sel={sel}
+        width={width}
       />
     );
   } else {
-    body = <ListBody cs={cs} focused={state.focus === "sidebar"} sel={sel} />;
+    body = (
+      <ListBody
+        cs={cs}
+        focused={state.focus === "sidebar"}
+        sel={sel}
+        width={width}
+      />
+    );
   }
   return (
     <box style={{ flexDirection: "column" }}>
@@ -321,7 +365,7 @@ export function Sidebar() {
         style={{ flexGrow: 1 }}
       >
         {state.changesets.map((cs) => (
-          <Section cs={cs} key={cs.id} />
+          <Section cs={cs} key={cs.id} width={state.sidebarWidth} />
         ))}
       </scrollbox>
     </box>
