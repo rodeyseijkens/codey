@@ -1,0 +1,44 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
+  "extends": ["ultracite/biome/core", "ultracite/biome/react"],
+  "files": {
+    "includes": ["src/**", "test/**", "scripts/**", "*.jsonc", "*.mjs", "*.ts"]
+  },
+  "javascript": {
+    "globals": ["Bun"]
+  },
+  "overrides": [
+    {
+      // Fire-and-forget async (dispatch handlers, watcher teardown) is
+      // intentional in the TUI event loop; `void promise` expresses it best.
+      "includes": ["src/state/dispatch.ts", "src/main.tsx", "src/watch.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noVoid": "off"
+          }
+        }
+      }
+    },
+    {
+      // OpenTUI renderables use custom event props (onMouse, onKeyDown, ...)
+      // and per-row handler closures; the DOM-focused React rules flag these
+      // as unknown attributes / prop binds / static interactions, which are
+      // false positives here (there is no ARIA role model in a terminal UI).
+      "includes": ["src/ui/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noUnknownAttribute": "off"
+          },
+          "performance": {
+            "noJsxPropsBind": "off"
+          },
+          "a11y": {
+            "noStaticElementInteractions": "off"
+          }
+        }
+      }
+    }
+  ]
+}

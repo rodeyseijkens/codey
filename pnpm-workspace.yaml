@@ -1,0 +1,6 @@
+packages:
+  - "."
+overrides:
+  shell-quote: 1.9.0
+minimumReleaseAgeExclude:
+  - ultracite@7.10.2
