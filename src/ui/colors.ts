@@ -1,3 +1,12 @@
+import {
+  STATUS_ADDED,
+  STATUS_COPIED,
+  STATUS_DELETED,
+  STATUS_MODIFIED,
+  STATUS_RENAMED,
+  STATUS_TYPE_CHANGED,
+} from "./icons";
+
 export type IconColorKey =
   | "aqua"
   | "beige"
@@ -778,19 +787,19 @@ export function statusColor(status: string, C: UiColors): string {
   }
 }
 
-export function statusLetter(status: string): string {
+export function statusIcon(status: string): string {
   switch (status) {
     case "added":
-      return "A";
+      return STATUS_ADDED;
     case "deleted":
-      return "D";
+      return STATUS_DELETED;
     case "renamed":
-      return "R";
+      return STATUS_RENAMED;
     case "copied":
-      return "C";
+      return STATUS_COPIED;
     case "type-changed":
-      return "T";
+      return STATUS_TYPE_CHANGED;
     default:
-      return "M";
+      return STATUS_MODIFIED;
   }
 }

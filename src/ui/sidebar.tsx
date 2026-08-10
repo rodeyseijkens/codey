@@ -11,7 +11,7 @@ import {
 import { getStore, rowKey, useAppState } from "../state/store";
 import { type Changeset, type FileDiff, fileDiffKey } from "../types";
 import { useColors } from "./color-context";
-import { statusColor, statusLetter } from "./colors";
+import { statusColor, statusIcon } from "./colors";
 import {
   CHEVRON_DOWN,
   CHEVRON_RIGHT,
@@ -19,6 +19,7 @@ import {
   fileIcon,
   folderColor,
   folderIcon,
+  STATUS_UNTRACKED,
 } from "./icons";
 
 function truncatePath(path: string, max: number): string {
@@ -43,8 +44,8 @@ function FileRow(props: {
   const { ui: C, icons } = useColors();
   const letter =
     file.status === "added" && file.notice === "untracked"
-      ? "?"
-      : statusLetter(file.status);
+      ? STATUS_UNTRACKED
+      : statusIcon(file.status);
 
   const handleClick = (e: MouseEvent) => {
     if (e.button === 0) {
@@ -83,7 +84,7 @@ function FileRow(props: {
       <text
         style={{
           fg: selected && focused ? C.fg : statusColor(file.status, C),
-          width: 1,
+          width: 2,
         }}
       >
         {letter}

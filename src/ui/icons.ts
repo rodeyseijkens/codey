@@ -359,3 +359,11 @@ export function folderColor(path: string): IconColorKey {
 
 export const CHEVRON_DOWN = "\u{eab4}";
 export const CHEVRON_RIGHT = "\u{eab6}";
+
+export const STATUS_ADDED = "\u{f457}";
+export const STATUS_MODIFIED = "\u{f459}";
+export const STATUS_RENAMED = "\u{f45a}";
+export const STATUS_DELETED = "\u{f458}";
+export const STATUS_COPIED = "\u{f4bb}";
+export const STATUS_TYPE_CHANGED = "\u{f412}";
+export const STATUS_UNTRACKED = "\u{f50c}";
