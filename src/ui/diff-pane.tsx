@@ -206,7 +206,6 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
           backgroundColor: C.bg,
           flexGrow: 1,
           paddingLeft: 2,
-          paddingTop: 1,
         }}
       >
         <text style={{ fg: C.faint }}>No file selected — j/k to navigate</text>
@@ -221,7 +220,6 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
           backgroundColor: C.bg,
           flexGrow: 1,
           paddingLeft: 2,
-          paddingTop: 1,
         }}
       >
         <text style={{ fg: C.faint }}>Binary file — no diff</text>
@@ -236,7 +234,6 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
           backgroundColor: C.bg,
           flexGrow: 1,
           paddingLeft: 2,
-          paddingTop: 1,
         }}
       >
         <text style={{ fg: C.yellow }}>
@@ -253,7 +250,6 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
           backgroundColor: C.bg,
           flexGrow: 1,
           paddingLeft: 2,
-          paddingTop: 1,
         }}
       >
         <text style={{ fg: C.faint }}>No diff content</text>
@@ -303,6 +299,7 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
         removedSignColor={C.red}
         showLineNumbers={state.lineNumbers}
         style={{ flexGrow: 1 }}
+        syncScroll={true}
         syntaxStyle={props.syntaxStyle}
         view={viewMode}
       />
