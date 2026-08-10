@@ -164,9 +164,8 @@ function ConfirmDiscardOverlay(props: {
     ? `Discard changes in ${overlay.paths.length} file(s)?`
     : `Discard changes to ${overlay.paths[0] ?? ""}?`;
   return (
-    <OverlayFrame height={7} title="Discard changes" width={70}>
-      <text style={{ fg: C.yellow }}>{label}</text>
-      <text style={{ fg: C.faint, marginTop: 1 }}>
+    <OverlayFrame height={7} title={label} width={70}>
+      <text style={{ fg: C.accent, marginTop: 1 }}>
         This cannot be undone. y to confirm, Esc to cancel.
       </text>
     </OverlayFrame>
