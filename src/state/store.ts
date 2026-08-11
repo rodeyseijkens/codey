@@ -4,6 +4,7 @@ import { buildFileTree, visibleTreeNodes } from "../lib/tree";
 import type {
   Changeset,
   Comment,
+  CommitEntry,
   DiffMode,
   FileDiff,
   LoaderMode,
@@ -67,6 +68,11 @@ export interface AppState {
   collapsed: Record<string, boolean>;
   collapsedTree: Record<string, boolean>;
   comments: Comment[];
+  commitEntries: CommitEntry[];
+  commitHasMore: boolean;
+  commitLoading: boolean;
+  commitOffset: number;
+  commitView: { hash: string; file: FileDiff } | null;
   conflictNotice: string | null;
   cursorRow: number;
   fatalError: string | null;
@@ -107,6 +113,11 @@ export function initialState(): AppState {
     collapsed: {},
     collapsedTree: {},
     comments: [],
+    commitEntries: [],
+    commitHasMore: true,
+    commitLoading: false,
+    commitOffset: 0,
+    commitView: null,
     conflictNotice: null,
     cursorRow: 0,
     fatalError: null,
@@ -212,6 +223,10 @@ export class AppStore {
       if (file) {
         return { file, scope: sel.scope };
       }
+    }
+    const cv = this.state.commitView;
+    if (cv) {
+      return { file: cv.file, scope: "single" };
     }
     const last = this.state.lastFile;
     if (last) {
