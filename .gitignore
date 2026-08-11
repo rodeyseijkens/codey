@@ -8,3 +8,4 @@ bin/codey-herdr
 .DS_Store
 .env
 .env.local
+*.tsbuildinfo
