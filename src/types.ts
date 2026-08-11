@@ -67,6 +67,25 @@ export function fileDiffKey(file: FileDiff): string {
     : file.path;
 }
 
+export interface CommitFile {
+  additions: number;
+  deletions: number;
+  path: string;
+  status: FileStatus;
+}
+
+export interface CommitEntry {
+  author: string;
+  date: string;
+  diffByPath: Record<string, string>;
+  files: CommitFile[];
+  hash: string;
+  isPushed: boolean;
+  message: string;
+  shortHash: string;
+  stats: { additions: number; deletions: number; files: number };
+}
+
 export function commentKey(scope: Scope, path: string): string {
   return `${scope}:${path}`;
 }
