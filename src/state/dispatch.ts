@@ -90,6 +90,9 @@ export function dispatchCommand(cmd: CommandId): void {
       if (state.anchorRow !== null) {
         store.set({ anchorRow: null });
       }
+      if (state.commitView) {
+        store.set({ commitView: null });
+      }
       return;
     case "select-prev":
       if (state.focus === "sidebar") {
