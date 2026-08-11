@@ -2,10 +2,15 @@ import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
 import { type ReactNode, useEffect, useRef } from "react";
 import { buildFileTree, type TreeNode, visibleTreeNodes } from "../lib/tree";
 import {
+  clearCommitView,
+  loadCommits,
+  loadMoreCommits,
+  selectCommitFile,
   selectDir,
   selectFile,
   selectSection,
   toggleCollapse,
+  toggleCommitExpand,
   toggleTreeFolder,
 } from "../state/actions";
 import { getStore, rowKey, useAppState } from "../state/store";
@@ -334,6 +339,190 @@ function Section(props: { cs: Changeset; width: number }) {
   );
 }
 
+function CommitLog(props: { width: number }) {
+  const state = useAppState();
+  const { ui: C } = useColors();
+  const { commitEntries, commitHasMore, commitLoading, collapsed, repoRoot } =
+    state;
+  useEffect(() => {
+    if (repoRoot && commitEntries.length === 0 && !commitLoading) {
+      loadCommits();
+    }
+  }, [commitEntries.length, commitLoading, repoRoot]);
+
+  const handleToggle = (hash: string) => {
+    toggleCommitExpand(hash);
+  };
+
+  const handleFileClick = (hash: string, path: string) => {
+    clearCommitView();
+    selectCommitFile(hash, path);
+  };
+
+  const handleLoadMore = () => {
+    loadMoreCommits();
+  };
+
+  const rows: ReactNode[] = [];
+  for (const commit of commitEntries) {
+    const isExpanded = collapsed[commit.hash];
+    rows.push(
+      <box
+        key={commit.hash}
+        style={{
+          backgroundColor: C.bg,
+          flexDirection: "column",
+        }}
+      >
+        <box
+          onMouseDown={() => handleToggle(commit.hash)}
+          style={{
+            flexDirection: "row",
+            height: 1,
+            paddingLeft: 1,
+            paddingRight: 1,
+          }}
+        >
+          {isExpanded ? (
+            <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_DOWN}</text>
+          ) : (
+            <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_RIGHT}</text>
+          )}
+          <text
+            style={{
+              fg: C.dim,
+              flexGrow: 1,
+              overflow: "hidden",
+            }}
+          >
+            {truncatePath(commit.message, props.width - 5)}
+          </text>
+          {!commit.isPushed && (
+            <text style={{ fg: C.yellow, width: 2 }}>↑</text>
+          )}
+        </box>
+        {isExpanded && commit.files.length > 0 && (
+          <box
+            style={{
+              backgroundColor: C.bg,
+              flexDirection: "column",
+              paddingLeft: 2,
+            }}
+          >
+            {commit.files.map((file) => {
+              const showAdd = file.additions > 1;
+              const showDel = file.deletions > 1;
+              const addWidth = showAdd ? String(file.additions).length : 0;
+              const delWidth = showDel ? String(file.deletions).length : 0;
+              const statWidth =
+                addWidth + (showAdd && showDel ? 1 : 0) + delWidth;
+              return (
+                <box
+                  key={file.path}
+                  onMouseDown={() => handleFileClick(commit.hash, file.path)}
+                  style={{
+                    backgroundColor: C.bg,
+                    flexDirection: "row",
+                    height: 1,
+                    paddingLeft: 1,
+                    paddingRight: 1,
+                  }}
+                >
+                  <text style={{ fg: statusColor(file.status, C), width: 2 }}>
+                    {statusIcon(file.status)}
+                  </text>
+                  <text
+                    style={{
+                      fg: C.fg,
+                      flexGrow: 1,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {truncatePath(file.path, props.width - 6 - statWidth)}
+                  </text>
+                  {showAdd ? (
+                    <text
+                      style={{
+                        fg: C.green,
+                        width: String(file.additions).length,
+                      }}
+                    >
+                      {file.additions}
+                    </text>
+                  ) : null}
+                  {showAdd && showDel ? (
+                    <text style={{ fg: C.dim, width: 1 }}>/</text>
+                  ) : null}
+                  {showDel ? (
+                    <text
+                      style={{
+                        fg: C.red,
+                        width: String(file.deletions).length,
+                      }}
+                    >
+                      {file.deletions}
+                    </text>
+                  ) : null}
+                </box>
+              );
+            })}
+          </box>
+        )}
+      </box>
+    );
+  }
+
+  return (
+    <box
+      style={{
+        border: ["bottom"],
+        borderColor: C.border,
+        borderStyle: "single",
+        flexDirection: "column",
+        height: 12,
+      }}
+    >
+      <box
+        style={{
+          backgroundColor: C.panel,
+          flexDirection: "row",
+          height: 1,
+          paddingLeft: 1,
+          paddingRight: 1,
+        }}
+      >
+        <text style={{ fg: C.accent }}>Commits</text>
+      </box>
+      <scrollbox style={{ flexGrow: 1 }}>
+        {rows.length === 0 && !commitLoading ? (
+          <box style={{ height: 1, paddingLeft: 3 }}>
+            <text style={{ fg: C.faint }}>no commits</text>
+          </box>
+        ) : (
+          rows
+        )}
+        {commitHasMore ? (
+          <box
+            onMouseDown={handleLoadMore}
+            style={{
+              backgroundColor: C.panel,
+              flexDirection: "row",
+              height: 1,
+              justifyContent: "center",
+              paddingLeft: 1,
+              paddingRight: 1,
+            }}
+          >
+            <text style={{ fg: C.dim }}>
+              {commitLoading ? "loading..." : "load more"}
+            </text>
+          </box>
+        ) : null}
+      </scrollbox>
+    </box>
+  );
+}
+
 export function Sidebar() {
   const state = useAppState();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
@@ -368,6 +557,7 @@ export function Sidebar() {
           <Section cs={cs} key={cs.id} width={state.sidebarWidth} />
         ))}
       </scrollbox>
+      <CommitLog width={state.sidebarWidth} />
     </box>
   );
 }
