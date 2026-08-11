@@ -1,7 +1,8 @@
 import { isHerdrPlugin, sendToAgent } from "../herdr/bridge";
 import { copyText, formatCommentsAsMarkdown } from "../lib/clipboard";
 import { treeKey } from "../lib/tree";
-import type { LoaderMode, Scope } from "../types";
+import { getCommitFileDiff, gitLog } from "../loaders/git-log";
+import type { FileDiff, LoaderMode, Scope } from "../types";
 import {
   deleteFiles,
   restoreWorktreeFiles,
@@ -104,6 +105,7 @@ export async function refresh(): Promise<void> {
     if (nextSel) {
       applySelection(store, nextSel);
     }
+    await loadCommits();
   } catch (err) {
     store.set({
       fatalError: err instanceof Error ? err.message : String(err),
@@ -586,4 +588,128 @@ export function openHelp(): void {
 export function closeOverlay(): void {
   const store = getStore();
   store.set({ overlay: null });
+}
+
+export async function loadCommits(): Promise<void> {
+  const store = getStore();
+  let rt: RuntimeConfig;
+  try {
+    rt = getRuntime();
+  } catch {
+    return;
+  }
+  if (!rt.repoRoot || store.getState().commitLoading) {
+    return;
+  }
+  store.set({ commitEntries: [], commitLoading: true, commitOffset: 0 });
+  try {
+    const { commits, hasMore } = await gitLog(rt.repoRoot, 0, 10);
+    store.set({
+      commitEntries: commits,
+      commitHasMore: hasMore,
+      commitLoading: false,
+    });
+  } catch {
+    store.set({
+      commitEntries: [],
+      commitHasMore: false,
+      commitLoading: false,
+    });
+  }
+}
+
+export async function loadMoreCommits(): Promise<void> {
+  const store = getStore();
+  let rt: RuntimeConfig;
+  try {
+    rt = getRuntime();
+  } catch {
+    return;
+  }
+  if (!rt.repoRoot) {
+    return;
+  }
+  const state = store.getState();
+  if (state.commitLoading || !state.commitHasMore) {
+    return;
+  }
+  store.set({ commitLoading: true });
+  try {
+    const { commits, hasMore } = await gitLog(
+      rt.repoRoot,
+      state.commitOffset + 10,
+      10
+    );
+    store.set({
+      commitEntries: [...state.commitEntries, ...commits],
+      commitHasMore: hasMore,
+      commitLoading: false,
+      commitOffset: state.commitOffset + 10,
+    });
+  } catch {
+    store.set({ commitLoading: false });
+  }
+}
+
+export function toggleCommitExpand(hash: string): void {
+  const store = getStore();
+  const expanded = { ...store.getState().collapsed };
+  expanded[hash] = !expanded[hash];
+  store.set({ collapsed: expanded });
+}
+
+export async function selectCommitFile(
+  hash: string,
+  filePath: string
+): Promise<void> {
+  const store = getStore();
+  let rt: RuntimeConfig;
+  try {
+    rt = getRuntime();
+  } catch {
+    return;
+  }
+  if (!rt.repoRoot) {
+    return;
+  }
+  const entry = store.getState().commitEntries.find((c) => c.hash === hash);
+  if (!entry) {
+    return;
+  }
+
+  let diff = entry.diffByPath[filePath];
+  if (!diff) {
+    try {
+      diff = await getCommitFileDiff(rt.repoRoot, hash, filePath);
+      const updated = store.getState().commitEntries.map((c) => {
+        if (c.hash !== hash) {
+          return c;
+        }
+        return {
+          ...c,
+          diffByPath: { ...c.diffByPath, [filePath]: diff ?? "" },
+        };
+      });
+      store.set({ commitEntries: updated });
+    } catch {
+      store.showToast("error", `failed to load diff for ${filePath}`);
+      return;
+    }
+  }
+
+  const file: FileDiff = {
+    additions: 0,
+    deletions: 0,
+    diff: diff ?? "",
+    isBinary: false,
+    path: filePath,
+    status: "modified",
+    tooLarge: false,
+  };
+  store.set({ commitView: { file, hash } });
+}
+
+export function clearCommitView(): void {
+  const store = getStore();
+  store.set({ commitView: null });
 }
