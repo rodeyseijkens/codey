@@ -70,8 +70,9 @@ export function BottomBar() {
     content =
       "j/k move · space collapse · Tab focus diff · a stage · A stage all · u unstage/discard · U discard all · ? help";
   } else {
-    content =
-      "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · s send · ? help";
+    content = state.wrapLines
+      ? "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · s send · w unwrap · ? help"
+      : "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · s send · w wrap · ? help";
   }
 
   return (

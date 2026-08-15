@@ -46,20 +46,21 @@ export interface PendingStage {
 }
 
 export type Overlay =
-  | {
-      kind: "comment";
-      mode: "add" | "edit";
-      scope: Scope;
-      path: string;
-      startRow: number;
-      endRow: number;
-      context: string;
-      commentId?: string;
-    }
   | { kind: "confirm-discard"; scope: Scope; paths: string[]; bulk: boolean }
   | { kind: "help" }
-  | { kind: "palette" }
-  | { kind: "comments"; scope: Scope; path: string };
+  | { kind: "palette" };
+
+/** An in-progress inline comment being typed into the diff body. */
+export interface CommentDraft {
+  commentId?: string;
+  context: string;
+  endRow: number;
+  mode: "add" | "edit";
+  path: string;
+  scope: Scope;
+  startRow: number;
+  text: string;
+}
 
 export interface AppState {
   anchorRow: number | null;
@@ -67,6 +68,7 @@ export interface AppState {
   changesets: Changeset[];
   collapsed: Record<string, boolean>;
   collapsedTree: Record<string, boolean>;
+  commentDraft: CommentDraft | null;
   comments: Comment[];
   commitEntries: CommitEntry[];
   commitHasMore: boolean;
@@ -95,6 +97,7 @@ export interface AppState {
   theme: string;
   toast: Toast | null;
   watchActive: boolean;
+  wrapLines: boolean;
 }
 
 function defaultKeymap(): ResolvedKeymap {
@@ -112,6 +115,7 @@ export function initialState(): AppState {
     changesets: [],
     collapsed: {},
     collapsedTree: {},
+    commentDraft: null,
     comments: [],
     commitEntries: [],
     commitHasMore: true,
@@ -140,6 +144,7 @@ export function initialState(): AppState {
     theme: "auto",
     toast: null,
     watchActive: false,
+    wrapLines: false,
   };
 }
 

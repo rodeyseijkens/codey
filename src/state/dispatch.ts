@@ -25,11 +25,11 @@ import {
   unstageSelected,
 } from "./actions";
 import {
+  cancelCommentDraft,
   deleteCommentAtCursor,
   jumpToComment,
-  openAddComment,
-  openCommentList,
-  openEditCommentAtCursor,
+  openAddCommentDraft,
+  openEditCommentDraft,
   visualSelect,
 } from "./comment-actions";
 import { getStore } from "./store";
@@ -73,10 +73,7 @@ export function dispatchCommand(cmd: CommandId): void {
       quit();
       return;
     case "help":
-      store.set({ overlay: { kind: "help" } });
-      return;
-    case "palette":
-      store.set({ overlay: { kind: "palette" } });
+      store.set({ commentDraft: null, overlay: { kind: "help" } });
       return;
     case "cancel":
       if (state.pendingStage) {
@@ -129,10 +126,10 @@ export function dispatchCommand(cmd: CommandId): void {
       visualSelect();
       return;
     case "add-comment":
-      openAddComment();
+      openAddCommentDraft();
       return;
     case "edit-comment":
-      openEditCommentAtCursor();
+      openEditCommentDraft();
       return;
     case "delete-comment":
       deleteCommentAtCursor();
@@ -142,9 +139,6 @@ export function dispatchCommand(cmd: CommandId): void {
       return;
     case "prev-comment":
       jumpToComment(-1);
-      return;
-    case "list-comments":
-      openCommentList();
       return;
     case "send-comments":
       void sendComments();
@@ -173,6 +167,9 @@ export function dispatchCommand(cmd: CommandId): void {
     case "toggle-view":
       toggleSidebarView();
       return;
+    case "wrap-text":
+      store.set({ wrapLines: !state.wrapLines });
+      return;
     case "prev-hunk":
     case "next-hunk":
       return;
@@ -185,6 +182,7 @@ export function openHelpOverlay(): void {
   openHelp();
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: its allowed for now
 export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   const store = getStore();
   const state = store.getState();
@@ -202,6 +200,13 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
       (chord.key === "y" || chord.key === "return" || chord.key === "enter")
     ) {
       void confirmDiscard();
+    }
+    return;
+  }
+
+  if (state.commentDraft) {
+    if (cmd === "cancel" || chord.key === "escape") {
+      cancelCommentDraft();
     }
     return;
   }

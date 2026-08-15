@@ -582,7 +582,7 @@ export async function copySelection(): Promise<void> {
 
 export function openHelp(): void {
   const store = getStore();
-  store.set({ overlay: { kind: "help" } });
+  store.set({ commentDraft: null, overlay: { kind: "help" } });
 }
 
 export function closeOverlay(): void {

@@ -1,4 +1,9 @@
-import { parseDiffRows, rowLabel } from "../lib/diff-lines";
+import {
+  buildCanonicalDiffRows,
+  type CanonicalDiffRow,
+  canonicalRowLabel,
+  createHunkDiffFilesFromPatch,
+} from "../ui/hunk-diff/opentui";
 import { getStore } from "./store";
 
 function rowsOfSelectedFile() {
@@ -7,7 +12,24 @@ function rowsOfSelectedFile() {
   if (!sel?.file.diff) {
     return null;
   }
-  return { rows: parseDiffRows(sel.file.diff), sel };
+  const [file] = createHunkDiffFilesFromPatch(sel.file.diff, sel.file.path);
+  if (!file) {
+    return null;
+  }
+  return { rows: buildCanonicalDiffRows(file), sel };
+}
+
+/** Context snippet for one canonical row range, used by the agent payload. */
+function contextForRange(
+  rows: readonly CanonicalDiffRow[],
+  startRow: number,
+  endRow: number
+) {
+  const slice = rows.slice(startRow, endRow + 1);
+  return slice
+    .map((r) => `${canonicalRowLabel(r)} ${r.text}`)
+    .join("\n")
+    .slice(0, 400);
 }
 
 export function visualSelect(): void {
@@ -16,14 +38,15 @@ export function visualSelect(): void {
   store.set({ anchorRow: anchor === null ? store.getState().cursorRow : null });
 }
 
-export function openAddComment(): void {
+/** Open an inline draft at the cursor (or the visual selection range). */
+export function openAddCommentDraft(): void {
   const store = getStore();
   const ctx = rowsOfSelectedFile();
   if (!ctx) {
     store.showToast("info", "no diff to comment on");
     return;
   }
-  const { sel, rows } = ctx;
+  const { rows, sel } = ctx;
   const cursor = store.getState().cursorRow;
   const anchor = store.getState().anchorRow;
   const startRow = anchor === null ? cursor : Math.min(anchor, cursor);
@@ -31,32 +54,27 @@ export function openAddComment(): void {
   if (endRow >= rows.length) {
     return;
   }
-  const slice = rows.slice(startRow, endRow + 1);
-  const context = slice
-    .map((r) => `${rowLabel(r)} ${r.text}`)
-    .join("\n")
-    .slice(0, 400);
   store.set({
     anchorRow: null,
-    overlay: {
-      context,
+    commentDraft: {
+      context: contextForRange(rows, startRow, endRow),
       endRow,
-      kind: "comment",
       mode: "add",
       path: sel.file.path,
       scope: sel.scope,
       startRow,
+      text: "",
     },
   });
 }
 
-export function openEditCommentAtCursor(): void {
+/** Reopen an existing comment at the cursor as an inline edit draft. */
+export function openEditCommentDraft(): void {
   const store = getStore();
-  const ctx = rowsOfSelectedFile();
-  if (!ctx) {
+  const sel = store.selectedFile();
+  if (!sel) {
     return;
   }
-  const { sel } = ctx;
   const cursor = store.getState().cursorRow;
   const comment = store
     .commentsFor(sel.scope, sel.file.path)
@@ -66,17 +84,85 @@ export function openEditCommentAtCursor(): void {
     return;
   }
   store.set({
-    overlay: {
+    commentDraft: {
       commentId: comment.id,
       context: comment.context,
       endRow: comment.endRow,
-      kind: "comment",
       mode: "edit",
       path: comment.path,
       scope: comment.scope,
       startRow: comment.startRow,
+      text: comment.text,
     },
   });
+}
+
+export function cancelCommentDraft(): void {
+  getStore().set({ commentDraft: null });
+}
+
+export function updateCommentDraft(text: string): void {
+  const store = getStore();
+  const { commentDraft } = store.getState();
+  if (!commentDraft) {
+    return;
+  }
+  store.set({ commentDraft: { ...commentDraft, text } });
+}
+
+export function deleteComment(id: string): void {
+  const store = getStore();
+  store.set({
+    comments: store.getState().comments.filter((c) => c.id !== id),
+  });
+  store.showToast("success", "comment deleted");
+}
+
+/** Save the active draft: empty text cancels, edit updates, add inserts. */
+export function saveCommentDraft(text: string): void {
+  const store = getStore();
+  const { commentDraft } = store.getState();
+  if (!commentDraft) {
+    return;
+  }
+  const trimmed = text.trim();
+  if (trimmed === "") {
+    store.set({ commentDraft: null });
+    return;
+  }
+  const now = Date.now();
+  if (commentDraft.mode === "edit" && commentDraft.commentId) {
+    store.set({
+      commentDraft: null,
+      comments: store
+        .getState()
+        .comments.map((c) =>
+          c.id === commentDraft.commentId
+            ? { ...c, text: trimmed, updatedAt: now }
+            : c
+        ),
+    });
+    store.showToast("success", "comment updated");
+    return;
+  }
+  store.set({
+    commentDraft: null,
+    comments: [
+      ...store.getState().comments,
+      {
+        context: commentDraft.context,
+        createdAt: now,
+        endRow: commentDraft.endRow,
+        id: crypto.randomUUID(),
+        path: commentDraft.path,
+        scope: commentDraft.scope,
+        startRow: commentDraft.startRow,
+        text: trimmed,
+        updatedAt: now,
+      },
+    ],
+  });
+  store.showToast("success", "comment added");
 }
 
 export function deleteCommentAtCursor(): void {
@@ -121,61 +207,4 @@ export function jumpToComment(dir: 1 | -1): void {
   if (target) {
     store.set({ cursorRow: target.startRow });
   }
-}
-
-export function openCommentList(): void {
-  const store = getStore();
-  const sel = store.selectedFile();
-  if (!sel) {
-    return;
-  }
-  store.set({
-    overlay: { kind: "comments", path: sel.file.path, scope: sel.scope },
-  });
-}
-
-export function saveCommentFromOverlay(text: string): void {
-  const store = getStore();
-  const { overlay } = store.getState();
-  if (overlay?.kind !== "comment") {
-    return;
-  }
-  const trimmed = text.trim();
-  if (trimmed === "") {
-    store.set({ overlay: null });
-    return;
-  }
-  const now = Date.now();
-  if (overlay.mode === "edit" && overlay.commentId) {
-    store.set({
-      comments: store
-        .getState()
-        .comments.map((c) =>
-          c.id === overlay.commentId
-            ? { ...c, text: trimmed, updatedAt: now }
-            : c
-        ),
-      overlay: null,
-    });
-    store.showToast("success", "comment updated");
-    return;
-  }
-  store.set({
-    comments: [
-      ...store.getState().comments,
-      {
-        context: overlay.context,
-        createdAt: now,
-        endRow: overlay.endRow,
-        id: crypto.randomUUID(),
-        path: overlay.path,
-        scope: overlay.scope,
-        startRow: overlay.startRow,
-        text: trimmed,
-        updatedAt: now,
-      },
-    ],
-    overlay: null,
-  });
-  store.showToast("success", "comment added");
 }

@@ -1,10 +1,7 @@
-import type { SyntaxStyle } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
-import { useEffect, useState } from "react";
 import { keyEventToChord } from "../keymap/chords";
 import { handleKeyEvent, restart } from "../state/dispatch";
 import { getStore, useAppState } from "../state/store";
-import { getSyntaxStyle } from "../themes/index";
 import { ColorProvider } from "./color-context";
 import { getThemeColors } from "./colors";
 import { DiffPane } from "./diff-pane";
@@ -15,19 +12,8 @@ import { BottomBar, TopBar } from "./status-bar";
 
 export function App() {
   const state = useAppState();
-  const [syntaxStyle, setSyntaxStyle] = useState<SyntaxStyle | undefined>();
-  const { theme } = state;
-  const colors = getThemeColors(theme);
+  const colors = getThemeColors(state.theme);
   const C = colors.ui;
-
-  useEffect(() => {
-    const themeId = theme === "auto" ? "github-dark" : theme;
-    getSyntaxStyle(themeId, "dark")
-      .then(setSyntaxStyle)
-      .catch(() => {
-        // theme load is best-effort; fall back to unstyled diff
-      });
-  }, [theme]);
 
   useKeyboard((e) => {
     const s = getStore().getState();
@@ -76,7 +62,7 @@ export function App() {
           <TopBar />
           <box style={{ flexDirection: "row", flexGrow: 1 }}>
             {state.sidebarVisible ? <Sidebar /> : null}
-            <DiffPane syntaxStyle={syntaxStyle} />
+            <DiffPane />
           </box>
           <BottomBar />
           <Overlays />
