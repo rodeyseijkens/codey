@@ -1,137 +1,233 @@
-import type { DiffRenderable, KeyEvent, SyntaxStyle } from "@opentui/core";
+import type { KeyEvent, ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useEffect, useRef } from "react";
+import { getFiletypeFromFileName } from "@pierre/diffs";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { keyEventToChord } from "../keymap/chords";
 import type { CommandId } from "../keymap/commands";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
 import {
-  changeGroupOffsets,
-  type DiffRow,
-  parseDiffRows,
-} from "../lib/diff-lines";
-import type { AppStore } from "../state/store";
+  cancelCommentDraft,
+  deleteComment,
+  saveCommentDraft,
+  updateCommentDraft,
+} from "../state/comment-actions";
 import { getStore, useAppState } from "../state/store";
 import { useColors } from "./color-context";
-import type { UiColors } from "./colors";
+import {
+  buildCanonicalDiffRows,
+  type CanonicalDiffRow,
+  createHunkDiffFilesFromPatch,
+  HunkDiffBody,
+  type HunkDiffNote,
+} from "./hunk-diff/opentui";
+
+import { toInternalDiffFile } from "./hunk-diff/opentui/model";
+import { buildLineHighlightPaintIndex } from "./hunk-diff/ui/diff/lineHighlightPaint";
+import type { ValidatedLineHighlight } from "./hunk-diff/ui/highlights/validate";
 import { useKeymap } from "./keymap-context";
-
-const EXT_LANG: Record<string, string> = {
-  bash: "shellscript",
-  c: "c",
-  cjs: "javascript",
-  cpp: "cpp",
-  css: "css",
-  go: "go",
-  h: "c",
-  html: "html",
-  java: "java",
-  js: "javascript",
-  json: "json",
-  jsonc: "jsonc",
-  jsx: "jsx",
-  md: "markdown",
-  mjs: "javascript",
-  py: "python",
-  rb: "ruby",
-  rs: "rust",
-  sh: "shellscript",
-  sql: "sql",
-  toml: "toml",
-  ts: "typescript",
-  tsx: "typescriptreact",
-  yaml: "yaml",
-  yml: "yaml",
-  zig: "zig",
-};
-
-export function filetypeFor(path: string): string {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_LANG[ext] ?? "text";
-}
 
 function resolveViewMode(
   layoutMode: string,
   termWidth: number
-): "split" | "unified" {
+): "split" | "stack" {
   if (layoutMode === "split") {
     return "split";
   }
   if (layoutMode === "stack") {
-    return "unified";
+    return "stack";
   }
-  return termWidth >= 160 ? "split" : "unified";
+  return termWidth >= 160 ? "split" : "stack";
 }
 
-interface DiffInternals {
-  clearHighlightLines?: (start: number, end: number) => void;
-  highlightLines?: (start: number, end: number, color: string) => void;
-  leftCodeRenderable?: { scrollY: number; height: number };
-  rightCodeRenderable?: { scrollY: number; height: number };
+function isChange(row: CanonicalDiffRow | undefined): boolean {
+  return !!row && (row.kind === "add" || row.kind === "del");
 }
 
-function jumpToHunk(
-  store: AppStore,
-  rows: DiffRow[],
+function jumpToChange(
+  store: ReturnType<typeof getStore>,
+  rows: readonly CanonicalDiffRow[],
   cmd: CommandId,
-  cursorRow: number,
-  rowCount: number
+  cursorRow: number
 ): void {
-  const offsets = changeGroupOffsets(rows);
   if (cmd === "next-hunk") {
-    const next = offsets.find((o) => o > cursorRow);
-    if (next !== undefined) {
-      store.set({ cursorRow: Math.min(next, rowCount - 1) });
-    }
-    return;
+    jumpToNextChange(store, rows, cursorRow);
+  } else {
+    jumpToPrevChange(store, rows, cursorRow);
   }
-  const prev = [...offsets].reverse().find((o) => o < cursorRow);
-  store.set({ cursorRow: prev === undefined ? 0 : Math.max(prev, 0) });
 }
 
-function applyHighlights(
-  diff: DiffInternals | null,
-  store: AppStore,
-  rowCount: number,
-  viewMode: "split" | "unified",
-  C: UiColors
+function jumpToNextChange(
+  store: ReturnType<typeof getStore>,
+  rows: readonly CanonicalDiffRow[],
+  cursorRow: number
 ): void {
-  if (!diff || rowCount === 0) {
-    return;
-  }
-  diff.clearHighlightLines?.(0, rowCount - 1);
-  const sel = store.selectedFile();
-  if (sel) {
-    for (const c of store.commentsFor(sel.scope, sel.file.path)) {
-      diff.highlightLines?.(
-        c.startRow,
-        Math.min(c.endRow, rowCount - 1),
-        C.comment
-      );
+  let i = cursorRow + 1;
+  if (isChange(rows[cursorRow])) {
+    while (i < rows.length && isChange(rows[i])) {
+      i += 1;
     }
   }
-  const cursor = store.getState().cursorRow;
-  if (cursor >= 0 && cursor < rowCount) {
-    diff.highlightLines?.(cursor, cursor, C.cursor);
-  }
-  const code =
-    viewMode === "unified" ? diff.leftCodeRenderable : diff.rightCodeRenderable;
-  if (code && typeof code.scrollY === "number") {
-    const visible = code.height || 20;
-    if (cursor < code.scrollY + 2) {
-      code.scrollY = Math.max(0, cursor - 2);
-    } else if (cursor > code.scrollY + visible - 3) {
-      code.scrollY = Math.max(0, cursor - visible + 3);
+  while (i < rows.length) {
+    if (isChange(rows[i])) {
+      store.set({ cursorRow: i });
+      return;
     }
+    i += 1;
   }
 }
 
-function handleDiffPaneKey(
+function jumpToPrevChange(
+  store: ReturnType<typeof getStore>,
+  rows: readonly CanonicalDiffRow[],
+  cursorRow: number
+): void {
+  let i = cursorRow - 1;
+  if (isChange(rows[cursorRow])) {
+    while (i >= 0 && isChange(rows[i])) {
+      i -= 1;
+    }
+  }
+  while (i >= 0) {
+    if (isChange(rows[i])) {
+      let blockStart = i;
+      while (blockStart > 0 && isChange(rows[blockStart - 1])) {
+        blockStart -= 1;
+      }
+      store.set({ cursorRow: blockStart });
+      return;
+    }
+    i -= 1;
+  }
+}
+
+/** Build whole-line paint marks for one comment's canonical row range. */
+function commentMarksForRange(
+  rows: readonly CanonicalDiffRow[],
+  startRow: number,
+  endRow: number
+): ValidatedLineHighlight[] {
+  const marks: ValidatedLineHighlight[] = [];
+  const start = Math.max(0, startRow);
+  const end = Math.min(endRow, rows.length - 1);
+  for (let index = start; index <= end; index += 1) {
+    const row = rows[index];
+    if (!row) {
+      continue;
+    }
+    if (row.kind === "add" && row.newLine !== undefined) {
+      marks.push({
+        end: Number.MAX_SAFE_INTEGER,
+        line: row.newLine,
+        side: "new",
+        start: 0,
+        tone: "info",
+      });
+    } else if (row.kind === "del" && row.oldLine !== undefined) {
+      marks.push({
+        end: Number.MAX_SAFE_INTEGER,
+        line: row.oldLine,
+        side: "old",
+        start: 0,
+        tone: "info",
+      });
+    } else if (row.kind === "context") {
+      if (row.oldLine !== undefined) {
+        marks.push({
+          end: Number.MAX_SAFE_INTEGER,
+          line: row.oldLine,
+          side: "old",
+          start: 0,
+          tone: "info",
+        });
+      }
+      if (row.newLine !== undefined) {
+        marks.push({
+          end: Number.MAX_SAFE_INTEGER,
+          line: row.newLine,
+          side: "new",
+          start: 0,
+          tone: "info",
+        });
+      }
+    }
+  }
+  return marks;
+}
+
+function resolveDiffPaneKey(key: string): CommandId | undefined {
+  if (key === "up") {
+    return "select-prev";
+  }
+  if (key === "down") {
+    return "select-next";
+  }
+  if (key === "pageup") {
+    return "page-up";
+  }
+  if (key === "pagedown") {
+    return "page-down";
+  }
+}
+
+function applyPageScroll(
+  scrollRef: ScrollBoxRenderable | null,
+  direction: -1 | 1
+) {
+  if (!scrollRef) {
+    return;
+  }
+  const viewportHeight = scrollRef.viewport.height;
+  if (viewportHeight <= 0) {
+    return;
+  }
+  const delta = direction * viewportHeight;
+  scrollRef.scrollTop = Math.max(
+    0,
+    Math.min(
+      scrollRef.scrollHeight - viewportHeight,
+      scrollRef.scrollTop + delta
+    )
+  );
+}
+
+function applyHalfPageScroll(
+  scrollRef: ScrollBoxRenderable | null,
+  store: ReturnType<typeof getStore>,
+  rowCount: number,
+  cursorRow: number,
+  direction: -1 | 1
+) {
+  const viewportHeight = scrollRef?.viewport.height ?? 0;
+  if (scrollRef && viewportHeight > 0) {
+    const delta = direction * (viewportHeight / 2);
+    scrollRef.scrollTop = Math.max(
+      0,
+      Math.min(
+        scrollRef.scrollHeight - viewportHeight,
+        scrollRef.scrollTop + delta
+      )
+    );
+  }
+  store.set({
+    cursorRow: Math.max(
+      0,
+      Math.min(
+        rowCount - 1,
+        cursorRow + Math.floor(viewportHeight / 2) * direction
+      )
+    ),
+  });
+}
+
+export function handleDiffPaneKey(
   e: KeyEvent,
-  store: AppStore,
-  keymap: ResolvedKeymap
+  store: ReturnType<typeof getStore>,
+  keymap: ResolvedKeymap,
+  rows: readonly CanonicalDiffRow[],
+  scrollRef: ScrollBoxRenderable | null = null
 ): void {
   const s = store.getState();
-  if (s.focus !== "diff" || s.overlay) {
+  if (s.focus !== "diff" || s.overlay || s.commentDraft) {
     return;
   }
   const chord = keyEventToChord(e);
@@ -139,8 +235,6 @@ function handleDiffPaneKey(
     return;
   }
   const cmd = lookupCommand(keymap, chord);
-  const current = store.selectedFile();
-  const rows = current?.file.diff ? parseDiffRows(current.file.diff) : [];
   const rowCount = rows.length;
   if (rowCount === 0) {
     return;
@@ -148,13 +242,26 @@ function handleDiffPaneKey(
 
   let effectiveCmd = cmd;
   if (!effectiveCmd) {
-    if (chord.key === "up") {
-      effectiveCmd = "select-prev";
-    } else if (chord.key === "down") {
-      effectiveCmd = "select-next";
-    }
+    effectiveCmd = resolveDiffPaneKey(chord.key);
   }
   if (!effectiveCmd) {
+    return;
+  }
+
+  if (effectiveCmd === "page-up") {
+    applyPageScroll(scrollRef, -1);
+    return;
+  }
+  if (effectiveCmd === "page-down") {
+    applyPageScroll(scrollRef, 1);
+    return;
+  }
+  if (effectiveCmd === "page-cursor-half-up") {
+    applyHalfPageScroll(scrollRef, store, rowCount, s.cursorRow, -1);
+    return;
+  }
+  if (effectiveCmd === "page-cursor-half-down") {
+    applyHalfPageScroll(scrollRef, store, rowCount, s.cursorRow, 1);
     return;
   }
 
@@ -167,37 +274,118 @@ function handleDiffPaneKey(
     return;
   }
   if (effectiveCmd === "next-hunk" || effectiveCmd === "prev-hunk") {
-    jumpToHunk(store, rows, effectiveCmd, s.cursorRow, rowCount);
+    jumpToChange(store, rows, effectiveCmd, s.cursorRow);
   }
 }
 
-export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
+export function DiffPane() {
   const state = useAppState();
   const keymap = useKeymap();
   const store = getStore();
-  const diffRef = useRef<DiffRenderable | null>(null);
   const dims = useTerminalDimensions();
   const { ui: C } = useColors();
+  const scrollRef = useRef<ScrollBoxRenderable | null>(null);
+  const [cursorOffset, setCursorOffset] = useState(0);
 
   const sel = store.selectedFile();
   const file = sel?.file;
-  const rows = file?.diff ? parseDiffRows(file.diff) : [];
+
+  const hunkFiles = useMemo(
+    () =>
+      file?.diff
+        ? createHunkDiffFilesFromPatch(file.diff, file.path).map((f) => ({
+            ...f,
+            language: getFiletypeFromFileName(file.path),
+          }))
+        : [],
+    [file?.diff, file?.path]
+  );
+  const [hunkFile] = hunkFiles;
+  const internalFile = useMemo(
+    () => (hunkFile ? toInternalDiffFile(hunkFile) : undefined),
+    [hunkFile]
+  );
+  const rows = useMemo(
+    () => (hunkFile ? buildCanonicalDiffRows(hunkFile) : []),
+    [hunkFile]
+  );
+
+  const comments = useMemo(() => {
+    if (!sel) {
+      return [];
+    }
+    return state.comments.filter(
+      (c) => c.scope === sel.scope && c.path === sel.file.path
+    );
+  }, [state.comments, sel]);
+
+  const notes = useMemo<HunkDiffNote[]>(() => {
+    const draft = state.commentDraft;
+    const list: HunkDiffNote[] = comments.map((comment) => {
+      const editing = draft?.mode === "edit" && draft.commentId === comment.id;
+      return {
+        anchorRow: comment.endRow,
+        editing,
+        guideStartRow: comment.startRow,
+        id: comment.id,
+        onCancel: editing ? cancelCommentDraft : undefined,
+        onDelete: editing ? undefined : () => deleteComment(comment.id),
+        onInput: editing ? updateCommentDraft : undefined,
+        onSave: editing ? saveCommentDraft : undefined,
+        text: editing ? (draft?.text ?? comment.text) : comment.text,
+      };
+    });
+    if (draft?.mode === "add") {
+      list.push({
+        anchorRow: draft.endRow,
+        editing: true,
+        guideStartRow: draft.startRow,
+        id: "draft",
+        onCancel: cancelCommentDraft,
+        onInput: updateCommentDraft,
+        onSave: saveCommentDraft,
+        text: draft.text,
+      });
+    }
+    return list;
+  }, [comments, state.commentDraft]);
+
+  const lineHighlights = useMemo(() => {
+    if (!internalFile || comments.length === 0) {
+      return;
+    }
+    const marks = comments.flatMap((c) =>
+      commentMarksForRange(rows, c.startRow, c.endRow)
+    );
+    return buildLineHighlightPaintIndex({ file: internalFile, marks });
+  }, [internalFile, comments, rows]);
 
   const viewMode = resolveViewMode(state.layoutMode, dims.width);
+  const contentWidth = Math.max(
+    10,
+    dims.width - (state.sidebarVisible ? state.sidebarWidth : 0)
+  );
 
   useKeyboard((e) => {
-    handleDiffPaneKey(e, store, keymap);
+    handleDiffPaneKey(e, store, keymap, rows, scrollRef.current);
   });
 
   useEffect(() => {
-    applyHighlights(
-      diffRef.current as unknown as DiffInternals | null,
-      store,
-      rows.length,
-      viewMode,
-      C
-    );
-  });
+    const scroll = scrollRef.current;
+    if (scroll === null || state.focus !== "diff") {
+      return;
+    }
+    const viewportHeight = scroll.viewport.height;
+    if (viewportHeight <= 0) {
+      return;
+    }
+    const bottom = scroll.scrollTop + viewportHeight - 1;
+    if (cursorOffset < scroll.scrollTop) {
+      scroll.scrollTop = cursorOffset;
+    } else if (cursorOffset > bottom) {
+      scroll.scrollTop = cursorOffset - viewportHeight + 1;
+    }
+  }, [cursorOffset, state.focus]);
 
   if (!(sel && file)) {
     return (
@@ -243,7 +431,7 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
     );
   }
 
-  if (!file.diff) {
+  if (!(file.diff && hunkFile)) {
     return (
       <box
         style={{
@@ -285,24 +473,33 @@ export function DiffPane(props: { syntaxStyle?: SyntaxStyle }) {
           {rows.length} lines · {viewMode}
         </text>
       </box>
-      <diff
-        addedBg={C.diffAddedBg}
-        addedSignColor={C.green}
-        contextBg={C.bg}
-        diff={file.diff}
-        fg={C.fg}
-        filetype={filetypeFor(file.path)}
-        ref={(el: DiffRenderable) => {
-          diffRef.current = el;
+      <scrollbox
+        focused={false}
+        height="100%"
+        ref={(el: ScrollBoxRenderable) => {
+          scrollRef.current = el;
         }}
-        removedBg={C.diffRemovedBg}
-        removedSignColor={C.red}
-        showLineNumbers={state.lineNumbers}
-        style={{ flexGrow: 1 }}
-        syncScroll={true}
-        syntaxStyle={props.syntaxStyle}
-        view={viewMode}
-      />
+        scrollY={true}
+        viewportCulling={false}
+        width="100%"
+      >
+        <HunkDiffBody
+          cursorRow={state.cursorRow}
+          file={hunkFile}
+          layout={viewMode}
+          lineHighlights={lineHighlights}
+          notes={notes}
+          onCursorOffsetResolved={(offset) => {
+            setCursorOffset(offset);
+          }}
+          showHunkHeaders={false}
+          showLineNumbers={state.lineNumbers}
+          tabWidth={state.tabWidth}
+          theme={state.theme}
+          width={contentWidth}
+          wrapLines={state.wrapLines}
+        />
+      </scrollbox>
     </box>
   );
 }
