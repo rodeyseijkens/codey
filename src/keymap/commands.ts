@@ -1,7 +1,6 @@
 export type CommandId =
   | "quit"
   | "help"
-  | "palette"
   | "select-prev"
   | "select-next"
   | "prev-hunk"
@@ -19,7 +18,6 @@ export type CommandId =
   | "delete-comment"
   | "next-comment"
   | "prev-comment"
-  | "list-comments"
   | "send-comments"
   | "copy"
   | "stage-file"
@@ -29,12 +27,16 @@ export type CommandId =
   | "refresh"
   | "toggle-layout"
   | "toggle-view"
-  | "cancel";
+  | "page-up"
+  | "page-down"
+  | "page-cursor-half-up"
+  | "page-cursor-half-down"
+  | "cancel"
+  | "wrap-text";
 
 export const ALL_COMMANDS: readonly CommandId[] = [
   "quit",
   "help",
-  "palette",
   "select-prev",
   "select-next",
   "prev-hunk",
@@ -52,7 +54,6 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "delete-comment",
   "next-comment",
   "prev-comment",
-  "list-comments",
   "send-comments",
   "copy",
   "stage-file",
@@ -62,6 +63,10 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "refresh",
   "toggle-layout",
   "toggle-view",
+  "page-up",
+  "page-down",
+  "page-cursor-half-up",
+  "page-cursor-half-down",
 ] as const;
 
 export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
@@ -73,11 +78,13 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   "edit-comment": "Edit the comment on the current line",
   "focus-toggle": "Toggle focus between sidebar and diff pane",
   help: "Show help overlay",
-  "list-comments": "List pending comments for the current file",
   "next-comment": "Jump to next comment",
   "next-file": "Jump to next file",
   "next-hunk": "Jump to next hunk",
-  palette: "Open command palette",
+  "page-cursor-half-down": "Move cursor and page half page down",
+  "page-cursor-half-up": "Move cursor and page half page up",
+  "page-down": "Move page down",
+  "page-up": "Move page up",
   "prev-comment": "Jump to previous comment",
   "prev-file": "Jump to previous file",
   "prev-hunk": "Jump to previous hunk",
@@ -96,6 +103,7 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   "unstage-all": "Unstage all staged files",
   "unstage-file": "Unstage selected file (git restore --staged)",
   "visual-select": "Start line/range selection for comments",
+  "wrap-text": "Toggle diff line wrapping",
 };
 
 export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
@@ -107,11 +115,13 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "edit-comment": "e",
   "focus-toggle": "tab",
   help: "?",
-  "list-comments": "l",
   "next-comment": "n",
   "next-file": "f",
   "next-hunk": "]",
-  palette: "/",
+  "page-cursor-half-down": "ctrl+d",
+  "page-cursor-half-up": "ctrl+u",
+  "page-down": "ctrl+f",
+  "page-up": "ctrl+b",
   "prev-comment": "N",
   "prev-file": "F",
   "prev-hunk": "[",
@@ -130,4 +140,5 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "unstage-all": "U",
   "unstage-file": "u",
   "visual-select": "v",
+  "wrap-text": "w",
 };

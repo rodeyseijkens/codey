@@ -14,7 +14,6 @@ whole config), and codey shows an error pane until the file is fixed.
 | ------- | ---------------- | -------------------------------------------------------- |
 | `q`     | quit             | Quit codey                                               |
 | `?`     | help             | Show help overlay                                        |
-| `/`     | palette          | Open command palette                                     |
 | `j`     | select-next      | Move selection down (sidebar: next file; diff: next row) |
 | `k`     | select-prev      | Move selection up                                        |
 | `]`     | next-hunk        | Jump to next hunk (diff pane)                            |
@@ -32,7 +31,6 @@ whole config), and codey shows an error pane until the file is fixed.
 | `d`     | delete-comment   | Delete the comment on the current line                   |
 | `n`     | next-comment     | Jump to next comment                                     |
 | `N`     | prev-comment     | Jump to previous comment                                 |
-| `l`     | list-comments    | List pending comments for the current file               |
 | `s`     | send-comments    | Send pending comments (standalone: copy to clipboard)    |
 | `y`     | copy             | Copy selected file's diff to clipboard                   |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
@@ -41,7 +39,12 @@ whole config), and codey shows an error pane until the file is fixed.
 | `U`     | unstage-all      | Unstage all staged files                                 |
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
+| `w`     | wrap-text        | Toggle diff line wrapping                                |
 | `t`     | toggle-view      | Toggle sidebar view: tree → list → tree                  |
+| `ctrl+b`| page-up          | Move page up (diff pane)                                 |
+| `ctrl+f`| page-down        | Move page down (diff pane)                               |
+| `ctrl+u`| page-cursor-half-up | Move cursor and page half page up (diff pane)         |
+| `ctrl+d`| page-cursor-half-down | Move cursor and page half page down (diff pane)       |
 | `esc`   | cancel           | Cancel overlay or pending confirmation                   |
 
 ## Sidebar view
