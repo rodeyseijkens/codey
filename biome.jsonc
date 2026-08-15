@@ -2,7 +2,18 @@
   "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
   "extends": ["ultracite/biome/core", "ultracite/biome/react"],
   "files": {
-    "includes": ["src/**", "test/**", "scripts/**", "*.jsonc", "*.mjs", "*.ts"]
+    "includes": [
+      "src/**",
+      "test/**",
+      "scripts/**",
+      "*.jsonc",
+      "*.mjs",
+      "*.ts",
+      "!src/ui/hunk-diff/core",
+      "!src/ui/hunk-diff/ui",
+      "!src/ui/hunk-diff/lib",
+      "!src/ui/hunk-diff/opentui/model.ts"
+    ]
   },
   "javascript": {
     "globals": ["Bun"]

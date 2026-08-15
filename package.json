@@ -28,15 +28,17 @@
     ]
   },
   "dependencies": {
-    "@opentui/core": "^0.4.3",
-    "@opentui/react": "^0.4.3",
+    "@opentui/core": "^0.5.3",
+    "@opentui/react": "^0.5.3",
+    "@pierre/diffs": "1.2.2",
     "chokidar": "^4.0.3",
     "commander": "^14.0.3",
     "diff": "^8.0.3",
+    "get-east-asian-width": "^1.6.0",
     "react": "^19.2.8",
     "shell-quote": "1.9.0",
-    "shiki": "^4.4.2",
     "smol-toml": "^1.7.1",
+    "string-width": "^8.2.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {

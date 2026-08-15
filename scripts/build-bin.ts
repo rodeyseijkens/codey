@@ -43,8 +43,6 @@ async function main() {
       "@opentui/react",
       "react",
       "react-reconciler",
-      "shiki",
-      "web-tree-sitter",
       "chokidar",
     ],
     naming: "[dir]/[name].js",
