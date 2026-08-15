@@ -1,5 +1,8 @@
-import { parseDiffRows } from "../src/lib/diff-lines";
 import { gitShow, gitStaged, gitUnstaged, twoFile } from "../src/loaders/index";
+import {
+  buildCanonicalDiffRows,
+  createHunkDiffFilesFromPatch,
+} from "../src/ui/hunk-diff/opentui";
 import { getRepoRoot, isRepo } from "../src/vcs/git";
 
 async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {
@@ -13,11 +16,15 @@ async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {
 async function runOnce(root: string, hasHeadCommit: boolean): Promise<void> {
   const staged = await time("gitStaged", () => gitStaged(root));
   const unstaged = await time("gitUnstaged", () => gitUnstaged(root));
-  await time("parseDiffRows (all files)", () => {
+  await time("canonical rows (all files)", () => {
     let rows = 0;
     for (const f of [...staged.files, ...unstaged.files]) {
       if (f.diff) {
-        rows += parseDiffRows(f.diff).length;
+        const files = createHunkDiffFilesFromPatch(f.diff, f.path);
+        rows += files.reduce(
+          (total, file) => total + buildCanonicalDiffRows(file).length,
+          0
+        );
       }
     }
     return Promise.resolve(rows);

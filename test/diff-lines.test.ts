@@ -1,12 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import type { DiffRow } from "../src/lib/diff-lines";
 import {
-  changeGroupOffsets,
-  parseDiffRows,
-  rowLabel,
-} from "../src/lib/diff-lines";
+  buildCanonicalDiffRows,
+  type CanonicalDiffRow,
+  canonicalHunkOffsets,
+  canonicalRowLabel,
+  createHunkDiffFilesFromPatch,
+} from "../src/ui/hunk-diff/opentui";
 
-function rowAt(rows: DiffRow[], index: number): DiffRow {
+function rowAt(rows: CanonicalDiffRow[], index: number): CanonicalDiffRow {
   const row = rows[index];
   if (row === undefined) {
     throw new Error(`row ${index} missing`);
@@ -27,118 +28,82 @@ index 123..456 100644
  function y() {}
 `;
 
-describe("parseDiffRows", () => {
-  test("skips diff metadata lines before the first hunk", () => {
-    const rows = parseDiffRows(DIFF);
-    expect(rows).toHaveLength(5);
-    expect(rows.map((r) => r.type)).toEqual([
+function rowsOf(diff: string): CanonicalDiffRow[] {
+  const [file] = createHunkDiffFilesFromPatch(diff, "test");
+  if (!file) {
+    throw new Error("expected one file");
+  }
+  return buildCanonicalDiffRows(file);
+}
+
+describe("buildCanonicalDiffRows", () => {
+  test("includes hunk headers, change lines, and collapsed gaps", () => {
+    const rows = rowsOf(DIFF);
+    expect(rows).toHaveLength(8);
+    expect(rows.map((r) => r.kind)).toEqual([
+      "header",
       "del",
       "context",
       "add",
+      "gap",
+      "header",
       "context",
       "context",
     ]);
   });
 
   test("does not treat ---/+++ file headers as diff rows", () => {
-    const rows = parseDiffRows(DIFF);
+    const rows = rowsOf(DIFF);
     expect(rows.map((r) => r.text)).not.toContain("-- a/foo.ts");
     expect(rows.map((r) => r.text)).not.toContain("++ b/foo.ts");
   });
 
   test("assigns sequential hunk indices", () => {
-    const rows = parseDiffRows(DIFF);
-    expect(rows.map((r) => r.hunkIndex)).toEqual([0, 0, 0, 1, 1]);
+    const rows = rowsOf(DIFF);
+    expect(rows.map((r) => r.hunkIndex)).toEqual([0, 0, 0, 0, 1, 1, 1, 1]);
   });
 
   test("tracks old/new line numbers", () => {
-    const rows = parseDiffRows(DIFF);
-    const del = rowAt(rows, 0);
-    const context = rowAt(rows, 1);
-    const add = rowAt(rows, 2);
-    expect(del.type).toBe("del");
+    const rows = rowsOf(DIFF);
+    const del = rowAt(rows, 1);
+    const context = rowAt(rows, 2);
+    const add = rowAt(rows, 3);
+    expect(del.kind).toBe("del");
     expect(del.oldLine).toBe(1);
-    expect(context.type).toBe("context");
+    expect(context.kind).toBe("context");
     expect(context.newLine).toBe(1);
     expect(context.oldLine).toBe(2);
-    expect(add.type).toBe("add");
+    expect(add.kind).toBe("add");
     expect(add.newLine).toBe(2);
   });
 });
 
-describe("rowLabel", () => {
+describe("canonicalRowLabel", () => {
   test("labels add rows with new line number", () => {
-    const rows = parseDiffRows(DIFF);
-    expect(rowLabel(rowAt(rows, 2))).toBe("+2");
+    const rows = rowsOf(DIFF);
+    expect(canonicalRowLabel(rowAt(rows, 3))).toBe("+2");
   });
 
   test("labels del rows with old line number", () => {
-    const rows = parseDiffRows(DIFF);
-    expect(rowLabel(rowAt(rows, 0))).toBe("-1");
+    const rows = rowsOf(DIFF);
+    expect(canonicalRowLabel(rowAt(rows, 1))).toBe("-1");
   });
 
   test("labels context rows with new line number", () => {
-    const rows = parseDiffRows(DIFF);
-    expect(rowLabel(rowAt(rows, 1))).toBe("1");
+    const rows = rowsOf(DIFF);
+    expect(canonicalRowLabel(rowAt(rows, 2))).toBe("1");
+  });
+
+  test("labels headers and gaps as empty", () => {
+    const rows = rowsOf(DIFF);
+    expect(canonicalRowLabel(rowAt(rows, 0))).toBe("");
+    expect(canonicalRowLabel(rowAt(rows, 4))).toBe("");
   });
 });
 
-describe("changeGroupOffsets", () => {
-  test("returns the first change of each group separated by more than 3 context lines", () => {
-    const diff = `diff --git a/f.ts b/f.ts
---- a/f.ts
-+++ b/f.ts
-@@ -1,20 +1,20 @@
- line1
- line2
--line3
-+CHANGED3
- line4
- line5
- line6
- line7
- line8
- line9
- line10
- line11
- line12
--line13
-+CHANGED13
- line14
- line15
- line16
- line17
- line18
- line19
- line20
-`;
-    const rows = parseDiffRows(diff);
-    expect(changeGroupOffsets(rows)).toEqual([2, 13]);
-  });
-
-  test("merges changes within 3 context lines into one group", () => {
-    const diff = `diff --git a/f.ts b/f.ts
---- a/f.ts
-+++ b/f.ts
-@@ -1,10 +1,10 @@
- line1
--line2
-+CHANGED2
- line3
- line4
--line5
-+CHANGED5
- line6
- line7
- line8
- line9
- line10
-`;
-    const rows = parseDiffRows(diff);
-    expect(changeGroupOffsets(rows)).toEqual([1]);
-  });
-
-  test("returns empty for a diff with no changes", () => {
-    expect(changeGroupOffsets([])).toEqual([]);
+describe("canonicalHunkOffsets", () => {
+  test("returns the first visible code row of each hunk", () => {
+    const rows = rowsOf(DIFF);
+    expect(canonicalHunkOffsets(rows)).toEqual([1, 6]);
   });
 });
