@@ -2,6 +2,7 @@ import type { CommitEntry, FileStatus } from "../types";
 import { gitThrow } from "../vcs/git";
 
 const LOG_FORMAT = "%H%n%s%n%an%n%ai%n";
+const WHITESPACE_RE = /\s+/;
 
 export async function gitLog(
   cwd: string,
@@ -10,6 +11,7 @@ export async function gitLog(
 ): Promise<{
   commits: CommitEntry[];
   hasMore: boolean;
+  behind: number;
 }> {
   const logOutput = await gitThrow(
     [
@@ -25,7 +27,7 @@ export async function gitLog(
   const hasMore = parsed.length > limit;
   const slice = hasMore ? parsed.slice(0, limit) : parsed;
 
-  const unpushedHashes = await getUnpushedHashes(cwd);
+  const { unpushed, behind } = await getPushedState(cwd);
 
   const filePromises = slice.map(async (c) => getCommitFiles(cwd, c.hash));
   const fileResults: Array<
@@ -55,14 +57,14 @@ export async function gitLog(
       diffByPath: {},
       files,
       hash: c.hash,
-      isPushed: !unpushedHashes.has(c.hash),
+      isPushed: !unpushed.has(c.hash),
       message: c.message,
       shortHash: c.shortHash,
       stats: { additions, deletions, files: files.length },
     });
   }
 
-  return { commits, hasMore };
+  return { behind, commits, hasMore };
 }
 
 function parseLogOutput(text: string): Array<{
@@ -99,13 +101,27 @@ function parseLogOutput(text: string): Array<{
   return out;
 }
 
-async function getUnpushedHashes(cwd: string): Promise<Set<string>> {
+async function getPushedState(
+  cwd: string
+): Promise<{ unpushed: Set<string>; behind: number }> {
   try {
     const upstream = await gitThrow(["rev-parse", "--abbrev-ref", "@{u}"], cwd);
-    const out = await gitThrow(["rev-list", upstream.trim(), "..HEAD"], cwd);
-    return new Set(out.split("\n").filter((h) => h.length > 0));
+    const base = upstream.trim();
+    const out = await gitThrow(["rev-list", `${base}..HEAD`], cwd);
+    const [behindStr] = (
+      await gitThrow(
+        ["rev-list", "--left-right", "--count", `${base}...HEAD`],
+        cwd
+      )
+    )
+      .trim()
+      .split(WHITESPACE_RE);
+    return {
+      behind: Number(behindStr) || 0,
+      unpushed: new Set(out.split("\n").filter((h) => h.length > 0)),
+    };
   } catch {
-    return new Set();
+    return { behind: 0, unpushed: new Set() };
   }
 }
 
