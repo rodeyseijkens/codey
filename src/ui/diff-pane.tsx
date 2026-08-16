@@ -39,6 +39,9 @@ function resolveViewMode(
   return termWidth >= 160 ? "split" : "stack";
 }
 
+/** Minimum lines of context kept above/below the cursor when scrolling. */
+const SCROLLOFF = 5;
+
 function isChange(row: CanonicalDiffRow | undefined): boolean {
   return !!row && (row.kind === "add" || row.kind === "del");
 }
@@ -286,6 +289,11 @@ export function DiffPane() {
   const { ui: C } = useColors();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const [cursorOffset, setCursorOffset] = useState(0);
+  const [forceScrollToTop, setForceScrollToTop] = useState(false);
+  const [pendingFirstChange, setPendingFirstChange] = useState<number | null>(
+    null
+  );
+  const prevFilePathRef = useRef<string | undefined>(undefined);
 
   const sel = store.selectedFile();
   const file = sel?.file;
@@ -371,21 +379,47 @@ export function DiffPane() {
   });
 
   useEffect(() => {
+    if (file?.path !== prevFilePathRef.current) {
+      prevFilePathRef.current = file?.path;
+      const firstChange = rows.findIndex(
+        (row) => row.kind === "add" || row.kind === "del"
+      );
+      if (firstChange >= 0) {
+        setPendingFirstChange(firstChange);
+        store.set({ cursorRow: firstChange });
+      } else {
+        setPendingFirstChange(null);
+      }
+    }
+  }, [file?.path, rows, store]);
+
+  useEffect(() => {
     const scroll = scrollRef.current;
-    if (scroll === null || state.focus !== "diff") {
+    if (scroll === null) {
       return;
     }
     const viewportHeight = scroll.viewport.height;
     if (viewportHeight <= 0) {
       return;
     }
-    const bottom = scroll.scrollTop + viewportHeight - 1;
-    if (cursorOffset < scroll.scrollTop) {
-      scroll.scrollTop = cursorOffset;
-    } else if (cursorOffset > bottom) {
-      scroll.scrollTop = cursorOffset - viewportHeight + 1;
+    if (forceScrollToTop) {
+      scroll.scrollTop = Math.max(0, cursorOffset - SCROLLOFF);
+      setForceScrollToTop(false);
+      return;
     }
-  }, [cursorOffset, state.focus]);
+    if (state.focus !== "diff") {
+      return;
+    }
+    const bottom = scroll.scrollTop + viewportHeight - 1;
+    if (cursorOffset - SCROLLOFF < scroll.scrollTop) {
+      scroll.scrollTop = Math.max(0, cursorOffset - SCROLLOFF);
+    } else if (cursorOffset + SCROLLOFF > bottom) {
+      scroll.scrollTop = Math.max(
+        0,
+        cursorOffset - viewportHeight + 1 + SCROLLOFF
+      );
+    }
+  }, [cursorOffset, forceScrollToTop, state.focus]);
 
   if (!(sel && file)) {
     return (
@@ -491,6 +525,10 @@ export function DiffPane() {
           notes={notes}
           onCursorOffsetResolved={(offset) => {
             setCursorOffset(offset);
+            if (pendingFirstChange !== null) {
+              setPendingFirstChange(null);
+              setForceScrollToTop(true);
+            }
           }}
           showHunkHeaders={false}
           showLineNumbers={state.lineNumbers}
