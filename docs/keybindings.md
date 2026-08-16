@@ -22,8 +22,8 @@ whole config), and codey shows an error pane until the file is fixed.
 | `F`     | prev-file        | Jump to previous file (diff pane; commit log files)      |
 | `tab`   | focus-toggle     | Cycle focus: changes → diff → commits                    |
 | `shift+tab` | focus-prev    | Cycle focus the other way                                |
-| `0`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
-| `1`     | focus-diff       | Focus the diff pane                                      |
+| `0`     | focus-diff       | Focus the diff pane                                      |
+| `1`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
 | `2`     | focus-commits    | Focus the commit log (re-shows the sidebar)              |
 | `p`     | toggle-sidebar   | Show/hide the sidebar                                    |
 | `space` | collapse-section | Collapse/expand the selected row (section/folder/commit header, load more) |
@@ -102,8 +102,8 @@ confirms and clears those comments; `Esc` cancels.
 ## Sidebar visibility
 
 While the sidebar is hidden (`p`), focus is always the diff pane and `tab` stays
-there. Pressing `0` or `2` re-shows the sidebar and focuses the changes or commit
-log; `1` focuses the diff without re-showing it. Reopening with `p` focuses the
+there. Pressing `1` or `2` re-shows the sidebar and focuses the changes or commit
+log; `0` focuses the diff without re-showing it. Reopening with `p` focuses the
 pane the currently-shown file comes from: a commit diff returns to the commit
 log, otherwise the changes pane.
 
