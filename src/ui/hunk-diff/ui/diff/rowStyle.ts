@@ -349,12 +349,12 @@ export function stackGutterText(
   showLineNumbers: boolean,
 ) {
   if (!showLineNumbers) {
-    return `${cell.sign} `;
+    return "  ";
   }
 
   const oldNumber = diffLineNumberText(cell.oldLineNumber, lineNumberDigits);
   const newNumber = diffLineNumberText(cell.newLineNumber, lineNumberDigits);
-  return `${oldNumber} ${newNumber} ${cell.sign}`;
+  return `${oldNumber} ${newNumber} `;
 }
 
 /** Build the split-view gutter text shared by the TUI and clipboard renderers. */
@@ -364,11 +364,11 @@ export function splitGutterText(
   showLineNumbers: boolean,
 ) {
   if (!showLineNumbers) {
-    return `${cell.sign} `;
+    return "  ";
   }
 
   const number = cell.lineNumber
     ? String(cell.lineNumber).padStart(lineNumberDigits, " ")
     : " ".repeat(lineNumberDigits);
-  return `${number} ${cell.sign}`;
+  return `${number} `;
 }

@@ -128,7 +128,7 @@ export function resolveSplitCellGeometry(
   prefixWidth = DIFF_RAIL_PREFIX_WIDTH,
 ) {
   const availableWidth = Math.max(0, width - prefixWidth);
-  const gutterWidth = Math.min(availableWidth, showLineNumbers ? lineNumberDigits + 3 : 2);
+  const gutterWidth = Math.min(availableWidth, showLineNumbers ? lineNumberDigits + 1 : 2);
 
   return {
     gutterWidth,
@@ -144,7 +144,10 @@ export function resolveStackCellGeometry(
   prefixWidth = DIFF_RAIL_PREFIX_WIDTH,
 ) {
   const availableWidth = Math.max(0, width - prefixWidth);
-  const gutterWidth = Math.min(availableWidth, showLineNumbers ? lineNumberDigits * 2 + 5 : 2);
+  const gutterWidth = Math.min(
+    availableWidth,
+    showLineNumbers ? lineNumberDigits * 2 + 2 : 2,
+  );
 
   return {
     gutterWidth,
