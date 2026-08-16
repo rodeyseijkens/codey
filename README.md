@@ -66,8 +66,9 @@ The default command opens the staged/unstaged diff viewer. Press `?` inside for 
 
 | Key                 | Action                                        |
 | ------------------- | --------------------------------------------- |
-| `j` / `k`           | Move selection down / up                      |
-| `Tab`               | Toggle focus between sidebar and diff pane    |
+| `j` / `k`           | Move selection down / up (changes, diff, commit log)     |
+| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log                 |
+| `0` / `1` / `2`     | Focus changes / diff / commit log directly               |
 | `c`                 | Add transient comment on selected line/range  |
 | `v`                 | Start line/range selection for comments       |
 | `a` / `A`           | Stage file / Stage all files                  |
@@ -86,7 +87,7 @@ The default command opens the staged/unstaged diff viewer. Press `?` inside for 
 | `y`                 | Copy selection to clipboard                   |
 | `s`                 | Send comments (standalone: copy to clipboard) |
 | `w`                 | Toggle line wrapping                          |
-| `Space`             | Collapse/expand section                       |
+| `Space`             | Collapse/expand row (section, folder, commit header)      |
 | `Esc`               | Cancel overlay                                |
 | `Ctrl+f` / `Ctrl+b` | Page down / up                                |
 | `Ctrl+d` / `Ctrl+u` | Half-page down / up                           |
