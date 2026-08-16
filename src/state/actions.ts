@@ -706,7 +706,12 @@ export async function selectCommitFile(
     status: "modified",
     tooLarge: false,
   };
-  store.set({ commitView: { file, hash } });
+  store.set({
+    anchorRow: null,
+    commitView: { file, hash },
+    cursorRow: 0,
+    selection: null,
+  });
 }
 
 export function clearCommitView(): void {
