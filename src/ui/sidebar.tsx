@@ -36,6 +36,8 @@ import {
   fileIcon,
   folderColor,
   folderIcon,
+  GIT_PULL_ICON,
+  GIT_PUSH_ICON,
   STATUS_UNTRACKED,
 } from "./icons";
 
@@ -361,6 +363,7 @@ function CommitHeaderRow(props: {
 }) {
   const { commit, expanded, id, onMouseDown, selected, width } = props;
   const { ui: C } = useColors();
+  const hasPushIcon = Boolean(commit && !commit.isPushed);
   return (
     <box
       id={id}
@@ -378,6 +381,9 @@ function CommitHeaderRow(props: {
       ) : (
         <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_RIGHT}</text>
       )}
+      {hasPushIcon ? (
+        <text style={{ fg: C.green, width: 2 }}>{GIT_PUSH_ICON}</text>
+      ) : null}
       <text
         style={{
           fg: selected ? C.fg : C.dim,
@@ -385,11 +391,8 @@ function CommitHeaderRow(props: {
           overflow: "hidden",
         }}
       >
-        {truncatePath(commit?.message ?? "", width - 5)}
+        {truncatePath(commit?.message ?? "", width - 4 - (hasPushIcon ? 2 : 0))}
       </text>
-      {commit && !commit.isPushed ? (
-        <text style={{ fg: C.yellow, width: 2 }}>↑</text>
-      ) : null}
     </box>
   );
 }
@@ -469,10 +472,12 @@ function CommitLoadMoreRow(props: {
 
 function CommitLog(props: { width: number }) {
   const state = useAppState();
-  const { ui: C } = useColors();
+  const { icons, ui: C } = useColors();
   const store = getStore();
-  const { commitEntries, commitLoading, commitCursor, repoRoot } = state;
+  const { commitBehind, commitEntries, commitLoading, commitCursor, repoRoot } =
+    state;
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
+  const hasBehind = commitBehind > 0;
 
   useEffect(() => {
     if (repoRoot && commitEntries.length === 0 && !commitLoading) {
@@ -577,6 +582,13 @@ function CommitLog(props: { width: number }) {
         }}
       >
         <text style={{ fg: C.accent }}>Commits</text>
+        <text style={{ flexGrow: 1 }} />
+        {hasBehind ? (
+          <>
+            <text style={{ fg: icons.orange, width: 2 }}>{GIT_PULL_ICON}</text>
+            <text style={{ fg: icons.orange }}>{commitBehind}</text>
+          </>
+        ) : null}
       </box>
       <scrollbox
         ref={(el: ScrollBoxRenderable) => {
