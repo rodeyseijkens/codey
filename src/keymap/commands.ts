@@ -8,6 +8,10 @@ export type CommandId =
   | "prev-file"
   | "next-file"
   | "focus-toggle"
+  | "focus-prev"
+  | "focus-sidebar"
+  | "focus-diff"
+  | "focus-commits"
   | "toggle-sidebar"
   | "collapse-section"
   | "sidebar-shrink"
@@ -44,6 +48,10 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "prev-file",
   "next-file",
   "focus-toggle",
+  "focus-prev",
+  "focus-sidebar",
+  "focus-diff",
+  "focus-commits",
   "toggle-sidebar",
   "collapse-section",
   "sidebar-shrink",
@@ -76,7 +84,11 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   copy: "Copy selection/diff to clipboard",
   "delete-comment": "Delete the comment on the current line",
   "edit-comment": "Edit the comment on the current line",
-  "focus-toggle": "Toggle focus between sidebar and diff pane",
+  "focus-commits": "Focus the commit log",
+  "focus-diff": "Focus the diff pane",
+  "focus-prev": "Cycle focus to the previous pane",
+  "focus-sidebar": "Focus the changes pane",
+  "focus-toggle": "Cycle focus: changes → diff → commits",
   help: "Show help overlay",
   "next-comment": "Jump to next comment",
   "next-file": "Jump to next file",
@@ -113,6 +125,10 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   copy: "y",
   "delete-comment": "d",
   "edit-comment": "e",
+  "focus-commits": "2",
+  "focus-diff": "1",
+  "focus-prev": "shift+tab",
+  "focus-sidebar": "0",
   "focus-toggle": "tab",
   help: "?",
   "next-comment": "n",
@@ -142,3 +158,63 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "visual-select": "v",
   "wrap-text": "w",
 };
+
+export const COMMAND_SECTIONS: ReadonlyArray<{
+  commands: readonly CommandId[];
+  title: string;
+}> = [
+  {
+    commands: [
+      "select-prev",
+      "select-next",
+      "next-file",
+      "prev-file",
+      "collapse-section",
+      "toggle-sidebar",
+      "toggle-view",
+      "sidebar-shrink",
+      "sidebar-grow",
+      "stage-file",
+      "stage-all",
+      "unstage-file",
+      "unstage-all",
+      "refresh",
+      "toggle-layout",
+      "wrap-text",
+    ],
+    title: "Changes",
+  },
+  {
+    commands: [
+      "prev-hunk",
+      "next-hunk",
+      "page-up",
+      "page-down",
+      "page-cursor-half-up",
+      "page-cursor-half-down",
+      "visual-select",
+      "add-comment",
+      "edit-comment",
+      "delete-comment",
+      "next-comment",
+      "prev-comment",
+      "send-comments",
+      "copy",
+    ],
+    title: "Diff",
+  },
+  {
+    commands: [
+      "focus-toggle",
+      "focus-prev",
+      "focus-sidebar",
+      "focus-diff",
+      "focus-commits",
+    ],
+    title: "Commits",
+  },
+  {
+    commands: ["quit", "help", "cancel"],
+    title: "Global",
+  },
+];

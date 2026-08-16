@@ -11,9 +11,27 @@ import type {
   Scope,
 } from "../types";
 
-export type FocusPane = "sidebar" | "diff";
+export type FocusPane = "sidebar" | "diff" | "commits";
 export type SidebarView = "tree" | "list";
 export type ToastKind = "info" | "success" | "warn" | "error";
+
+export type CommitRow =
+  | { kind: "header"; hash: string; index: number }
+  | { kind: "file"; hash: string; fileIndex: number; path: string }
+  | { kind: "load-more" };
+
+export function commitRowKey(row: CommitRow): string {
+  switch (row.kind) {
+    case "header":
+      return `commit:${row.hash}`;
+    case "file":
+      return `commit-file:${row.hash}:${row.path}`;
+    case "load-more":
+      return "commit-load-more";
+    default:
+      return "commit-load-more";
+  }
+}
 
 export interface Toast {
   kind: ToastKind;
@@ -70,6 +88,7 @@ export interface AppState {
   collapsedTree: Record<string, boolean>;
   commentDraft: CommentDraft | null;
   comments: Comment[];
+  commitCursor: string | null;
   commitEntries: CommitEntry[];
   commitHasMore: boolean;
   commitLoading: boolean;
@@ -117,6 +136,7 @@ export function initialState(): AppState {
     collapsedTree: {},
     commentDraft: null,
     comments: [],
+    commitCursor: null,
     commitEntries: [],
     commitHasMore: true,
     commitLoading: false,
@@ -220,8 +240,53 @@ export class AppStore {
     return out;
   }
 
+  commitRows(): CommitRow[] {
+    const out: CommitRow[] = [];
+    const { collapsed, commitEntries, commitHasMore } = this.state;
+    for (let index = 0; index < commitEntries.length; index += 1) {
+      const entry = commitEntries[index];
+      if (!entry) {
+        continue;
+      }
+      out.push({ hash: entry.hash, index, kind: "header" });
+      if (!collapsed[entry.hash]) {
+        continue;
+      }
+      for (let fileIndex = 0; fileIndex < entry.files.length; fileIndex += 1) {
+        const file = entry.files[fileIndex];
+        if (!file) {
+          continue;
+        }
+        out.push({
+          fileIndex,
+          hash: entry.hash,
+          kind: "file",
+          path: file.path,
+        });
+      }
+    }
+    if (commitHasMore && commitEntries.length > 0) {
+      out.push({ kind: "load-more" });
+    }
+    return out;
+  }
+
+  commitCursorRow(): CommitRow | null {
+    const cursor = this.state.commitCursor;
+    if (cursor === null) {
+      return null;
+    }
+    return (
+      this.commitRows().find((row) => commitRowKey(row) === cursor) ?? null
+    );
+  }
+
   selectedFile(): { scope: Scope; file: FileDiff } | null {
-    const sel = this.state.selection;
+    const { commitView, focus, selection } = this.state;
+    if (focus === "commits" && commitView) {
+      return { file: commitView.file, scope: "single" };
+    }
+    const sel = selection;
     if (sel && sel.kind === "file") {
       const cs = this.changeset(sel.scope);
       const file = cs?.files[sel.index];
@@ -229,7 +294,7 @@ export class AppStore {
         return { file, scope: sel.scope };
       }
     }
-    const cv = this.state.commitView;
+    const cv = commitView;
     if (cv) {
       return { file: cv.file, scope: "single" };
     }

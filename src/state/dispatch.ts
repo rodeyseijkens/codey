@@ -5,10 +5,17 @@ import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
 import {
   cancelPendingStage,
   closeOverlay,
+  commitSelectNext,
+  commitSelectPrev,
+  commitToggleCursorRow,
   confirmDiscard,
   confirmPendingStage,
   copySelection,
   cycleLayout,
+  focusCommits,
+  focusDiff,
+  focusPrev,
+  focusSidebar,
   openHelp,
   refresh,
   resizeSidebar,
@@ -32,7 +39,7 @@ import {
   openEditCommentDraft,
   visualSelect,
 } from "./comment-actions";
-import { getStore } from "./store";
+import { type AppState, getStore } from "./store";
 
 let quitHandler: (() => void) | null = null;
 let restartHandler: (() => void) | null = null;
@@ -64,6 +71,12 @@ const STAGE_COMMANDS: ReadonlySet<CommandId> = new Set([
   "unstage-all",
 ]);
 
+/** True when the diff pane is showing a commit-file diff (not a working-tree file). */
+function commitFileShown(state: AppState): boolean {
+  return state.commitView !== null && state.selection === null;
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: its allowed for now
 export function dispatchCommand(cmd: CommandId): void {
   const store = getStore();
   const state = store.getState();
@@ -94,27 +107,51 @@ export function dispatchCommand(cmd: CommandId): void {
     case "select-prev":
       if (state.focus === "sidebar") {
         selectPrev();
+      } else if (state.focus === "commits") {
+        void commitSelectPrev();
       }
       return;
     case "select-next":
       if (state.focus === "sidebar") {
         selectNext();
+      } else if (state.focus === "commits") {
+        void commitSelectNext();
       }
       return;
     case "prev-file":
-      selectPrev();
+      if (state.focus === "diff") {
+        selectPrev();
+      }
       return;
     case "next-file":
-      selectNext();
+      if (state.focus === "diff") {
+        selectNext();
+      }
       return;
     case "focus-toggle":
       toggleFocus();
+      return;
+    case "focus-prev":
+      focusPrev();
+      return;
+    case "focus-sidebar":
+      focusSidebar();
+      return;
+    case "focus-diff":
+      focusDiff();
+      return;
+    case "focus-commits":
+      focusCommits();
       return;
     case "toggle-sidebar":
       toggleSidebar();
       return;
     case "collapse-section":
-      toggleSelectedRow();
+      if (state.focus === "sidebar") {
+        toggleSelectedRow();
+      } else if (state.focus === "commits") {
+        void commitToggleCursorRow();
+      }
       return;
     case "sidebar-shrink":
       resizeSidebar(-4);
@@ -123,21 +160,39 @@ export function dispatchCommand(cmd: CommandId): void {
       resizeSidebar(4);
       return;
     case "visual-select":
+      if (commitFileShown(state)) {
+        return;
+      }
       visualSelect();
       return;
     case "add-comment":
+      if (commitFileShown(state)) {
+        return;
+      }
       openAddCommentDraft();
       return;
     case "edit-comment":
+      if (commitFileShown(state)) {
+        return;
+      }
       openEditCommentDraft();
       return;
     case "delete-comment":
+      if (commitFileShown(state)) {
+        return;
+      }
       deleteCommentAtCursor();
       return;
     case "next-comment":
+      if (commitFileShown(state)) {
+        return;
+      }
       jumpToComment(1);
       return;
     case "prev-comment":
+      if (commitFileShown(state)) {
+        return;
+      }
       jumpToComment(-1);
       return;
     case "send-comments":
@@ -147,15 +202,27 @@ export function dispatchCommand(cmd: CommandId): void {
       void copySelection();
       return;
     case "stage-file":
+      if (commitFileShown(state)) {
+        return;
+      }
       void stageSelected();
       return;
     case "stage-all":
+      if (commitFileShown(state)) {
+        return;
+      }
       void stageAll();
       return;
     case "unstage-file":
+      if (commitFileShown(state)) {
+        return;
+      }
       void unstageSelected();
       return;
     case "unstage-all":
+      if (commitFileShown(state)) {
+        return;
+      }
       void unstageAll();
       return;
     case "refresh":

@@ -12,6 +12,8 @@ import {
 import {
   type AppState,
   type AppStore,
+  type CommitRow,
+  commitRowKey,
   getStore,
   type PendingStage,
   rowKey,
@@ -105,13 +107,29 @@ export async function refresh(): Promise<void> {
     if (nextSel) {
       applySelection(store, nextSel);
     }
+    const prevCommitCursor = store.getState().commitCursor;
     await loadCommits();
+    if (prevCommitCursor !== null) {
+      repairCommitCursor(store, prevCommitCursor);
+    }
   } catch (err) {
     store.set({
       fatalError: err instanceof Error ? err.message : String(err),
       loading: false,
     });
   }
+}
+
+function repairCommitCursor(store: AppStore, prev: string): void {
+  const rows = store.commitRows();
+  if (!rows[0]) {
+    store.set({ commitCursor: null });
+    return;
+  }
+  const key = rows.some((r) => commitRowKey(r) === prev)
+    ? prev
+    : commitRowKey(rows[0]);
+  store.set({ commitCursor: key });
 }
 
 function applySelection(store: AppStore, row: SidebarRow | null): void {
@@ -122,7 +140,6 @@ function applySelection(store: AppStore, row: SidebarRow | null): void {
   const patch: Partial<AppState> = {
     anchorRow: null,
     cursorRow: 0,
-    focus: "sidebar",
     selection: row,
   };
   if (row.kind === "file") {
@@ -197,14 +214,54 @@ export function toggleSelectedRow(): void {
 
 export function toggleFocus(): void {
   const store = getStore();
-  store.set({
-    focus: store.getState().focus === "sidebar" ? "diff" : "sidebar",
-  });
+  const state = store.getState();
+  if (!state.sidebarVisible) {
+    store.set({ focus: "diff" });
+    return;
+  }
+  const order: AppState["focus"][] = ["sidebar", "diff", "commits"];
+  const next = order[(order.indexOf(state.focus) + 1) % order.length];
+  store.set({ focus: next });
+}
+
+export function focusPrev(): void {
+  const store = getStore();
+  const state = store.getState();
+  if (!state.sidebarVisible) {
+    store.set({ focus: "diff" });
+    return;
+  }
+  const order: AppState["focus"][] = ["sidebar", "commits", "diff"];
+  const next = order[(order.indexOf(state.focus) + 1) % order.length];
+  store.set({ focus: next });
+}
+
+export function focusSidebar(): void {
+  const store = getStore();
+  store.set({ focus: "sidebar", sidebarVisible: true });
+}
+
+export function focusDiff(): void {
+  const store = getStore();
+  store.set({ focus: "diff" });
+}
+
+export function focusCommits(): void {
+  const store = getStore();
+  store.set({ focus: "commits", sidebarVisible: true });
 }
 
 export function toggleSidebar(): void {
   const store = getStore();
-  store.set({ sidebarVisible: !store.getState().sidebarVisible });
+  const state = store.getState();
+  if (state.sidebarVisible) {
+    store.set({ focus: "diff", sidebarVisible: false });
+  } else {
+    store.set({
+      focus: state.commitView && !state.selection ? "commits" : "sidebar",
+      sidebarVisible: true,
+    });
+  }
 }
 
 export function toggleCollapse(scope: Scope): void {
@@ -618,7 +675,7 @@ export async function loadCommits(): Promise<void> {
   }
 }
 
-export async function loadMoreCommits(): Promise<void> {
+export async function loadMoreCommits(followCursor = false): Promise<void> {
   const store = getStore();
   let rt: RuntimeConfig;
   try {
@@ -635,6 +692,7 @@ export async function loadMoreCommits(): Promise<void> {
   }
   store.set({ commitLoading: true });
   try {
+    const before = state.commitEntries.length;
     const { commits, hasMore } = await gitLog(
       rt.repoRoot,
       state.commitOffset + 10,
@@ -646,6 +704,16 @@ export async function loadMoreCommits(): Promise<void> {
       commitLoading: false,
       commitOffset: state.commitOffset + 10,
     });
+    const [first] = commits;
+    if (followCursor && first) {
+      store.set({
+        commitCursor: commitRowKey({
+          hash: first.hash,
+          index: before,
+          kind: "header",
+        }),
+      });
+    }
   } catch {
     store.set({ commitLoading: false });
   }
@@ -656,6 +724,52 @@ export function toggleCommitExpand(hash: string): void {
   const expanded = { ...store.getState().collapsed };
   expanded[hash] = !expanded[hash];
   store.set({ collapsed: expanded });
+}
+
+async function moveCommitCursor(store: AppStore, delta: -1 | 1): Promise<void> {
+  const rows = store.commitRows();
+  if (rows.length === 0) {
+    return;
+  }
+  const cur = store.getState().commitCursor;
+  const idx = cur ? rows.findIndex((r) => commitRowKey(r) === cur) : -1;
+  let target: CommitRow | undefined;
+  if (cur === null || idx < 0) {
+    target = delta === 1 ? rows[0] : (rows.at(-1) ?? rows[0]);
+  } else {
+    target = rows[Math.min(Math.max(idx + delta, 0), rows.length - 1)];
+  }
+  if (!target) {
+    return;
+  }
+  store.set({ commitCursor: commitRowKey(target) });
+  if (target.kind === "file") {
+    await selectCommitFile(target.hash, target.path);
+  }
+}
+
+export function commitSelectNext(): Promise<void> {
+  return moveCommitCursor(getStore(), 1);
+}
+
+export function commitSelectPrev(): Promise<void> {
+  return moveCommitCursor(getStore(), -1);
+}
+
+export async function commitToggleCursorRow(): Promise<void> {
+  const store = getStore();
+  const rows = store.commitRows();
+  const cur = store.getState().commitCursor;
+  const idx = cur ? rows.findIndex((r) => commitRowKey(r) === cur) : -1;
+  const row = idx >= 0 ? rows[idx] : null;
+  if (!row) {
+    return;
+  }
+  if (row.kind === "header") {
+    toggleCommitExpand(row.hash);
+  } else if (row.kind === "load-more") {
+    await loadMoreCommits(true);
+  }
 }
 
 export async function selectCommitFile(
