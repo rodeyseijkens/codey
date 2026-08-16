@@ -756,6 +756,46 @@ export function commitSelectPrev(): Promise<void> {
   return moveCommitCursor(getStore(), -1);
 }
 
+async function moveCommitCursorToFile(
+  store: AppStore,
+  delta: -1 | 1
+): Promise<void> {
+  const rows = store.commitRows();
+  if (rows.length === 0) {
+    return;
+  }
+  const cur = store.getState().commitCursor;
+  const curIdx = cur ? rows.findIndex((r) => commitRowKey(r) === cur) : -1;
+  let start: number;
+  if (cur === null || curIdx < 0) {
+    start = delta === 1 ? -1 : rows.length;
+  } else {
+    start = curIdx;
+  }
+  let target: CommitRow | undefined;
+  for (let i = start + delta; i >= 0 && i < rows.length; i += delta) {
+    if (rows[i]?.kind === "file") {
+      target = rows[i];
+      break;
+    }
+  }
+  if (!target) {
+    return;
+  }
+  store.set({ commitCursor: commitRowKey(target) });
+  if (target.kind === "file") {
+    await selectCommitFile(target.hash, target.path);
+  }
+}
+
+export function commitSelectNextFile(): Promise<void> {
+  return moveCommitCursorToFile(getStore(), 1);
+}
+
+export function commitSelectPrevFile(): Promise<void> {
+  return moveCommitCursorToFile(getStore(), -1);
+}
+
 export async function commitToggleCursorRow(): Promise<void> {
   const store = getStore();
   const rows = store.commitRows();

@@ -6,7 +6,9 @@ import {
   cancelPendingStage,
   closeOverlay,
   commitSelectNext,
+  commitSelectNextFile,
   commitSelectPrev,
+  commitSelectPrevFile,
   commitToggleCursorRow,
   confirmDiscard,
   confirmPendingStage,
@@ -121,11 +123,15 @@ export function dispatchCommand(cmd: CommandId): void {
     case "prev-file":
       if (state.focus === "diff") {
         selectPrev();
+      } else if (state.focus === "commits") {
+        void commitSelectPrevFile();
       }
       return;
     case "next-file":
       if (state.focus === "diff") {
         selectNext();
+      } else if (state.focus === "commits") {
+        void commitSelectNextFile();
       }
       return;
     case "focus-toggle":
