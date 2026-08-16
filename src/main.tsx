@@ -66,6 +66,7 @@ async function startSession(opts: RunOptions): Promise<void> {
   }
 
   store.set({
+    gutterSign: config.gutterSign,
     keymap: keymapRes.keymap,
     layoutMode: opts.flags.mode ? (opts.flags.mode as DiffMode) : config.mode,
     lineNumbers: config.lineNumbers,

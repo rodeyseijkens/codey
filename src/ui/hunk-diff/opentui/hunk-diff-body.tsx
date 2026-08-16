@@ -260,6 +260,7 @@ export function HunkDiffBody({
   theme = "github-dark-default",
   showLineNumbers = true,
   showHunkHeaders = true,
+  gutterSign = false,
   tabWidth = DEFAULT_TAB_WIDTH,
   wrapLines = false,
   horizontalOffset = 0,
@@ -340,7 +341,8 @@ export function HunkDiffBody({
           showLineNumbers,
           showHunkHeaders,
           wrapLines,
-          resolvedTheme
+          resolvedTheme,
+          gutterSign
         );
       } else {
         offset += measureCommentCardHeight({
@@ -364,6 +366,7 @@ export function HunkDiffBody({
     resolvedTheme,
     canonicalRows,
     layout,
+    gutterSign,
   ]);
 
   useEffect(() => {
@@ -460,6 +463,7 @@ export function HunkDiffBody({
               }
               showHunkHeaders={showHunkHeaders}
               showLineNumbers={showLineNumbers}
+              showSign={gutterSign}
               theme={resolvedTheme}
               width={width}
               wrapLines={wrapLines}

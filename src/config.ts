@@ -5,6 +5,7 @@ export const CONFIG_DIR = `${process.env.HOME ?? "~"}/.config/codey`;
 export const CONFIG_PATH = `${CONFIG_DIR}/config.toml`;
 
 export const ConfigSchema = z.strictObject({
+  gutterSign: z.boolean().default(false),
   keybindings: z.record(z.string(), z.string()).default({}),
   lineNumbers: z.boolean().default(true),
   mode: z.enum(["split", "stack", "auto"]).default("auto"),

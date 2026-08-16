@@ -99,6 +99,7 @@ export interface AppState {
   cursorRow: number;
   fatalError: string | null;
   focus: FocusPane;
+  gutterSign: boolean;
   keymap: ResolvedKeymap;
   lastFile: { index: number; scope: Scope } | null;
   layoutMode: DiffMode;
@@ -148,6 +149,7 @@ export function initialState(): AppState {
     cursorRow: 0,
     fatalError: null,
     focus: "sidebar",
+    gutterSign: false,
     keymap: defaultKeymap(),
     lastFile: null,
     layoutMode: "auto",

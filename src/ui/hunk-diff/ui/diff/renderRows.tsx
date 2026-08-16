@@ -707,6 +707,7 @@ function buildWrappedSplitCell(
   showLineNumbers: boolean,
   prefixWidth: number,
   theme: AppTheme,
+  showSign = false,
 ) {
   const palette = splitCellPalette(cell.kind, theme);
   const { gutterWidth, contentWidth } = resolveSplitCellGeometry(
@@ -714,10 +715,14 @@ function buildWrappedSplitCell(
     lineNumberDigits,
     showLineNumbers,
     prefixWidth,
+    showSign,
   );
-  const firstGutterText = splitGutterText(cell, lineNumberDigits, showLineNumbers).padEnd(
-    gutterWidth,
-  );
+  const firstGutterText = splitGutterText(
+    cell,
+    lineNumberDigits,
+    showLineNumbers,
+    showSign,
+  ).padEnd(gutterWidth);
   const wrappedSpans = wrapSpans(cell.spans, contentWidth);
 
   return {
@@ -739,6 +744,7 @@ function buildWrappedStackCell(
   showLineNumbers: boolean,
   prefixWidth: number,
   theme: AppTheme,
+  showSign = false,
 ) {
   const palette = stackCellPalette(cell.kind, theme);
   const { gutterWidth, contentWidth } = resolveStackCellGeometry(
@@ -746,10 +752,14 @@ function buildWrappedStackCell(
     lineNumberDigits,
     showLineNumbers,
     prefixWidth,
+    showSign,
   );
-  const firstGutterText = stackGutterText(cell, lineNumberDigits, showLineNumbers).padEnd(
-    gutterWidth,
-  );
+  const firstGutterText = stackGutterText(
+    cell,
+    lineNumberDigits,
+    showLineNumbers,
+    showSign,
+  ).padEnd(gutterWidth);
   const wrappedSpans = wrapSpans(cell.spans, contentWidth);
 
   return {
@@ -824,6 +834,7 @@ function renderSplitCell(
   },
   highlight?: RowHighlight,
   paneOffset = 0,
+  showSign = false,
 ) {
   const basePalette = splitCellPalette(cell.kind, theme, cell.moveKind);
   const palette = highlight ? applyHighlightPalette(basePalette, highlight.bg) : basePalette;
@@ -834,8 +845,11 @@ function renderSplitCell(
     lineNumberDigits,
     showLineNumbers,
     prefixWidth,
+    showSign,
   );
-  const gutterText = splitGutterText(cell, lineNumberDigits, showLineNumbers).padEnd(gutterWidth);
+  const gutterText = splitGutterText(cell, lineNumberDigits, showLineNumbers, showSign).padEnd(
+    gutterWidth,
+  );
 
   // Convert global selection column range to content-local range.
   const globalContentStart = paneOffset + prefixWidth + gutterWidth;
@@ -887,6 +901,7 @@ function renderStackCell(
     bg: string;
   },
   highlight?: RowHighlight,
+  showSign = false,
 ) {
   const basePalette = stackCellPalette(cell.kind, theme, cell.moveKind);
   const palette = highlight ? applyHighlightPalette(basePalette, highlight.bg) : basePalette;
@@ -897,6 +912,7 @@ function renderStackCell(
     lineNumberDigits,
     showLineNumbers,
     prefixWidth,
+    showSign,
   );
 
   // Convert global selection column range to content-local range.
@@ -918,7 +934,7 @@ function renderStackCell(
         </span>
       ) : null}
       <span key={`${keyPrefix}:gutter`} fg={palette.numberColor} bg={palette.gutterBg}>
-        {stackGutterText(cell, lineNumberDigits, showLineNumbers).padEnd(gutterWidth)}
+        {stackGutterText(cell, lineNumberDigits, showLineNumbers, showSign).padEnd(gutterWidth)}
       </span>
       {renderInlineSpans(
         cell.spans,
@@ -1138,6 +1154,7 @@ export function measureRenderedRowHeight(
   showHunkHeaders: boolean,
   wrapLines: boolean,
   _theme: AppTheme,
+  showSign = false,
 ) {
   if (row.type === "hunk-header") {
     return showHunkHeaders ? 1 : 0;
@@ -1159,12 +1176,14 @@ export function measureRenderedRowHeight(
       lineNumberDigits,
       showLineNumbers,
       markerWidth,
+      showSign,
     );
     const rightGeometry = resolveSplitCellGeometry(
       rightWidth,
       lineNumberDigits,
       showLineNumbers,
       markerWidth,
+      showSign,
     );
 
     return Math.max(
@@ -1186,6 +1205,7 @@ export function measureRenderedRowHeight(
     lineNumberDigits,
     showLineNumbers,
     marker().length,
+    showSign,
   );
   return measureWrappedSpansLineCount(row.cell.spans, cellGeometry.contentWidth);
 }
@@ -1284,6 +1304,7 @@ function renderRow(
   noteGuideSide?: "old" | "new",
   onHoverRow?: (rowKey: string) => void,
   onToggleGap?: (gapKey: string) => void,
+  showSign = false,
 ) {
   // Extension marks repaint span backgrounds only; geometry inputs keep using the source row.
   const row = withRowLineHighlights(sourceRow, lineHighlights, theme);
@@ -1391,6 +1412,7 @@ function renderRow(
                 leftPrefix,
                 leftHighlight,
                 0,
+                showSign,
               )}
               {renderSplitCell(
                 row.right,
@@ -1403,6 +1425,7 @@ function renderRow(
                 rightPrefix,
                 rightHighlight,
                 leftWidth,
+                showSign,
               )}
               {guideOnNewSide ? (
                 <span key={`${row.key}:note-guide`} fg={theme.noteBorder}>
@@ -1421,6 +1444,7 @@ function renderRow(
         showLineNumbers,
         leftPrefix.text.length,
         theme,
+        showSign,
       );
       const rightLayout = buildWrappedSplitCell(
         row.right,
@@ -1429,6 +1453,7 @@ function renderRow(
         showLineNumbers,
         rightPrefix.text.length,
         theme,
+        showSign,
       );
       const leftContentWidth = Math.max(
         0,
@@ -1556,6 +1581,7 @@ function renderRow(
                 codeHorizontalOffset,
                 prefix,
                 cellHighlight,
+                showSign,
               )}
               {guideOnNewSide ? (
                 <span key={`${row.key}:note-guide`} fg={theme.noteBorder}>
@@ -1574,6 +1600,7 @@ function renderRow(
         showLineNumbers,
         prefix.text.length,
         theme,
+        showSign,
       );
       const wrappedContentWidth = Math.max(
         0,
@@ -1649,6 +1676,7 @@ interface DiffRowViewProps {
   width: number;
   lineNumberDigits: number;
   showLineNumbers: boolean;
+  showSign: boolean;
   showHunkHeaders: boolean;
   wrapLines: boolean;
   codeHorizontalOffset: number;
@@ -1678,6 +1706,7 @@ export const DiffRowView = memo(
     width,
     lineNumberDigits,
     showLineNumbers,
+    showSign,
     showHunkHeaders,
     wrapLines,
     codeHorizontalOffset,
@@ -1710,6 +1739,7 @@ export const DiffRowView = memo(
       noteGuideSide,
       onHoverRow,
       onToggleGap,
+      showSign,
     );
   },
   (previous, next) => {
@@ -1718,6 +1748,7 @@ export const DiffRowView = memo(
       previous.width === next.width &&
       previous.lineNumberDigits === next.lineNumberDigits &&
       previous.showLineNumbers === next.showLineNumbers &&
+      previous.showSign === next.showSign &&
       previous.showHunkHeaders === next.showHunkHeaders &&
       previous.wrapLines === next.wrapLines &&
       previous.codeHorizontalOffset === next.codeHorizontalOffset &&

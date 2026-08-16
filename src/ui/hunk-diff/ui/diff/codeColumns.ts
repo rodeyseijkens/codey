@@ -126,9 +126,13 @@ export function resolveSplitCellGeometry(
   lineNumberDigits: number,
   showLineNumbers: boolean,
   prefixWidth = DIFF_RAIL_PREFIX_WIDTH,
+  showSign = false,
 ) {
   const availableWidth = Math.max(0, width - prefixWidth);
-  const gutterWidth = Math.min(availableWidth, showLineNumbers ? lineNumberDigits + 1 : 2);
+  const gutterWidth = Math.min(
+    availableWidth,
+    showLineNumbers ? lineNumberDigits + (showSign ? 2 : 1) : 2,
+  );
 
   return {
     gutterWidth,
@@ -142,11 +146,12 @@ export function resolveStackCellGeometry(
   lineNumberDigits: number,
   showLineNumbers: boolean,
   prefixWidth = DIFF_RAIL_PREFIX_WIDTH,
+  showSign = false,
 ) {
   const availableWidth = Math.max(0, width - prefixWidth);
   const gutterWidth = Math.min(
     availableWidth,
-    showLineNumbers ? lineNumberDigits * 2 + 2 : 2,
+    showLineNumbers ? lineNumberDigits * 2 + (showSign ? 3 : 2) : 2,
   );
 
   return {
@@ -161,14 +166,33 @@ export function resolveCodeViewportWidth(
   width: number,
   lineNumberDigits: number,
   showLineNumbers: boolean,
+  showSign = false,
 ) {
   if (layout === "split") {
     const { leftWidth, rightWidth } = resolveSplitPaneWidths(width);
     return Math.min(
-      resolveSplitCellGeometry(leftWidth, lineNumberDigits, showLineNumbers).contentWidth,
-      resolveSplitCellGeometry(rightWidth, lineNumberDigits, showLineNumbers).contentWidth,
+      resolveSplitCellGeometry(
+        leftWidth,
+        lineNumberDigits,
+        showLineNumbers,
+        undefined,
+        showSign,
+      ).contentWidth,
+      resolveSplitCellGeometry(
+        rightWidth,
+        lineNumberDigits,
+        showLineNumbers,
+        undefined,
+        showSign,
+      ).contentWidth,
     );
   }
 
-  return resolveStackCellGeometry(width, lineNumberDigits, showLineNumbers).contentWidth;
+  return resolveStackCellGeometry(
+    width,
+    lineNumberDigits,
+    showLineNumbers,
+    undefined,
+    showSign,
+  ).contentWidth;
 }

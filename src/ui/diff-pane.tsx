@@ -520,6 +520,7 @@ export function DiffPane() {
         <HunkDiffBody
           cursorRow={state.cursorRow}
           file={hunkFile}
+          gutterSign={state.gutterSign}
           layout={viewMode}
           lineHighlights={lineHighlights}
           notes={notes}

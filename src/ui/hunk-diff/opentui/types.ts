@@ -58,6 +58,8 @@ export interface HunkDiffBodyProps {
    */
   cursorRow?: number;
   file?: HunkDiffFileInput;
+  /** Show the `+`/`-` sign column in the line-number gutter. */
+  gutterSign?: boolean;
   highlight?: boolean;
   horizontalOffset?: number;
   layout?: HunkDiffLayout;
