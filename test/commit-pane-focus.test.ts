@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { resolveKeymap } from "../src/keymap/index";
 import {
   commitSelectNext,
+  commitSelectNextFile,
   commitSelectPrev,
   commitToggleCursorRow,
   configureRuntime,
@@ -365,6 +366,59 @@ describe("commit pane with a real repo", () => {
       throw new Error("expected a commit row after refresh");
     }
     expect(store.getState().commitCursor).toBe(commitRowKey(firstRow));
+  });
+
+  test("f/F jump between commit file rows and keep focus on commits", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "a.txt"), "base\n");
+    await writeFile(join(dir, "b.txt"), "b\n");
+    await commitAll(dir, "first");
+    await writeFile(join(dir, "a.txt"), "base\nupdated\n");
+    await writeFile(join(dir, "b.txt"), "b\nupdated\n");
+    await commitAll(dir, "second");
+    const store = setupStore({ focus: "commits" }, dir);
+    await loadCommits();
+
+    const [top] = store.getState().commitEntries;
+    if (!top) {
+      throw new Error("expected a commit");
+    }
+    const [firstFile, secondFile] = top.files;
+    if (!(firstFile && secondFile)) {
+      throw new Error("expected a two-file commit");
+    }
+    store.set({ collapsed: { [top.hash]: true } });
+    store.set({
+      commitCursor: commitRowKey({ hash: top.hash, index: 0, kind: "header" }),
+    });
+
+    const fileKey = (path: string) => `commit-file:${top.hash}:${path}`;
+    await commitSelectNextFile();
+    expect(store.getState().commitCursor).toBe(fileKey(firstFile.path));
+    expect(store.getState().commitView?.hash).toBe(top.hash);
+    expect(store.getState().commitView?.file.diff).toContain("+updated");
+    expect(store.getState().focus).toBe("commits");
+
+    dispatchCommand("next-file");
+    expect(store.getState().commitCursor).toBe(fileKey(secondFile.path));
+    dispatchCommand("next-file");
+    expect(store.getState().commitCursor).toBe(fileKey(secondFile.path));
+    dispatchCommand("prev-file");
+    expect(store.getState().commitCursor).toBe(fileKey(firstFile.path));
+  });
+
+  test("f/F stay put when the commit list has no file rows", () => {
+    const store = setupStore({
+      collapsed: {},
+      commitCursor: "commit:aaa",
+      commitEntries: [entry("aaa", [["a.txt", "modified"]])],
+      commitHasMore: false,
+      focus: "commits",
+    });
+    dispatchCommand("next-file");
+    expect(store.getState().commitCursor).toBe("commit:aaa");
+    dispatchCommand("prev-file");
+    expect(store.getState().commitCursor).toBe("commit:aaa");
   });
 });
 
