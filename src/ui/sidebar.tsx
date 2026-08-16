@@ -341,7 +341,7 @@ function Section(props: { cs: Changeset; width: number }) {
 
 function CommitLog(props: { width: number }) {
   const state = useAppState();
-  const { ui: C } = useColors();
+  const { icons, ui: C } = useColors();
   const { commitEntries, commitHasMore, commitLoading, collapsed, repoRoot } =
     state;
   useEffect(() => {
@@ -409,63 +409,35 @@ function CommitLog(props: { width: number }) {
               paddingLeft: 2,
             }}
           >
-            {commit.files.map((file) => {
-              const showAdd = file.additions > 1;
-              const showDel = file.deletions > 1;
-              const addWidth = showAdd ? String(file.additions).length : 0;
-              const delWidth = showDel ? String(file.deletions).length : 0;
-              const statWidth =
-                addWidth + (showAdd && showDel ? 1 : 0) + delWidth;
-              return (
-                <box
-                  key={file.path}
-                  onMouseDown={() => handleFileClick(commit.hash, file.path)}
+            {commit.files.map((file) => (
+              <box
+                key={file.path}
+                onMouseDown={() => handleFileClick(commit.hash, file.path)}
+                style={{
+                  backgroundColor: C.bg,
+                  flexDirection: "row",
+                  height: 1,
+                  paddingLeft: 1,
+                  paddingRight: 1,
+                }}
+              >
+                <text style={{ fg: icons[fileColor(file.path)], width: 2 }}>
+                  {fileIcon(file.path)}
+                </text>
+                <text
                   style={{
-                    backgroundColor: C.bg,
-                    flexDirection: "row",
-                    height: 1,
-                    paddingLeft: 1,
-                    paddingRight: 1,
+                    fg: C.fg,
+                    flexGrow: 1,
+                    overflow: "hidden",
                   }}
                 >
-                  <text style={{ fg: statusColor(file.status, C), width: 2 }}>
-                    {statusIcon(file.status)}
-                  </text>
-                  <text
-                    style={{
-                      fg: C.fg,
-                      flexGrow: 1,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {truncatePath(file.path, props.width - 6 - statWidth)}
-                  </text>
-                  {showAdd ? (
-                    <text
-                      style={{
-                        fg: C.green,
-                        width: String(file.additions).length,
-                      }}
-                    >
-                      {file.additions}
-                    </text>
-                  ) : null}
-                  {showAdd && showDel ? (
-                    <text style={{ fg: C.dim, width: 1 }}>/</text>
-                  ) : null}
-                  {showDel ? (
-                    <text
-                      style={{
-                        fg: C.red,
-                        width: String(file.deletions).length,
-                      }}
-                    >
-                      {file.deletions}
-                    </text>
-                  ) : null}
-                </box>
-              );
-            })}
+                  {truncatePath(file.path, fileNameMax(props.width, 2, false))}
+                </text>
+                <text style={{ fg: statusColor(file.status, C), width: 2 }}>
+                  {statusIcon(file.status)}
+                </text>
+              </box>
+            ))}
           </box>
         )}
       </box>
