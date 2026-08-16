@@ -25,7 +25,9 @@ whole config), and codey shows an error pane until the file is fixed.
 | `0`     | focus-diff       | Focus the diff pane                                      |
 | `1`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
 | `2`     | focus-commits    | Focus the commit log (re-shows the sidebar)              |
-| `p`     | toggle-sidebar   | Show/hide the sidebar                                    |
+| `p`     | git-pull         | Pull from the remote (commit pane only)                  |
+| `P`     | git-push         | Push to the remote (commit pane only)                    |
+| `b`     | toggle-sidebar   | Show/hide the sidebar                                    |
 | `space` | collapse-section | Collapse/expand the selected row (section/folder/commit header, load more) |
 | `<`     | sidebar-shrink   | Make the sidebar narrower                                |
 | `>`     | sidebar-grow     | Make the sidebar wider                                   |

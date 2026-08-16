@@ -12,6 +12,8 @@ export type CommandId =
   | "focus-sidebar"
   | "focus-diff"
   | "focus-commits"
+  | "git-pull"
+  | "git-push"
   | "toggle-sidebar"
   | "collapse-section"
   | "sidebar-shrink"
@@ -52,6 +54,8 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "focus-sidebar",
   "focus-diff",
   "focus-commits",
+  "git-pull",
+  "git-push",
   "toggle-sidebar",
   "collapse-section",
   "sidebar-shrink",
@@ -89,6 +93,8 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   "focus-prev": "Cycle focus to the previous pane",
   "focus-sidebar": "Focus the changes pane",
   "focus-toggle": "Cycle focus: changes → diff → commits",
+  "git-pull": "Pull from the remote (commit pane)",
+  "git-push": "Push to the remote (commit pane)",
   help: "Show help overlay",
   "next-comment": "Jump to next comment",
   "next-file": "Jump to next file",
@@ -130,6 +136,8 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "focus-prev": "shift+tab",
   "focus-sidebar": "1",
   "focus-toggle": "tab",
+  "git-pull": "p",
+  "git-push": "P",
   help: "?",
   "next-comment": "n",
   "next-file": "f",
@@ -151,7 +159,7 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "stage-all": "A",
   "stage-file": "a",
   "toggle-layout": "m",
-  "toggle-sidebar": "p",
+  "toggle-sidebar": "b",
   "toggle-view": "t",
   "unstage-all": "U",
   "unstage-file": "u",
@@ -210,6 +218,8 @@ export const COMMAND_SECTIONS: ReadonlyArray<{
       "focus-sidebar",
       "focus-diff",
       "focus-commits",
+      "git-pull",
+      "git-push",
     ],
     title: "Commits",
   },

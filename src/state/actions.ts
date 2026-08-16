@@ -5,6 +5,8 @@ import { getCommitFileDiff, gitLog } from "../loaders/git-log";
 import type { FileDiff, LoaderMode, Scope } from "../types";
 import {
   deleteFiles,
+  GitError,
+  gitThrow,
   restoreWorktreeFiles,
   stageFiles,
   unstageFiles,
@@ -873,4 +875,34 @@ export async function selectCommitFile(
 export function clearCommitView(): void {
   const store = getStore();
   store.set({ commitView: null });
+}
+
+async function gitRemoteCommand(args: string[], verb: string): Promise<void> {
+  const store = getStore();
+  let rt: RuntimeConfig;
+  try {
+    rt = getRuntime();
+  } catch {
+    return;
+  }
+  if (!rt.repoRoot) {
+    return;
+  }
+  try {
+    await gitThrow(args, rt.repoRoot);
+    store.showToast("success", `git ${verb} succeeded`);
+    await refresh();
+  } catch (err) {
+    const detail =
+      err instanceof GitError ? err.stderr.trim() || err.message : String(err);
+    store.showToast("error", detail);
+  }
+}
+
+export function gitPull(): void {
+  gitRemoteCommand(["pull"], "pull");
+}
+
+export function gitPush(): void {
+  gitRemoteCommand(["push"], "push");
 }

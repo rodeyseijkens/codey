@@ -18,6 +18,8 @@ import {
   focusDiff,
   focusPrev,
   focusSidebar,
+  gitPull,
+  gitPush,
   openHelp,
   refresh,
   resizeSidebar,
@@ -148,6 +150,16 @@ export function dispatchCommand(cmd: CommandId): void {
       return;
     case "focus-commits":
       focusCommits();
+      return;
+    case "git-pull":
+      if (state.focus === "commits") {
+        gitPull();
+      }
+      return;
+    case "git-push":
+      if (state.focus === "commits") {
+        gitPush();
+      }
       return;
     case "toggle-sidebar":
       toggleSidebar();
