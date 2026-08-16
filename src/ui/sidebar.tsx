@@ -13,8 +13,20 @@ import {
   toggleCommitExpand,
   toggleTreeFolder,
 } from "../state/actions";
-import { getStore, rowKey, useAppState } from "../state/store";
-import { type Changeset, type FileDiff, fileDiffKey } from "../types";
+import {
+  type CommitRow,
+  commitRowKey,
+  getStore,
+  rowKey,
+  useAppState,
+} from "../state/store";
+import {
+  type Changeset,
+  type CommitEntry,
+  type CommitFile,
+  type FileDiff,
+  fileDiffKey,
+} from "../types";
 import { useColors } from "./color-context";
 import { statusColor, statusIcon } from "./colors";
 import {
@@ -339,116 +351,217 @@ function Section(props: { cs: Changeset; width: number }) {
   );
 }
 
+function CommitHeaderRow(props: {
+  commit: CommitEntry | undefined;
+  expanded: boolean;
+  id: string;
+  onMouseDown: (e: MouseEvent) => void;
+  selected: boolean;
+  width: number;
+}) {
+  const { commit, expanded, id, onMouseDown, selected, width } = props;
+  const { ui: C } = useColors();
+  return (
+    <box
+      id={id}
+      onMouseDown={onMouseDown}
+      style={{
+        backgroundColor: selected ? C.selection : C.bg,
+        flexDirection: "row",
+        height: 1,
+        paddingLeft: 1,
+        paddingRight: 1,
+      }}
+    >
+      {expanded ? (
+        <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_DOWN}</text>
+      ) : (
+        <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_RIGHT}</text>
+      )}
+      <text
+        style={{
+          fg: selected ? C.fg : C.dim,
+          flexGrow: 1,
+          overflow: "hidden",
+        }}
+      >
+        {truncatePath(commit?.message ?? "", width - 5)}
+      </text>
+      {commit && !commit.isPushed ? (
+        <text style={{ fg: C.yellow, width: 2 }}>↑</text>
+      ) : null}
+    </box>
+  );
+}
+
+function CommitFileRow(props: {
+  file: CommitFile | undefined;
+  id: string;
+  onMouseDown: (e: MouseEvent) => void;
+  path: string;
+  selected: boolean;
+  width: number;
+}) {
+  const { file, id, onMouseDown, path, selected, width } = props;
+  const { icons, ui: C } = useColors();
+  return (
+    <box
+      id={id}
+      onMouseDown={onMouseDown}
+      style={{
+        backgroundColor: selected ? C.selection : C.bg,
+        flexDirection: "row",
+        height: 1,
+        paddingLeft: 3,
+        paddingRight: 1,
+      }}
+    >
+      <text style={{ fg: icons[fileColor(path)], width: 2 }}>
+        {fileIcon(path)}
+      </text>
+      <text
+        style={{
+          fg: C.fg,
+          flexGrow: 1,
+          overflow: "hidden",
+        }}
+      >
+        {truncatePath(path, fileNameMax(width, 2, false))}
+      </text>
+      {file ? (
+        <text style={{ fg: statusColor(file.status, C), width: 2 }}>
+          {statusIcon(file.status)}
+        </text>
+      ) : (
+        <text style={{ width: 2 }}> </text>
+      )}
+    </box>
+  );
+}
+
+function CommitLoadMoreRow(props: {
+  id: string;
+  loading: boolean;
+  onMouseDown: (e: MouseEvent) => void;
+  selected: boolean;
+}) {
+  const { id, loading, onMouseDown, selected } = props;
+  const { ui: C } = useColors();
+  return (
+    <box
+      id={id}
+      onMouseDown={onMouseDown}
+      style={{
+        backgroundColor: selected ? C.selection : C.panel,
+        flexDirection: "row",
+        height: 1,
+        justifyContent: "center",
+        paddingLeft: 1,
+        paddingRight: 1,
+      }}
+    >
+      <text style={{ fg: selected ? C.fg : C.dim }}>
+        {loading ? "loading..." : "load more"}
+      </text>
+    </box>
+  );
+}
+
 function CommitLog(props: { width: number }) {
   const state = useAppState();
-  const { icons, ui: C } = useColors();
-  const { commitEntries, commitHasMore, commitLoading, collapsed, repoRoot } =
-    state;
+  const { ui: C } = useColors();
+  const store = getStore();
+  const { commitEntries, commitLoading, commitCursor, repoRoot } = state;
+  const scrollRef = useRef<ScrollBoxRenderable | null>(null);
+
   useEffect(() => {
     if (repoRoot && commitEntries.length === 0 && !commitLoading) {
       loadCommits();
     }
   }, [commitEntries.length, commitLoading, repoRoot]);
 
-  const handleToggle = (hash: string) => {
-    toggleCommitExpand(hash);
+  useEffect(() => {
+    if (commitCursor) {
+      scrollRef.current?.scrollChildIntoView(commitCursor);
+    }
+  }, [commitCursor]);
+
+  const rows = store.commitRows();
+  const byHash = new Map(commitEntries.map((c) => [c.hash, c]));
+
+  const handleHeaderMouseDown = (
+    row: Extract<CommitRow, { kind: "header" }>
+  ) => {
+    store.set({ commitCursor: commitRowKey(row) });
+    toggleCommitExpand(row.hash);
   };
 
-  const handleFileClick = (hash: string, path: string) => {
+  const handleFileMouseDown = (row: Extract<CommitRow, { kind: "file" }>) => {
+    store.set({ commitCursor: commitRowKey(row) });
     clearCommitView();
-    selectCommitFile(hash, path);
+    selectCommitFile(row.hash, row.path);
   };
 
-  const handleLoadMore = () => {
-    loadMoreCommits();
+  const handleLoadMoreMouseDown = () => {
+    store.set({ commitCursor: "commit-load-more" });
+    loadMoreCommits(true);
   };
 
-  const rows: ReactNode[] = [];
-  for (const commit of commitEntries) {
-    const isExpanded = collapsed[commit.hash];
-    rows.push(
-      <box
-        key={commit.hash}
-        style={{
-          backgroundColor: C.bg,
-          flexDirection: "column",
-        }}
-      >
-        <box
-          onMouseDown={() => handleToggle(commit.hash)}
-          style={{
-            flexDirection: "row",
-            height: 1,
-            paddingLeft: 1,
-            paddingRight: 1,
-          }}
-        >
-          {isExpanded ? (
-            <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_DOWN}</text>
-          ) : (
-            <text style={{ fg: C.accent, width: 2 }}>{CHEVRON_RIGHT}</text>
-          )}
-          <text
-            style={{
-              fg: C.dim,
-              flexGrow: 1,
-              overflow: "hidden",
-            }}
-          >
-            {truncatePath(commit.message, props.width - 5)}
-          </text>
-          {!commit.isPushed && (
-            <text style={{ fg: C.yellow, width: 2 }}>↑</text>
-          )}
-        </box>
-        {isExpanded && commit.files.length > 0 && (
-          <box
-            style={{
-              backgroundColor: C.bg,
-              flexDirection: "column",
-              paddingLeft: 2,
-            }}
-          >
-            {commit.files.map((file) => (
-              <box
-                key={file.path}
-                onMouseDown={() => handleFileClick(commit.hash, file.path)}
-                style={{
-                  backgroundColor: C.bg,
-                  flexDirection: "row",
-                  height: 1,
-                  paddingLeft: 1,
-                  paddingRight: 1,
-                }}
-              >
-                <text style={{ fg: icons[fileColor(file.path)], width: 2 }}>
-                  {fileIcon(file.path)}
-                </text>
-                <text
-                  style={{
-                    fg: C.fg,
-                    flexGrow: 1,
-                    overflow: "hidden",
-                  }}
-                >
-                  {truncatePath(file.path, fileNameMax(props.width, 2, false))}
-                </text>
-                <text style={{ fg: statusColor(file.status, C), width: 2 }}>
-                  {statusIcon(file.status)}
-                </text>
-              </box>
-            ))}
-          </box>
-        )}
+  let body: ReactNode;
+  if (commitEntries.length === 0 && !commitLoading) {
+    body = (
+      <box style={{ height: 1, paddingLeft: 3 }}>
+        <text style={{ fg: C.faint }}>no commits</text>
       </box>
     );
+  } else {
+    body = rows.map((row) => {
+      const selected = commitCursor === commitRowKey(row);
+      const key = commitRowKey(row);
+      if (row.kind === "header") {
+        return (
+          <CommitHeaderRow
+            commit={byHash.get(row.hash)}
+            expanded={Boolean(state.collapsed[row.hash])}
+            id={key}
+            key={key}
+            onMouseDown={() => handleHeaderMouseDown(row)}
+            selected={selected}
+            width={props.width}
+          />
+        );
+      }
+      if (row.kind === "file") {
+        const commit = byHash.get(row.hash);
+        return (
+          <CommitFileRow
+            file={commit?.files[row.fileIndex]}
+            id={key}
+            key={key}
+            onMouseDown={() => handleFileMouseDown(row)}
+            path={row.path}
+            selected={selected}
+            width={props.width}
+          />
+        );
+      }
+      return (
+        <CommitLoadMoreRow
+          id={key}
+          key={key}
+          loading={commitLoading}
+          onMouseDown={handleLoadMoreMouseDown}
+          selected={selected}
+        />
+      );
+    });
   }
 
   return (
     <box
       style={{
-        border: ["bottom"],
-        borderColor: C.border,
+        border: ["top"],
+        borderColor: state.focus === "commits" ? C.accent : C.border,
         borderStyle: "single",
         flexDirection: "column",
         height: 12,
@@ -465,31 +578,13 @@ function CommitLog(props: { width: number }) {
       >
         <text style={{ fg: C.accent }}>Commits</text>
       </box>
-      <scrollbox style={{ flexGrow: 1 }}>
-        {rows.length === 0 && !commitLoading ? (
-          <box style={{ height: 1, paddingLeft: 3 }}>
-            <text style={{ fg: C.faint }}>no commits</text>
-          </box>
-        ) : (
-          rows
-        )}
-        {commitHasMore ? (
-          <box
-            onMouseDown={handleLoadMore}
-            style={{
-              backgroundColor: C.panel,
-              flexDirection: "row",
-              height: 1,
-              justifyContent: "center",
-              paddingLeft: 1,
-              paddingRight: 1,
-            }}
-          >
-            <text style={{ fg: C.dim }}>
-              {commitLoading ? "loading..." : "load more"}
-            </text>
-          </box>
-        ) : null}
+      <scrollbox
+        ref={(el: ScrollBoxRenderable) => {
+          scrollRef.current = el;
+        }}
+        style={{ flexGrow: 1 }}
+      >
+        {body}
       </scrollbox>
     </box>
   );

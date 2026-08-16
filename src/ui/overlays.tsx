@@ -2,7 +2,11 @@ import type { ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import type { ReactNode } from "react";
 import { useRef } from "react";
-import { COMMAND_DESCRIPTIONS, type CommandId } from "../keymap/commands";
+import {
+  COMMAND_DESCRIPTIONS,
+  COMMAND_SECTIONS,
+  type CommandId,
+} from "../keymap/commands";
 import { getStore, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { useKeymap } from "./keymap-context";
@@ -63,13 +67,19 @@ function HelpOverlay() {
   const store = getStore();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const { ui: C } = useColors();
-  const entries = [...keymap.byCommand.entries()]
-    .map(([cmd, chord]) => ({
-      chord,
-      cmd,
-      desc: COMMAND_DESCRIPTIONS[cmd as CommandId] ?? "",
-    }))
-    .sort((a, b) => a.cmd.localeCompare(b.cmd));
+  const entries = [...keymap.byCommand.entries()].map(([cmd, chord]) => ({
+    chord,
+    cmd,
+    desc: COMMAND_DESCRIPTIONS[cmd as CommandId] ?? "",
+  }));
+  const byCmd = new Map(entries.map((e) => [e.cmd, e]));
+  const sections = COMMAND_SECTIONS.map((section) => ({
+    entries: section.commands
+      .map((cmd) => byCmd.get(cmd))
+      .filter((e): e is NonNullable<typeof e> => e !== undefined),
+    title: section.title,
+  }));
+  const leftover = entries.filter((e) => !byCmd.has(e.cmd));
 
   useKeyboard((e) => {
     if (store.getState().overlay?.kind !== "help") {
@@ -91,12 +101,31 @@ function HelpOverlay() {
         style={{ flexGrow: 1 }}
       >
         <box style={{ flexDirection: "column" }}>
-          {entries.map((e) => (
-            <box key={e.cmd} style={{ flexDirection: "row", height: 1 }}>
-              <text style={{ fg: C.yellow, width: 16 }}>{e.chord}</text>
-              <text style={{ fg: C.dim }}>{e.desc}</text>
+          {sections.map((section, sectionIndex) => (
+            <box key={section.title} style={{ flexDirection: "column" }}>
+              {sectionIndex > 0 ? (
+                <text style={{ fg: C.border }}>{"─".repeat(40)}</text>
+              ) : null}
+              <text style={{ fg: C.accent }}>{section.title}</text>
+              {section.entries.map((e) => (
+                <box key={e.cmd} style={{ flexDirection: "row", height: 1 }}>
+                  <text style={{ fg: C.yellow, width: 16 }}>{e.chord}</text>
+                  <text style={{ fg: C.dim }}>{e.desc}</text>
+                </box>
+              ))}
             </box>
           ))}
+          {leftover.length > 0 ? (
+            <box key="other" style={{ flexDirection: "column" }}>
+              <text style={{ fg: C.accent }}>Other</text>
+              {leftover.map((e) => (
+                <box key={e.cmd} style={{ flexDirection: "row", height: 1 }}>
+                  <text style={{ fg: C.yellow, width: 16 }}>{e.chord}</text>
+                  <text style={{ fg: C.dim }}>{e.desc}</text>
+                </box>
+              ))}
+            </box>
+          ) : null}
         </box>
       </scrollbox>
     </OverlayFrame>
