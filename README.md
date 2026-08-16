@@ -76,7 +76,7 @@ The default command opens the staged/unstaged diff viewer. Press `?` inside for 
 | `d` / `e`           | Delete / edit comment on current line         |
 | `n` / `N`           | Next / previous comment                       |
 | `[` / `]`           | Previous / next hunk                          |
-| `f` / `F`           | Next / previous file                          |
+| `f` / `F`           | Next / previous file (diff, commit log)       |
 | `?`                 | Show help overlay                             |
 | `r`                 | Refresh (reload from git)                     |
 | `q`                 | Quit                                          |

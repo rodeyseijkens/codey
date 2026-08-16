@@ -18,8 +18,8 @@ whole config), and codey shows an error pane until the file is fixed.
 | `k`     | select-prev      | Move selection up                                        |
 | `]`     | next-hunk        | Jump to next hunk (diff pane)                            |
 | `[`     | prev-hunk        | Jump to previous hunk (diff pane)                        |
-| `f`     | next-file        | Jump to next file (diff pane)                            |
-| `F`     | prev-file        | Jump to previous file (diff pane)                        |
+| `f`     | next-file        | Jump to next file (diff pane; commit log files)          |
+| `F`     | prev-file        | Jump to previous file (diff pane; commit log files)      |
 | `tab`   | focus-toggle     | Cycle focus: changes → diff → commits                    |
 | `shift+tab` | focus-prev    | Cycle focus the other way                                |
 | `0`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
@@ -78,6 +78,8 @@ While the commit pane is focused:
   row does nothing.
 - Moving the cursor onto a file row opens its diff in the diff pane (focus stays
   on the commit log). A cursor on a commit header keeps the last-shown diff.
+- `f`/`F` jump the cursor between commit file rows (forward/backward), opening
+  each diff; they stop at the first/last commit file.
 - The `load more` row loads the next page only when you explicitly press `space`
   (or click it); after loading, the cursor jumps to the first newly added commit.
 
