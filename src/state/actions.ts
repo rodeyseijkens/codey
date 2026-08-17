@@ -955,3 +955,88 @@ export function confirmForcePush(): void {
   store.set({ overlay: null });
   gitRemoteCommand(["push", "--force-with-lease"], "force push");
 }
+
+/** Open the commit-message input from the commit pane. */
+export function openCommitDraft(): void {
+  const store = getStore();
+  if (store.getState().focus !== "commits") {
+    return;
+  }
+  store.set({ commitDraft: "" });
+}
+
+export function cancelCommitDraft(): void {
+  getStore().set({ commitDraft: null });
+}
+
+async function commitMessage(root: string, message: string): Promise<void> {
+  const store = getStore();
+  try {
+    await gitThrow(["commit", "-m", message], root);
+    store.showToast("success", "committed");
+    await refresh();
+  } catch (err) {
+    store.showToast(
+      "error",
+      `commit failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+/** Commit staged changes, or ask before committing all working-tree changes. */
+export async function submitCommitDraft(text: string): Promise<void> {
+  const store = getStore();
+  const trimmed = text.trim();
+  if (trimmed === "") {
+    store.set({ commitDraft: null });
+    store.showToast("info", "empty commit message");
+    return;
+  }
+  const rt = getRuntime();
+  if (!rt.repoRoot) {
+    store.set({ commitDraft: null });
+    return;
+  }
+  const staged = store.changeset("staged");
+  if (staged && staged.files.length > 0) {
+    store.set({ commitDraft: null });
+    await commitMessage(rt.repoRoot, trimmed);
+    return;
+  }
+  const changes = store.changeset("changes");
+  if (changes && changes.files.length > 0) {
+    store.set({
+      commitDraft: null,
+      overlay: { kind: "confirm-commit-all", message: trimmed },
+    });
+    return;
+  }
+  store.set({ commitDraft: null });
+  store.showToast("info", "nothing to commit");
+}
+
+/** Stage every working-tree change and commit after the confirm-commit-all overlay. */
+export async function confirmCommitAll(): Promise<void> {
+  const store = getStore();
+  const { overlay } = store.getState();
+  if (overlay?.kind !== "confirm-commit-all") {
+    return;
+  }
+  const { message } = overlay;
+  store.set({ overlay: null });
+  const rt = getRuntime();
+  if (!rt.repoRoot) {
+    return;
+  }
+  try {
+    await gitThrow(["add", "-A"], rt.repoRoot);
+    await gitThrow(["commit", "-m", message], rt.repoRoot);
+    store.showToast("success", "committed all changes");
+    await refresh();
+  } catch (err) {
+    store.showToast(
+      "error",
+      `commit failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}

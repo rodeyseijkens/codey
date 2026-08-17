@@ -9,10 +9,12 @@ import {
   commitSelectPrev,
   commitToggleCursorRow,
   configureRuntime,
+  confirmCommitAll,
   focusCommits,
   focusPrev,
   loadCommits,
   refresh,
+  submitCommitDraft,
   toggleFocus,
   toggleSidebar,
 } from "../src/state/actions";
@@ -490,5 +492,90 @@ describe("focus gating in dispatch", () => {
       scope: "changes",
     });
     expect(store.getState().focus).toBe("diff");
+  });
+});
+
+describe("commit draft", () => {
+  test("c opens the commit input only from the commits focus", () => {
+    const store = setupStore({ focus: "commits" });
+    dispatchCommand("add-comment");
+    expect(store.getState().commitDraft).toBe("");
+    dispatchCommand("add-comment");
+    expect(store.getState().commitDraft).toBe("");
+  });
+
+  test("empty message cancels the draft", async () => {
+    const dir = await initRepo();
+    const store = setupStore({ focus: "commits" }, dir);
+    dispatchCommand("add-comment");
+    await submitCommitDraft("   ");
+    expect(store.getState().commitDraft).toBeNull();
+  });
+
+  test("submitting with staged changes creates a commit", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "a.txt"), "v1\n");
+    await gitThrow(["add", "-A"], dir);
+    const store = setupStore(
+      {
+        changesets: [
+          {
+            files: [diffFile("a.txt")],
+            id: "staged",
+            label: "Staged",
+            stats: { additions: 1, deletions: 0, files: 1 },
+          },
+        ],
+        focus: "commits",
+      },
+      dir
+    );
+    dispatchCommand("add-comment");
+    await submitCommitDraft("feat: test commit");
+    expect(store.getState().commitDraft).toBeNull();
+    expect(store.getState().overlay).toBeNull();
+    expect((await gitThrow(["log", "-1", "--format=%s"], dir)).trim()).toBe(
+      "feat: test commit"
+    );
+  });
+
+  test("submitting with nothing staged asks to commit all changes", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "a.txt"), "v1\n");
+    const store = setupStore(
+      {
+        changesets: [
+          {
+            files: [diffFile("a.txt")],
+            id: "changes",
+            label: "Changes",
+            stats: { additions: 1, deletions: 0, files: 1 },
+          },
+        ],
+        focus: "commits",
+      },
+      dir
+    );
+    dispatchCommand("add-comment");
+    await submitCommitDraft("feat: all in");
+    expect(store.getState().commitDraft).toBeNull();
+    expect(store.getState().overlay).toEqual({
+      kind: "confirm-commit-all",
+      message: "feat: all in",
+    });
+    await confirmCommitAll();
+    expect(store.getState().overlay).toBeNull();
+    expect((await gitThrow(["log", "-1", "--format=%s"], dir)).trim()).toBe(
+      "feat: all in"
+    );
+  });
+
+  test("submitting with no changes at all shows a toast", async () => {
+    const dir = await initRepo();
+    const store = setupStore({ focus: "commits" }, dir);
+    dispatchCommand("add-comment");
+    await submitCommitDraft("feat: nothing");
+    expect(store.getState().commitDraft).toBeNull();
+    expect(store.getState().toast?.kind).toBe("info");
   });
 });

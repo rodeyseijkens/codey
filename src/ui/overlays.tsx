@@ -1,4 +1,8 @@
-import { RGBA, type ScrollBoxRenderable } from "@opentui/core";
+import {
+  RGBA,
+  type ScrollBoxRenderable,
+  type TextareaRenderable,
+} from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import type { ReactNode } from "react";
 import { useRef } from "react";
@@ -7,6 +11,7 @@ import {
   COMMAND_SECTIONS,
   type CommandId,
 } from "../keymap/commands";
+import { submitCommitDraft } from "../state/actions";
 import { getStore, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { useKeymap } from "./keymap-context";
@@ -205,9 +210,58 @@ function ConfirmForcePushOverlay() {
   );
 }
 
+function ConfirmCommitAllOverlay() {
+  const { ui: C } = useColors();
+  return (
+    <OverlayFrame height={8} title="No staged changes" width={72}>
+      <text style={{ fg: C.accent }}>
+        Commit all working-tree changes (stages everything)?
+      </text>
+      <text style={{ fg: C.dim }}>
+        Press Esc to cancel, or Enter to confirm.
+      </text>
+    </OverlayFrame>
+  );
+}
+
+function CommitInputOverlay() {
+  const { ui: C } = useColors();
+  const textareaRef = useRef<TextareaRenderable | null>(null);
+  const contentWidth = 68;
+  return (
+    <OverlayFrame
+      height={5}
+      title="Commit staged changes"
+      titleEnd={<text style={{ fg: C.dim }}>esc</text>}
+      width={72}
+    >
+      <textarea
+        backgroundColor={C.panel}
+        focused
+        focusedBackgroundColor={C.panel}
+        focusedTextColor={C.fg}
+        height={1}
+        initialValue={getStore().getState().commitDraft ?? ""}
+        keyBindings={[{ action: "submit", name: "return" }]}
+        onSubmit={async () => {
+          const text = textareaRef.current?.plainText ?? "";
+          await submitCommitDraft(text);
+        }}
+        placeholder="commit message — Enter to commit, esc to cancel"
+        ref={textareaRef}
+        textColor={C.fg}
+        width={contentWidth}
+      />
+    </OverlayFrame>
+  );
+}
+
 export function Overlays() {
   const state = useAppState();
   const { overlay } = state;
+  if (state.commitDraft !== null) {
+    return <CommitInputOverlay />;
+  }
   if (!overlay) {
     return null;
   }
@@ -216,6 +270,9 @@ export function Overlays() {
   }
   if (overlay.kind === "confirm-discard-all") {
     return <ConfirmDiscardAllOverlay />;
+  }
+  if (overlay.kind === "confirm-commit-all") {
+    return <ConfirmCommitAllOverlay />;
   }
   if (overlay.kind === "confirm-force-push") {
     return <ConfirmForcePushOverlay />;

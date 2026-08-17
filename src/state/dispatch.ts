@@ -3,6 +3,7 @@ import { type KeyChord, keyEventToChord } from "../keymap/chords";
 import type { CommandId } from "../keymap/commands";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
 import {
+  cancelCommitDraft,
   cancelPendingStage,
   closeOverlay,
   commitSelectNext,
@@ -10,6 +11,7 @@ import {
   commitSelectPrev,
   commitSelectPrevFile,
   commitToggleCursorRow,
+  confirmCommitAll,
   confirmDiscard,
   confirmDiscardAll,
   confirmForcePush,
@@ -22,6 +24,7 @@ import {
   focusSidebar,
   gitPull,
   gitPush,
+  openCommitDraft,
   openHelp,
   refresh,
   resizeSidebar,
@@ -186,6 +189,10 @@ export function dispatchCommand(cmd: CommandId): void {
       visualSelect();
       return;
     case "add-comment":
+      if (state.focus === "commits") {
+        openCommitDraft();
+        return;
+      }
       if (commitFileShown(state)) {
         return;
       }
@@ -297,6 +304,18 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
       (chord.key === "y" || chord.key === "return" || chord.key === "enter")
     ) {
       void confirmDiscardAll();
+    } else if (
+      state.overlay.kind === "confirm-commit-all" &&
+      (chord.key === "y" || chord.key === "return" || chord.key === "enter")
+    ) {
+      void confirmCommitAll();
+    }
+    return;
+  }
+
+  if (state.commitDraft !== null) {
+    if (cmd === "cancel" || chord.key === "escape") {
+      cancelCommitDraft();
     }
     return;
   }

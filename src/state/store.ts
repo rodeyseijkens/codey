@@ -66,6 +66,7 @@ export interface PendingStage {
 export type Overlay =
   | { kind: "confirm-discard"; scope: Scope; paths: string[]; bulk: boolean }
   | { kind: "confirm-discard-all" }
+  | { kind: "confirm-commit-all"; message: string }
   | { kind: "confirm-force-push" }
   | { kind: "help" }
   | { kind: "palette" };
@@ -93,6 +94,7 @@ export interface AppState {
   commitAhead: number;
   commitBehind: number;
   commitCursor: string | null;
+  commitDraft: string | null;
   commitEntries: CommitEntry[];
   commitHasMore: boolean;
   commitLoading: boolean;
@@ -145,6 +147,7 @@ export function initialState(): AppState {
     commitAhead: 0,
     commitBehind: 0,
     commitCursor: null,
+    commitDraft: null,
     commitEntries: [],
     commitHasMore: true,
     commitLoading: false,
