@@ -168,7 +168,7 @@ function ConfirmDiscardOverlay(props: {
   return (
     <OverlayFrame height={7} title={label} width={70}>
       <text style={{ fg: C.accent }}>
-        This cannot be undone. y to confirm, Esc to cancel.
+        Press Esc to cancel, or Enter to confirm.
       </text>
     </OverlayFrame>
   );
@@ -199,7 +199,7 @@ function ConfirmForcePushOverlay() {
         Your branch has diverged from the remote branch.
       </text>
       <text style={{ fg: C.dim }}>
-        Press Esc to cancel, or Enter to force push.
+        Press Esc to cancel, or Enter to confirm.
       </text>
     </OverlayFrame>
   );
