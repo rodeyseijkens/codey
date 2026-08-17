@@ -1,4 +1,4 @@
-import type { ScrollBoxRenderable } from "@opentui/core";
+import { RGBA, type ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import type { ReactNode } from "react";
 import { useRef } from "react";
@@ -22,6 +22,7 @@ function OverlayFrame(props: {
     <box
       style={{
         alignItems: "center",
+        backgroundColor: RGBA.fromInts(0, 0, 0, 150),
         height: "100%",
         justifyContent: "center",
         position: "absolute",
@@ -31,9 +32,6 @@ function OverlayFrame(props: {
       <box
         style={{
           backgroundColor: C.panel,
-          border: true,
-          borderColor: C.accent,
-          borderStyle: "rounded",
           flexDirection: "column",
           height: props.height ?? 12,
           padding: 1,
