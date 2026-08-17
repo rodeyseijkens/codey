@@ -5,7 +5,7 @@
 [![Built on OpenTUI](https://img.shields.io/badge/Built%20on-OpenTUI-orange.svg)](https://github.com/anomalyco/opentui)
 [![Uses hunk-diff](https://img.shields.io/badge/Uses-hunk--diff-purple.svg)](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff)
 
-A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged diff viewer with transient line comments, real git staging, and a commit log sidebar. Built on [OpenTUI](https://github.com/anomalyco/opentui) and [hunk-diff](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff).
+A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged diff viewer with transient line comments, real git staging, and a commit log sidebar with pull/push and commit creation. Built on [OpenTUI](https://github.com/anomalyco/opentui) and [hunk-diff](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff).
 
 `codey` sits beside your agent while it writes code — review the diff it just produced, comment on lines, stage the parts you want, and hand the notes back. It runs standalone in any terminal and as a [herdr](https://herdr.dev) plugin pane.
 
@@ -90,7 +90,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `Ctrl+f` / `Ctrl+b` | Page down / up                                      |
 | `Ctrl+d` / `Ctrl+u` | Half-page down / up                                 |
 | `v`                 | Start line/range selection for comments             |
-| `c`                 | Add transient comment on selected line/range |
+| `c`                 | Add transient comment; in the commit log, open a commit input |
 | `d` / `e`           | Delete / edit comment on current line               |
 | `n` / `N`           | Next / previous comment                             |
 | `s`                 | Send comments (standalone: copy to clipboard)       |

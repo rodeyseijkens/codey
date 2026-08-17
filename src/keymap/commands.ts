@@ -82,7 +82,8 @@ export const ALL_COMMANDS: readonly CommandId[] = [
 ] as const;
 
 export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
-  "add-comment": "Add a transient comment on the selected line/range",
+  "add-comment":
+    "Add a transient comment on the selected line/range; in the commit log, open a commit input",
   cancel: "Cancel overlay or pending confirmation",
   "collapse-section": "Collapse/expand the selected row (section or folder)",
   copy: "Copy selection/diff to clipboard",

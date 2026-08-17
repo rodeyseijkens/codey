@@ -44,7 +44,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `ctrl+d`| page-cursor-half-down | Move cursor and page half page down (diff pane)       |
 | `ctrl+u`| page-cursor-half-up | Move cursor and page half page up (diff pane)         |
 | `v`     | visual-select    | Start line/range selection for comments                  |
-| `c`     | add-comment      | Add a transient comment on the selected line/range |
+| `c`     | add-comment      | Add a transient comment on the selected line/range; in the commit log, open a commit input |
 | `e`     | edit-comment     | Edit the comment on the current line                     |
 | `d`     | delete-comment   | Delete the comment on the current line                   |
 | `n`     | next-comment     | Jump to next comment                                     |
@@ -103,6 +103,17 @@ While the commit pane is focused:
   each diff; they stop at the first/last commit file.
 - The `load more` row loads the next page only when you explicitly press `space`
   (or click it); after loading, the cursor jumps to the first newly added commit.
+
+### Committing
+
+With the commit pane focused, `c` opens a commit-message input overlay. Enter
+creates a commit from the currently staged changes (`git commit -m "..."`).
+
+- If nothing is staged but working-tree changes exist, codey shows a second
+  dialog — *Commit all working-tree changes?* — that stages everything
+  (`git add -A`) and commits on confirmation.
+- If there is nothing to commit at all, an info toast explains so.
+- `Esc` cancels the commit input at any point.
 
 The commit cursor survives a refresh (`r`) as long as its commit hash still
 exists; otherwise it resets to the first row.
