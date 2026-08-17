@@ -13,6 +13,7 @@ import { useKeymap } from "./keymap-context";
 
 function OverlayFrame(props: {
   title: string;
+  titleEnd?: ReactNode;
   width?: number;
   height?: number;
   children?: ReactNode;
@@ -38,7 +39,18 @@ function OverlayFrame(props: {
           width: props.width ?? 70,
         }}
       >
-        <text style={{ fg: C.accent, marginBottom: 1 }}>{props.title}</text>
+        <box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 1,
+            paddingLeft: 1,
+            paddingRight: 1,
+          }}
+        >
+          <text style={{ fg: C.accent }}>{props.title}</text>
+          {props.titleEnd ?? null}
+        </box>
         {props.children}
       </box>
     </box>
@@ -89,16 +101,19 @@ function HelpOverlay() {
   return (
     <OverlayFrame
       height={26}
-      title="codey — keybindings (? to close)"
+      title="Keybindings"
+      titleEnd={<text style={{ fg: C.dim }}>esc</text>}
       width={78}
     >
       <scrollbox
         ref={(el: ScrollBoxRenderable) => {
           scrollRef.current = el;
         }}
-        style={{ flexGrow: 1 }}
+        style={{ flexGrow: 1, marginTop: 1 }}
       >
-        <box style={{ flexDirection: "column" }}>
+        <box
+          style={{ flexDirection: "column", paddingLeft: 1, paddingRight: 1 }}
+        >
           {sections.map((section, sectionIndex) => (
             <box key={section.title} style={{ flexDirection: "column" }}>
               {sectionIndex > 0 ? (
