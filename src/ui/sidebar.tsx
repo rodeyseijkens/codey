@@ -1,5 +1,5 @@
 import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { buildFileTree, type TreeNode, visibleTreeNodes } from "../lib/tree";
 import {
   clearCommitView,
@@ -38,6 +38,7 @@ import {
   folderIcon,
   GIT_PULL_ICON,
   GIT_PUSH_ICON,
+  SPINNER_FRAMES,
   STATUS_UNTRACKED,
 } from "./icons";
 
@@ -480,11 +481,26 @@ function CommitLog(props: { width: number }) {
     commitEntries,
     commitLoading,
     commitCursor,
+    remoteBusy,
     repoRoot,
   } = state;
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const hasAhead = commitAhead > 0;
   const hasBehind = commitBehind > 0;
+  const hasBusy = remoteBusy !== null;
+  const [spinnerFrame, setSpinnerFrame] = useState(0);
+
+  useEffect(() => {
+    if (!hasBusy) {
+      setSpinnerFrame(0);
+      return;
+    }
+    const timer = setInterval(
+      () => setSpinnerFrame((frame) => (frame + 1) % SPINNER_FRAMES.length),
+      100
+    );
+    return () => clearInterval(timer);
+  }, [hasBusy]);
 
   useEffect(() => {
     if (repoRoot && commitEntries.length === 0 && !commitLoading) {
@@ -611,17 +627,25 @@ function CommitLog(props: { width: number }) {
       >
         <text style={{ fg: C.accent }}>Commits</text>
         <text style={{ flexGrow: 1 }} />
-        {hasAhead ? (
-          <text style={{ fg: C.green }}>
-            {GIT_PUSH_ICON} {commitAhead}
+        {hasBusy ? (
+          <text style={{ fg: icons.yellow }}>
+            {SPINNER_FRAMES[spinnerFrame]}
           </text>
-        ) : null}
-        {hasAhead && hasBehind ? <text> </text> : null}
-        {hasBehind ? (
-          <text style={{ fg: icons.orange }}>
-            {GIT_PULL_ICON} {commitBehind}
-          </text>
-        ) : null}
+        ) : (
+          <>
+            {hasAhead ? (
+              <text style={{ fg: C.green }}>
+                {GIT_PUSH_ICON} {commitAhead}
+              </text>
+            ) : null}
+            {hasAhead && hasBehind ? <text> </text> : null}
+            {hasBehind ? (
+              <text style={{ fg: icons.orange }}>
+                {GIT_PULL_ICON} {commitBehind}
+              </text>
+            ) : null}
+          </>
+        )}
       </box>
       <scrollbox
         ref={(el: ScrollBoxRenderable) => {

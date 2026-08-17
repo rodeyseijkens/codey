@@ -110,6 +110,7 @@ export interface AppState {
   loading: boolean;
   overlay: Overlay | null;
   pendingStage: PendingStage | null;
+  remoteBusy: "push" | "pull" | null;
   repoRoot: string | null;
   selection: Selection | null;
   sidebarView: SidebarView;
@@ -161,6 +162,7 @@ export function initialState(): AppState {
     loading: false,
     overlay: null,
     pendingStage: null,
+    remoteBusy: null,
     repoRoot: null,
     selection: null,
     sidebarView: "tree",

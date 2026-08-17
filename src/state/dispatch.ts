@@ -153,12 +153,12 @@ export function dispatchCommand(cmd: CommandId): void {
       focusCommits();
       return;
     case "git-pull":
-      if (state.focus === "commits") {
+      if (state.focus === "commits" && state.remoteBusy === null) {
         gitPull();
       }
       return;
     case "git-push":
-      if (state.focus === "commits") {
+      if (state.focus === "commits" && state.remoteBusy === null) {
         gitPush();
       }
       return;

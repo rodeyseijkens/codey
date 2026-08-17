@@ -363,6 +363,19 @@ export const CHEVRON_RIGHT = "\u{eab6}";
 export const GIT_PUSH_ICON = "\u{f431}";
 export const GIT_PULL_ICON = "\u{f433}";
 
+export const SPINNER_FRAMES = [
+  "⠋",
+  "⠙",
+  "⠹",
+  "⠸",
+  "⠼",
+  "⠴",
+  "⠦",
+  "⠧",
+  "⠇",
+  "⠏",
+];
+
 export const STATUS_ADDED = "\u{f457}";
 export const STATUS_MODIFIED = "\u{f459}";
 export const STATUS_RENAMED = "\u{f45a}";

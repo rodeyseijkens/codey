@@ -898,6 +898,7 @@ async function gitRemoteCommand(args: string[], verb: string): Promise<void> {
   if (!rt.repoRoot) {
     return;
   }
+  store.set({ remoteBusy: verb === "pull" ? "pull" : "push" });
   try {
     await gitThrow(args, rt.repoRoot);
     store.showToast("success", `git ${verb} succeeded`);
@@ -906,6 +907,8 @@ async function gitRemoteCommand(args: string[], verb: string): Promise<void> {
     const detail =
       err instanceof GitError ? err.stderr.trim() || err.message : String(err);
     store.showToast("error", detail);
+  } finally {
+    store.set({ remoteBusy: null });
   }
 }
 
