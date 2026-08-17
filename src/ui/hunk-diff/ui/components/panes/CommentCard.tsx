@@ -23,11 +23,11 @@ export function inlineNoteTitle(
   noteCount: number,
 ) {
   if (annotation.source === "user-draft") {
-    return "Draft note";
+    return "\uf448 ";
   }
   const source = reviewNoteSource(annotation);
   const author = sanitizeTerminalLine(annotation.author?.trim() ?? "");
-  const label = source === "user" ? "Your note" : author ? `${author} note` : "Agent note";
+  const label = source === "user" ? "\uf4f6 " : author ? `${author} note` : "Agent note";
   return noteCount > 1 ? `${label} ${noteIndex + 1}/${noteCount}` : label;
 }
 
@@ -127,7 +127,7 @@ export function CommentCard({
   width: number;
 }) {
   const textareaRef = useRef<TextareaRenderable | null>(null);
-  const titleText = `${inlineNoteTitle(annotation, noteIndex, noteCount)} - ${annotationRangeLabel(annotation, file)}`;
+  const titleText = `${inlineNoteTitle(annotation, noteIndex, noteCount)} — ${annotationRangeLabel(annotation, file)}`;
   const { boxWidth, contentWidth } = agentNoteBoxLayout({
     anchorSide,
     layout,
@@ -156,7 +156,7 @@ export function CommentCard({
         <text fg={theme.noteBorder}>{titleLabel}</text>
         <box style={{ flexGrow: 1 }} />
         {onDelete ? (
-          <box onMouseUp={onDelete} style={{ width: closeText.length, height: 1 }}>
+          <box onMouseUp={onDelete} style={{ width: closeText.length, height: 1, marginRight: 1 }}>
             <text fg="red" bg={theme.noteTitleBackground}>
               {closeText}
             </text>
