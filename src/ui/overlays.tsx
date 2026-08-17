@@ -34,7 +34,9 @@ function OverlayFrame(props: {
         style={{
           backgroundColor: C.panel,
           flexDirection: "column",
+          gap: 1,
           height: props.height ?? 12,
+          justifyContent: "space-between",
           padding: 1,
           width: props.width ?? 70,
         }}
@@ -43,7 +45,6 @@ function OverlayFrame(props: {
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            marginBottom: 1,
             paddingLeft: 1,
             paddingRight: 1,
           }}
@@ -51,7 +52,17 @@ function OverlayFrame(props: {
           <text style={{ fg: C.accent }}>{props.title}</text>
           {props.titleEnd ?? null}
         </box>
-        {props.children}
+        <box
+          style={{
+            flexDirection: "column",
+            gap: 1,
+            justifyContent: "space-between",
+            paddingLeft: 1,
+            paddingRight: 1,
+          }}
+        >
+          {props.children}
+        </box>
       </box>
     </box>
   );
@@ -109,11 +120,9 @@ function HelpOverlay() {
         ref={(el: ScrollBoxRenderable) => {
           scrollRef.current = el;
         }}
-        style={{ flexGrow: 1, marginTop: 1 }}
+        style={{ flexGrow: 1 }}
       >
-        <box
-          style={{ flexDirection: "column", paddingLeft: 1, paddingRight: 1 }}
-        >
+        <box style={{ flexDirection: "column" }}>
           {sections.map((section, sectionIndex) => (
             <box key={section.title} style={{ flexDirection: "column" }}>
               {sectionIndex > 0 ? (
@@ -158,7 +167,7 @@ function ConfirmDiscardOverlay(props: {
     : `Discard changes to ${overlay.paths[0] ?? ""}?`;
   return (
     <OverlayFrame height={7} title={label} width={70}>
-      <text style={{ fg: C.accent, marginTop: 1 }}>
+      <text style={{ fg: C.accent }}>
         This cannot be undone. y to confirm, Esc to cancel.
       </text>
     </OverlayFrame>
@@ -186,10 +195,10 @@ function ConfirmForcePushOverlay() {
   const { ui: C } = useColors();
   return (
     <OverlayFrame height={8} title="Force push" width={72}>
-      <text style={{ fg: C.accent, marginTop: 1 }}>
+      <text style={{ fg: C.accent }}>
         Your branch has diverged from the remote branch.
       </text>
-      <text style={{ fg: C.dim, marginTop: 1 }}>
+      <text style={{ fg: C.dim }}>
         Press Esc to cancel, or Enter to force push.
       </text>
     </OverlayFrame>
