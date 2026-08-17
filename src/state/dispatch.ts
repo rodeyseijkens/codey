@@ -11,6 +11,7 @@ import {
   commitSelectPrevFile,
   commitToggleCursorRow,
   confirmDiscard,
+  confirmForcePush,
   confirmPendingStage,
   copySelection,
   cycleLayout,
@@ -280,6 +281,11 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   if (state.overlay) {
     if (cmd === "cancel" || chord.key === "escape") {
       closeOverlay();
+    } else if (
+      state.overlay.kind === "confirm-force-push" &&
+      (chord.key === "y" || chord.key === "return" || chord.key === "enter")
+    ) {
+      confirmForcePush();
     } else if (
       state.overlay.kind === "confirm-discard" &&
       (chord.key === "y" || chord.key === "return" || chord.key === "enter")

@@ -1,7 +1,11 @@
 import { isHerdrPlugin, sendToAgent } from "../herdr/bridge";
 import { copyText, formatCommentsAsMarkdown } from "../lib/clipboard";
 import { treeKey } from "../lib/tree";
-import { getCommitFileDiff, gitLog } from "../loaders/git-log";
+import {
+  getBranchAheadBehind,
+  getCommitFileDiff,
+  gitLog,
+} from "../loaders/git-log";
 import type { FileDiff, LoaderMode, Scope } from "../types";
 import {
   deleteFiles,
@@ -903,6 +907,30 @@ export function gitPull(): void {
   gitRemoteCommand(["pull"], "pull");
 }
 
-export function gitPush(): void {
-  gitRemoteCommand(["push"], "push");
+export async function gitPush(): Promise<void> {
+  const store = getStore();
+  let rt: RuntimeConfig;
+  try {
+    rt = getRuntime();
+  } catch {
+    return;
+  }
+  if (!rt.repoRoot) {
+    return;
+  }
+  const { ahead, behind } = await getBranchAheadBehind(rt.repoRoot);
+  if (ahead > 0 && behind > 0) {
+    store.set({ overlay: { kind: "confirm-force-push" } });
+    return;
+  }
+  await gitRemoteCommand(["push"], "push");
+}
+
+export function confirmForcePush(): void {
+  const store = getStore();
+  if (store.getState().overlay?.kind !== "confirm-force-push") {
+    return;
+  }
+  store.set({ overlay: null });
+  gitRemoteCommand(["push", "--force-with-lease"], "force push");
 }

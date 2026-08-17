@@ -101,6 +101,29 @@ function parseLogOutput(text: string): Array<{
   return out;
 }
 
+/** Local-only (ahead) and remote-only (behind) commit counts for the current branch. */
+export async function getBranchAheadBehind(
+  cwd: string
+): Promise<{ ahead: number; behind: number }> {
+  try {
+    const upstream = await gitThrow(["rev-parse", "--abbrev-ref", "@{u}"], cwd);
+    const [behindStr, aheadStr] = (
+      await gitThrow(
+        ["rev-list", "--left-right", "--count", `${upstream.trim()}...HEAD`],
+        cwd
+      )
+    )
+      .trim()
+      .split(WHITESPACE_RE);
+    return {
+      ahead: Number(aheadStr) || 0,
+      behind: Number(behindStr) || 0,
+    };
+  } catch {
+    return { ahead: 0, behind: 0 };
+  }
+}
+
 async function getPushedState(
   cwd: string
 ): Promise<{ unpushed: Set<string>; behind: number }> {

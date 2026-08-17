@@ -152,6 +152,20 @@ function ConfirmDiscardOverlay(props: {
   );
 }
 
+function ConfirmForcePushOverlay() {
+  const { ui: C } = useColors();
+  return (
+    <OverlayFrame height={8} title="Force push" width={72}>
+      <text style={{ fg: C.accent, marginTop: 1 }}>
+        Your branch has diverged from the remote branch.
+      </text>
+      <text style={{ fg: C.dim, marginTop: 1 }}>
+        Press Esc to cancel, or Enter to force push.
+      </text>
+    </OverlayFrame>
+  );
+}
+
 export function Overlays() {
   const state = useAppState();
   const { overlay } = state;
@@ -160,6 +174,9 @@ export function Overlays() {
   }
   if (overlay.kind === "confirm-discard") {
     return <ConfirmDiscardOverlay overlay={overlay} />;
+  }
+  if (overlay.kind === "confirm-force-push") {
+    return <ConfirmForcePushOverlay />;
   }
   if (overlay.kind === "help") {
     return <HelpOverlay />;
