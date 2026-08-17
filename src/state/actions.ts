@@ -517,6 +517,32 @@ export async function confirmDiscard(): Promise<void> {
   }
 }
 
+/** Discard every working-tree change after the confirm-discard-all overlay is accepted. */
+export async function confirmDiscardAll(): Promise<void> {
+  const store = getStore();
+  const { overlay } = store.getState();
+  if (overlay?.kind !== "confirm-discard-all") {
+    return;
+  }
+  store.set({ overlay: null });
+  const changes = store.changeset("changes");
+  const paths = (changes?.files ?? []).map((f) => f.path);
+  if (paths.length === 0) {
+    return;
+  }
+  try {
+    await discardPaths("changes", paths);
+    store.clearCommentsFor("changes", paths);
+    store.showToast("success", `discarded changes in ${paths.length} file(s)`);
+    await refresh();
+  } catch (err) {
+    store.showToast(
+      "error",
+      `discard-all failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
 export async function unstageAll(): Promise<void> {
   const store = getStore();
   const rt = getRuntime();
@@ -526,21 +552,7 @@ export async function unstageAll(): Promise<void> {
   }
   const changes = store.changeset("changes");
   if (changes && changes.files.length > 0) {
-    const paths = changes.files.map((f) => f.path);
-    try {
-      await discardPaths("changes", paths);
-      store.clearCommentsFor("changes", paths);
-      store.showToast(
-        "success",
-        `discarded changes in ${paths.length} file(s)`
-      );
-      await refresh();
-    } catch (err) {
-      store.showToast(
-        "error",
-        `discard-all failed: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
+    store.set({ overlay: { kind: "confirm-discard-all" } });
     return;
   }
   const staged = store.changeset("staged");

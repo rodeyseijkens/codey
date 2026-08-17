@@ -165,6 +165,23 @@ function ConfirmDiscardOverlay(props: {
   );
 }
 
+function ConfirmDiscardAllOverlay() {
+  const state = useAppState();
+  const { ui: C } = useColors();
+  const changes = state.changesets.find((cs) => cs.id === "changes");
+  const count = changes?.files.length ?? 0;
+  return (
+    <OverlayFrame height={8} title="Discard all changes?" width={72}>
+      <text style={{ fg: C.accent }}>
+        All working-tree changes in {count} file(s) will be lost.
+      </text>
+      <text style={{ fg: C.dim }}>
+        Press Esc to cancel, or Enter to confirm.
+      </text>
+    </OverlayFrame>
+  );
+}
+
 function ConfirmForcePushOverlay() {
   const { ui: C } = useColors();
   return (
@@ -187,6 +204,9 @@ export function Overlays() {
   }
   if (overlay.kind === "confirm-discard") {
     return <ConfirmDiscardOverlay overlay={overlay} />;
+  }
+  if (overlay.kind === "confirm-discard-all") {
+    return <ConfirmDiscardAllOverlay />;
   }
   if (overlay.kind === "confirm-force-push") {
     return <ConfirmForcePushOverlay />;
