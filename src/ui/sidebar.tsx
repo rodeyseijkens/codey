@@ -474,9 +474,16 @@ function CommitLog(props: { width: number }) {
   const state = useAppState();
   const { icons, ui: C } = useColors();
   const store = getStore();
-  const { commitBehind, commitEntries, commitLoading, commitCursor, repoRoot } =
-    state;
+  const {
+    commitAhead,
+    commitBehind,
+    commitEntries,
+    commitLoading,
+    commitCursor,
+    repoRoot,
+  } = state;
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
+  const hasAhead = commitAhead > 0;
   const hasBehind = commitBehind > 0;
 
   useEffect(() => {
@@ -604,11 +611,16 @@ function CommitLog(props: { width: number }) {
       >
         <text style={{ fg: C.accent }}>Commits</text>
         <text style={{ flexGrow: 1 }} />
+        {hasAhead ? (
+          <text style={{ fg: C.green }}>
+            {GIT_PUSH_ICON} {commitAhead}
+          </text>
+        ) : null}
+        {hasAhead && hasBehind ? <text> </text> : null}
         {hasBehind ? (
-          <>
-            <text style={{ fg: icons.orange, width: 2 }}>{GIT_PULL_ICON}</text>
-            <text style={{ fg: icons.orange }}>{commitBehind}</text>
-          </>
+          <text style={{ fg: icons.orange }}>
+            {GIT_PULL_ICON} {commitBehind}
+          </text>
         ) : null}
       </box>
       <scrollbox

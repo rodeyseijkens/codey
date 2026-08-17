@@ -666,8 +666,13 @@ export async function loadCommits(): Promise<void> {
   }
   store.set({ commitEntries: [], commitLoading: true, commitOffset: 0 });
   try {
-    const { commits, hasMore, behind } = await gitLog(rt.repoRoot, 0, 10);
+    const { commits, hasMore, behind, ahead } = await gitLog(
+      rt.repoRoot,
+      0,
+      10
+    );
     store.set({
+      commitAhead: ahead,
       commitBehind: behind,
       commitEntries: commits,
       commitHasMore: hasMore,
@@ -700,12 +705,13 @@ export async function loadMoreCommits(followCursor = false): Promise<void> {
   store.set({ commitLoading: true });
   try {
     const before = state.commitEntries.length;
-    const { commits, hasMore, behind } = await gitLog(
+    const { commits, hasMore, behind, ahead } = await gitLog(
       rt.repoRoot,
       state.commitOffset + 10,
       10
     );
     store.set({
+      commitAhead: ahead,
       commitBehind: behind,
       commitEntries: [...state.commitEntries, ...commits],
       commitHasMore: hasMore,

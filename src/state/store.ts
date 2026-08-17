@@ -89,6 +89,7 @@ export interface AppState {
   collapsedTree: Record<string, boolean>;
   commentDraft: CommentDraft | null;
   comments: Comment[];
+  commitAhead: number;
   commitBehind: number;
   commitCursor: string | null;
   commitEntries: CommitEntry[];
@@ -139,6 +140,7 @@ export function initialState(): AppState {
     collapsedTree: {},
     commentDraft: null,
     comments: [],
+    commitAhead: 0,
     commitBehind: 0,
     commitCursor: null,
     commitEntries: [],

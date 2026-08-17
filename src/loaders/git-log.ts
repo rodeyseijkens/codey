@@ -12,6 +12,7 @@ export async function gitLog(
   commits: CommitEntry[];
   hasMore: boolean;
   behind: number;
+  ahead: number;
 }> {
   const logOutput = await gitThrow(
     [
@@ -27,7 +28,7 @@ export async function gitLog(
   const hasMore = parsed.length > limit;
   const slice = hasMore ? parsed.slice(0, limit) : parsed;
 
-  const { unpushed, behind } = await getPushedState(cwd);
+  const { ahead, behind, unpushed } = await getPushedState(cwd);
 
   const filePromises = slice.map(async (c) => getCommitFiles(cwd, c.hash));
   const fileResults: Array<
@@ -64,7 +65,7 @@ export async function gitLog(
     });
   }
 
-  return { behind, commits, hasMore };
+  return { ahead, behind, commits, hasMore };
 }
 
 function parseLogOutput(text: string): Array<{
@@ -126,11 +127,12 @@ export async function getBranchAheadBehind(
 
 async function getPushedState(
   cwd: string
-): Promise<{ unpushed: Set<string>; behind: number }> {
+): Promise<{ ahead: number; behind: number; unpushed: Set<string> }> {
   try {
     const upstream = await gitThrow(["rev-parse", "--abbrev-ref", "@{u}"], cwd);
     const base = upstream.trim();
     const out = await gitThrow(["rev-list", `${base}..HEAD`], cwd);
+    const unpushed = new Set(out.split("\n").filter((h) => h.length > 0));
     const [behindStr] = (
       await gitThrow(
         ["rev-list", "--left-right", "--count", `${base}...HEAD`],
@@ -140,11 +142,12 @@ async function getPushedState(
       .trim()
       .split(WHITESPACE_RE);
     return {
+      ahead: unpushed.size,
       behind: Number(behindStr) || 0,
-      unpushed: new Set(out.split("\n").filter((h) => h.length > 0)),
+      unpushed,
     };
   } catch {
-    return { behind: 0, unpushed: new Set() };
+    return { ahead: 0, behind: 0, unpushed: new Set() };
   }
 }
 
