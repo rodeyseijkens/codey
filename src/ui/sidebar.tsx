@@ -486,10 +486,31 @@ function CommitLog(props: { width: number }) {
   }, [commitEntries.length, commitLoading, repoRoot]);
 
   useEffect(() => {
-    if (commitCursor) {
-      scrollRef.current?.scrollChildIntoView(commitCursor);
+    if (!commitCursor) {
+      return;
     }
-  }, [commitCursor]);
+    const scroll: ScrollBoxRenderable | null = scrollRef.current;
+    if (!scroll) {
+      return;
+    }
+    const rows = store.commitRows();
+    const target = rows.findIndex((row) => commitRowKey(row) === commitCursor);
+    if (target < 0) {
+      return;
+    }
+    const viewportHeight = scroll.viewport.height;
+    const top = scroll.scrollTop;
+    const bottom = top + viewportHeight - 1;
+    let next = top;
+    if (target < top) {
+      next = target;
+    } else if (target > bottom) {
+      next = target - viewportHeight + 1;
+    }
+    if (next !== top) {
+      scroll.scrollTop = Math.max(0, next);
+    }
+  }, [commitCursor, store.commitRows]);
 
   const rows = store.commitRows();
   const byHash = new Map(commitEntries.map((c) => [c.hash, c]));
