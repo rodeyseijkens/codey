@@ -64,33 +64,54 @@ The default command opens the staged/unstaged diff viewer. Press `?` inside for 
 
 ### Keybindings (defaults)
 
-| Key                 | Action                                        |
-| ------------------- | --------------------------------------------- |
-| `j` / `k`           | Move selection down / up (changes, diff, commit log)     |
-| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log                 |
-| `0` / `1` / `2`     | Focus changes / diff / commit log directly               |
-| `c`                 | Add transient comment on selected line/range  |
-| `v`                 | Start line/range selection for comments       |
-| `a` / `A`           | Stage file / Stage all files                  |
-| `u` / `U`           | Unstage file / Unstage all files              |
-| `d` / `e`           | Delete / edit comment on current line         |
-| `n` / `N`           | Next / previous comment                       |
-| `[` / `]`           | Previous / next hunk                          |
-| `f` / `F`           | Next / previous file (diff, commit log)       |
-| `?`                 | Show help overlay                             |
-| `r`                 | Refresh (reload from git)                     |
-| `q`                 | Quit                                          |
-| `m`                 | Cycle layout (split / stack / auto)           |
-| `p`                 | Toggle sidebar                                |
-| `t`                 | Toggle sidebar view (tree / list)             |
-| `>` / `<`           | Grow / shrink sidebar                         |
-| `y`                 | Copy selection to clipboard                   |
-| `s`                 | Send comments (standalone: copy to clipboard) |
-| `w`                 | Toggle line wrapping                          |
-| `Space`             | Collapse/expand row (section, folder, commit header)      |
-| `Esc`               | Cancel overlay                                |
-| `Ctrl+f` / `Ctrl+b` | Page down / up                                |
-| `Ctrl+d` / `Ctrl+u` | Half-page down / up                           |
+Keys are grouped by the pane they act on, matching the help overlay.
+
+#### Changes Pane
+
+| Key                 | Action                                              |
+| ------------------- | --------------------------------------------------- |
+| `j` / `k`           | Move selection down / up                            |
+| `f` / `F`           | Next / previous file                                |
+| `Space`             | Collapse/expand row (section, folder, commit header)|
+| `b`                 | Toggle sidebar                                      |
+| `t`                 | Toggle sidebar view (tree / list)                   |
+| `<` / `>`           | Shrink / grow sidebar                               |
+| `a` / `A`           | Stage file / Stage all files                        |
+| `u` / `U`           | Unstage file / Unstage all files                    |
+| `r`                 | Refresh (reload from git)                           |
+| `m`                 | Cycle layout (split / stack / auto)                 |
+| `w`                 | Toggle line wrapping                                |
+
+#### Diff Pane
+
+| Key                 | Action                                              |
+| ------------------- | --------------------------------------------------- |
+| `[` / `]`           | Previous / next hunk                                |
+| `Ctrl+f` / `Ctrl+b` | Page down / up                                      |
+| `Ctrl+d` / `Ctrl+u` | Half-page down / up                                 |
+| `v`                 | Start line/range selection for comments             |
+| `c`                 | Add transient comment on selected line/range |
+| `d` / `e`           | Delete / edit comment on current line               |
+| `n` / `N`           | Next / previous comment                             |
+| `s`                 | Send comments (standalone: copy to clipboard)       |
+| `y`                 | Copy selection to clipboard                         |
+
+#### Commits Pane
+
+| Key                 | Action                                              |
+| ------------------- | --------------------------------------------------- |
+| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log           |
+| `0` / `1` / `2`     | Focus changes / diff / commit log directly          |
+| `p` / `P`           | Pull / push to the remote (commit pane)             |
+
+#### Global
+
+| Key                 | Action                                              |
+| ------------------- | --------------------------------------------------- |
+| `?`                 | Show help overlay                                   |
+| `q`                 | Quit                                                |
+| `Esc`               | Cancel overlay                                      |
+
 All keybindings are customizable in `~/.config/codey/config.toml` under `[keybindings]`. Press `?` inside the app for the full live list.
 
 Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, and custom keybindings live in `~/.config/codey/config.toml`.

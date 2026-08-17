@@ -10,35 +10,21 @@ whole config), and codey shows an error pane until the file is fixed.
 
 ## Defaults
 
+Keys are grouped by the pane they act on, matching the help overlay.
+
+### Changes Pane
+
 | Key     | Command          | Description                                              |
 | ------- | ---------------- | -------------------------------------------------------- |
-| `q`     | quit             | Quit codey                                               |
-| `?`     | help             | Show help overlay                                        |
 | `j`     | select-next      | Move selection down (changes/commit list; diff row)      |
 | `k`     | select-prev      | Move selection up                                        |
-| `]`     | next-hunk        | Jump to next hunk (diff pane)                            |
-| `[`     | prev-hunk        | Jump to previous hunk (diff pane)                        |
 | `f`     | next-file        | Jump to next file (diff pane; commit log files)          |
 | `F`     | prev-file        | Jump to previous file (diff pane; commit log files)      |
-| `tab`   | focus-toggle     | Cycle focus: changes → diff → commits                    |
-| `shift+tab` | focus-prev    | Cycle focus the other way                                |
-| `0`     | focus-diff       | Focus the diff pane                                      |
-| `1`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
-| `2`     | focus-commits    | Focus the commit log (re-shows the sidebar)              |
-| `p`     | git-pull         | Pull from the remote (commit pane only)                  |
-| `P`     | git-push         | Push to the remote (commit pane only)                    |
-| `b`     | toggle-sidebar   | Show/hide the sidebar                                    |
 | `space` | collapse-section | Collapse/expand the selected row (section/folder/commit header, load more) |
+| `b`     | toggle-sidebar   | Show/hide the sidebar                                    |
+| `t`     | toggle-view      | Toggle sidebar view: tree → list → tree                  |
 | `<`     | sidebar-shrink   | Make the sidebar narrower                                |
 | `>`     | sidebar-grow     | Make the sidebar wider                                   |
-| `v`     | visual-select    | Start line/range selection for comments                  |
-| `c`     | add-comment      | Add a transient comment on the selected line/range       |
-| `e`     | edit-comment     | Edit the comment on the current line                     |
-| `d`     | delete-comment   | Delete the comment on the current line                   |
-| `n`     | next-comment     | Jump to next comment                                     |
-| `N`     | prev-comment     | Jump to previous comment                                 |
-| `s`     | send-comments    | Send pending comments (standalone: copy to clipboard)    |
-| `y`     | copy             | Copy selected file's diff to clipboard                   |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
 | `A`     | stage-all        | Stage all changed files                                  |
 | `u`     | unstage-file     | Unstage selected file (`git restore --staged <file>`)    |
@@ -46,11 +32,44 @@ whole config), and codey shows an error pane until the file is fixed.
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
 | `w`     | wrap-text        | Toggle diff line wrapping                                |
-| `t`     | toggle-view      | Toggle sidebar view: tree → list → tree                  |
-| `ctrl+b`| page-up          | Move page up (diff pane)                                 |
+
+### Diff Pane
+
+| Key     | Command          | Description                                              |
+| ------- | ---------------- | -------------------------------------------------------- |
+| `]`     | next-hunk        | Jump to next hunk (diff pane)                            |
+| `[`     | prev-hunk        | Jump to previous hunk (diff pane)                        |
 | `ctrl+f`| page-down        | Move page down (diff pane)                               |
-| `ctrl+u`| page-cursor-half-up | Move cursor and page half page up (diff pane)         |
+| `ctrl+b`| page-up          | Move page up (diff pane)                                 |
 | `ctrl+d`| page-cursor-half-down | Move cursor and page half page down (diff pane)       |
+| `ctrl+u`| page-cursor-half-up | Move cursor and page half page up (diff pane)         |
+| `v`     | visual-select    | Start line/range selection for comments                  |
+| `c`     | add-comment      | Add a transient comment on the selected line/range |
+| `e`     | edit-comment     | Edit the comment on the current line                     |
+| `d`     | delete-comment   | Delete the comment on the current line                   |
+| `n`     | next-comment     | Jump to next comment                                     |
+| `N`     | prev-comment     | Jump to previous comment                                 |
+| `s`     | send-comments    | Send pending comments (standalone: copy to clipboard)    |
+| `y`     | copy             | Copy selected file's diff to clipboard                   |
+
+### Commits Pane
+
+| Key     | Command          | Description                                              |
+| ------- | ---------------- | -------------------------------------------------------- |
+| `tab`   | focus-toggle     | Cycle focus: changes → diff → commits                    |
+| `shift+tab` | focus-prev    | Cycle focus the other way                                |
+| `0`     | focus-diff       | Focus the diff pane                                      |
+| `1`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
+| `2`     | focus-commits    | Focus the commit log (re-shows the sidebar)              |
+| `p`     | git-pull         | Pull from the remote (commit pane only)                  |
+| `P`     | git-push         | Push to the remote (commit pane only)                    |
+
+### Global
+
+| Key     | Command          | Description                                              |
+| ------- | ---------------- | -------------------------------------------------------- |
+| `q`     | quit             | Quit codey                                               |
+| `?`     | help             | Show help overlay                                        |
 | `esc`   | cancel           | Cancel overlay or pending confirmation                   |
 
 ## Sidebar view
@@ -103,9 +122,9 @@ confirms and clears those comments; `Esc` cancels.
 
 ## Sidebar visibility
 
-While the sidebar is hidden (`p`), focus is always the diff pane and `tab` stays
+While the sidebar is hidden (`b`), focus is always the diff pane and `tab` stays
 there. Pressing `1` or `2` re-shows the sidebar and focuses the changes or commit
-log; `0` focuses the diff without re-showing it. Reopening with `p` focuses the
+log; `0` focuses the diff without re-showing it. Reopening with `b` focuses the
 pane the currently-shown file comes from: a commit diff returns to the commit
 log, otherwise the changes pane.
 
