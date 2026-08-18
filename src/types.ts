@@ -12,6 +12,7 @@ export interface FileDiff {
   additions: number;
   deletions: number;
   diff: string;
+  ignored?: boolean;
   isBinary: boolean;
   notice?: string;
   oldPath?: string;

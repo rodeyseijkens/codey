@@ -4,6 +4,7 @@ import { createTwoFilesPatch } from "diff";
 import type { Changeset, FileDiff } from "../types";
 import { MAX_DIFF_BYTES } from "../types";
 import { gitThrow } from "../vcs/git";
+import { DEFAULT_IGNORE_FILES, markIgnoredFiles } from "./ignore";
 import { buildGitChangeset, checkDiffLimits, countDiffLines } from "./shared";
 
 const SEPARATOR_RE = /^=+$/;
@@ -80,7 +81,10 @@ async function buildUntrackedFile(cwd: string, rel: string): Promise<FileDiff> {
   };
 }
 
-export async function gitUnstaged(cwd: string): Promise<Changeset> {
+export async function gitUnstaged(
+  cwd: string,
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
+): Promise<Changeset> {
   const base = ["diff", "--no-color", "-M", "-U999999"];
   const [nameStatus, numstat, diffText, untrackedText] = await Promise.all([
     gitThrow([...base, "--name-status"], cwd),
@@ -91,6 +95,7 @@ export async function gitUnstaged(cwd: string): Promise<Changeset> {
   const changeset = buildGitChangeset({
     diffText,
     id: "changes",
+    ignoreFiles,
     label: "Changes",
     nameStatus,
     numstat,
@@ -102,6 +107,7 @@ export async function gitUnstaged(cwd: string): Promise<Changeset> {
       .filter((line) => line.length > 0)
       .map((rel) => buildUntrackedFile(cwd, rel))
   );
+  markIgnoredFiles(untrackedFiles, ignoreFiles);
   const files = [...changeset.files, ...untrackedFiles].sort((a, b) =>
     comparePaths(a.path, b.path)
   );

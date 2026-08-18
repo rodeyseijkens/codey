@@ -77,6 +77,41 @@ describe("gitStaged", () => {
     expect(file?.isBinary).toBe(true);
     expect(file?.diff).toBe("");
   });
+
+  test("keeps lock files in the list but marks them ignored", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "package-lock.json"), "{}\n");
+    await writeFile(join(dir, "pnpm-lock.yaml"), "lockfileVersion: 9\n");
+    await writeFile(join(dir, "a.txt"), "hello\n");
+    await gitThrow(["add", "-A"], dir);
+
+    const cs = await gitStaged(dir);
+    expect(
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+    ).toEqual(["a.txt", "package-lock.json", "pnpm-lock.yaml"]);
+    expect(cs.stats.files).toBe(3);
+    const lock = cs.files.find((f) => f.path === "package-lock.json");
+    expect(lock?.ignored).toBe(true);
+    expect(lock?.diff).toBe("");
+    const plain = cs.files.find((f) => f.path === "a.txt");
+    expect(plain?.ignored).toBeFalsy();
+    expect(plain?.diff).toContain("+hello");
+  });
+
+  test("loads lock file diffs when ignoreFiles is overridden", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "package-lock.json"), "{}\n");
+    await writeFile(join(dir, "a.txt"), "hello\n");
+    await gitThrow(["add", "-A"], dir);
+
+    const cs = await gitStaged(dir, []);
+    expect(
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+    ).toEqual(["a.txt", "package-lock.json"]);
+    const lock = cs.files.find((f) => f.path === "package-lock.json");
+    expect(lock?.ignored).toBeFalsy();
+    expect(lock?.diff).toContain("{}");
+  });
 });
 
 describe("gitUnstaged", () => {
@@ -119,6 +154,25 @@ describe("gitUnstaged", () => {
     expect(file?.tooLarge).toBe(true);
     expect(file?.diff).toBe("");
   });
+
+  test("marks untracked lock files ignored without dropping them", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "new.txt"), "fresh\n");
+    await writeFile(join(dir, "bun.lockb"), "not a text lock\n");
+
+    const cs = await gitUnstaged(dir);
+    const lock = cs.files.find((f) => f.path === "bun.lockb");
+    expect(lock).toBeDefined();
+    expect(lock?.ignored).toBe(true);
+    expect(lock?.diff).toBe("");
+    expect(
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+    ).toEqual(["bun.lockb", "new.txt"]);
+    const overridden = await gitUnstaged(dir, []);
+    const shown = overridden.files.find((f) => f.path === "bun.lockb");
+    expect(shown?.ignored).toBeFalsy();
+    expect(shown?.diff).not.toBe("");
+  });
 });
 
 describe("gitShow", () => {
@@ -149,6 +203,29 @@ describe("gitShow", () => {
     expect(cs.files).toHaveLength(1);
     expect(cs.files[0]?.path).toBe("b.txt");
     expect(cs.files[0]?.status).toBe("added");
+  });
+
+  test("keeps lock files listed but ignored and honors an override", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "a.txt"), "base\n");
+    await commitAll(dir, "first");
+    await writeFile(join(dir, "a.txt"), "base\nupdated\n");
+    await writeFile(join(dir, "package-lock.json"), "{}\n");
+    await commitAll(dir, "second");
+
+    const cs = await gitShow("HEAD", dir);
+    const lock = cs.files.find((f) => f.path === "package-lock.json");
+    expect(lock).toBeDefined();
+    expect(lock?.ignored).toBe(true);
+    expect(lock?.diff).toBe("");
+    expect(
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+    ).toEqual(["a.txt", "package-lock.json"]);
+
+    const overridden = await gitShow("HEAD", dir, []);
+    const shown = overridden.files.find((f) => f.path === "package-lock.json");
+    expect(shown?.ignored).toBeFalsy();
+    expect(shown?.diff).toContain("{}");
   });
 });
 

@@ -1,9 +1,14 @@
 // biome-ignore lint/style/useFilenamingConvention: spec requires this filename
 import type { Changeset } from "../types";
 import { gitThrow } from "../vcs/git";
+import { DEFAULT_IGNORE_FILES } from "./ignore";
 import { buildGitChangeset } from "./shared";
 
-export async function gitShow(rev: string, cwd: string): Promise<Changeset> {
+export async function gitShow(
+  rev: string,
+  cwd: string,
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
+): Promise<Changeset> {
   const base = [
     "show",
     "--patch",
@@ -33,6 +38,7 @@ export async function gitShow(rev: string, cwd: string): Promise<Changeset> {
   return buildGitChangeset({
     diffText,
     id: "single",
+    ignoreFiles,
     label: `show ${rev}`,
     nameStatus,
     numstat,

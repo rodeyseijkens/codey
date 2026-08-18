@@ -436,6 +436,20 @@ export function DiffPane() {
     );
   }
 
+  if (file.ignored) {
+    return (
+      <box
+        style={{
+          backgroundColor: C.bg,
+          flexGrow: 1,
+          paddingLeft: 2,
+        }}
+      >
+        <text style={{ fg: C.faint }}>Ignored file — no diff loaded</text>
+      </box>
+    );
+  }
+
   if (file.isBinary) {
     return (
       <box

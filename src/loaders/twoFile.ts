@@ -5,6 +5,7 @@ import { createTwoFilesPatch } from "diff";
 import type { Changeset, FileDiff } from "../types";
 import { MAX_DIFF_BYTES } from "../types";
 import { git, gitThrow } from "../vcs/git";
+import { DEFAULT_IGNORE_FILES, markIgnoredFiles } from "./ignore";
 import {
   buildGitChangeset,
   checkDiffLimits,
@@ -23,7 +24,8 @@ async function isGitRef(rev: string, cwd: string): Promise<boolean> {
 async function twoFileDiff(
   a: string,
   b: string,
-  cwd: string
+  cwd: string,
+  ignoreFiles: readonly string[]
 ): Promise<Changeset> {
   const base = ["diff", "--no-color", "-M", a, b];
   const [nameStatus, numstat, diffText] = await Promise.all([
@@ -34,6 +36,7 @@ async function twoFileDiff(
   return buildGitChangeset({
     diffText,
     id: "single",
+    ignoreFiles,
     label: `diff ${a}..${b}`,
     nameStatus,
     numstat,
@@ -60,15 +63,17 @@ function fileNotice(check: SizeCheck, isBinary: boolean): string | undefined {
 async function twoFilePath(
   a: string,
   b: string,
-  cwd: string
+  cwd: string,
+  ignoreFiles: readonly string[]
 ): Promise<Changeset> {
   const label = `diff ${a}..${b}`;
   const [fileA, fileB] = await Promise.all([
     readOrThrow(a, cwd),
     readOrThrow(b, cwd),
   ]);
+  let file: FileDiff | null;
   if (fileA.size > MAX_DIFF_BYTES || fileB.size > MAX_DIFF_BYTES) {
-    const file: FileDiff = {
+    file = {
       additions: 0,
       deletions: 0,
       diff: "",
@@ -79,36 +84,36 @@ async function twoFilePath(
       status: "modified",
       tooLarge: true,
     };
-    return {
-      files: [file],
-      id: "single",
-      label,
-      stats: { additions: 0, deletions: 0, files: 1 },
+  } else {
+    const [textA, textB] = await Promise.all([fileA.text(), fileB.text()]);
+    const isBinary = textA.includes("\0") || textB.includes("\0");
+    const diff = isBinary ? "" : createTwoFilesPatch(a, b, textA, textB);
+    const check = checkDiffLimits(diff);
+    file = {
+      additions: isBinary ? 0 : countDiffLines(diff, "additions"),
+      deletions: isBinary ? 0 : countDiffLines(diff, "deletions"),
+      diff: check.tooLarge ? "" : diff,
+      isBinary,
+      notice: fileNotice(check, isBinary),
+      oldPath: a,
+      path: b,
+      status: "modified",
+      tooLarge: check.tooLarge,
     };
   }
-  const [textA, textB] = await Promise.all([fileA.text(), fileB.text()]);
-  const isBinary = textA.includes("\0") || textB.includes("\0");
-  const diff = isBinary ? "" : createTwoFilesPatch(a, b, textA, textB);
-  const check = checkDiffLimits(diff);
-  const file: FileDiff = {
-    additions: isBinary ? 0 : countDiffLines(diff, "additions"),
-    deletions: isBinary ? 0 : countDiffLines(diff, "deletions"),
-    diff: check.tooLarge ? "" : diff,
-    isBinary,
-    notice: fileNotice(check, isBinary),
-    oldPath: a,
-    path: b,
-    status: "modified",
-    tooLarge: check.tooLarge,
-  };
+  const files: FileDiff[] = [];
+  if (file) {
+    files.push(file);
+  }
+  markIgnoredFiles(files, ignoreFiles);
   return {
-    files: [file],
+    files,
     id: "single",
     label,
     stats: {
-      additions: file.additions,
-      deletions: file.deletions,
-      files: 1,
+      additions: files.reduce((sum, f) => sum + f.additions, 0),
+      deletions: files.reduce((sum, f) => sum + f.deletions, 0),
+      files: files.length,
     },
   };
 }
@@ -116,11 +121,12 @@ async function twoFilePath(
 export async function twoFile(
   a: string,
   b: string,
-  cwd: string
+  cwd: string,
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
 ): Promise<Changeset> {
   const [refA, refB] = await Promise.all([isGitRef(a, cwd), isGitRef(b, cwd)]);
   if (refA && refB) {
-    return twoFileDiff(a, b, cwd);
+    return twoFileDiff(a, b, cwd, ignoreFiles);
   }
-  return twoFilePath(a, b, cwd);
+  return twoFilePath(a, b, cwd, ignoreFiles);
 }

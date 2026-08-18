@@ -2,6 +2,7 @@
 import type { StructuredPatch } from "diff";
 import { formatPatch, parsePatch } from "diff";
 import type { Changeset, FileDiff, FileStatus } from "../types";
+import { DEFAULT_IGNORE_FILES, markIgnoredFiles } from "./ignore";
 import {
   checkDiffLimits,
   countDiffLines,
@@ -86,7 +87,10 @@ function buildPatchFile(section: string): FileDiff | null {
   };
 }
 
-export async function stdinPatch(input?: string): Promise<Changeset> {
+export async function stdinPatch(
+  input?: string,
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
+): Promise<Changeset> {
   const text = input ?? (await new Response(process.stdin).text());
   const rawSections = text.includes("diff --git ")
     ? splitDiffSections(text)
@@ -101,6 +105,7 @@ export async function stdinPatch(input?: string): Promise<Changeset> {
       files.push(file);
     }
   }
+  markIgnoredFiles(files, ignoreFiles);
   return {
     files,
     id: "single",

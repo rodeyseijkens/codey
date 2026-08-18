@@ -1,6 +1,7 @@
 import type { Changeset, FileDiff, FileStatus, Scope } from "../types";
 import { MAX_DIFF_BYTES, MAX_DIFF_LINES } from "../types";
 import { parseNameStatusLine } from "../vcs/git";
+import { DEFAULT_IGNORE_FILES, markIgnoredFiles } from "./ignore";
 
 const RENAME_TO_RE = /^rename to (.+)$/;
 const RENAME_FROM_RE = /^rename from (.+)$/;
@@ -223,6 +224,7 @@ export function countDiffLines(
 export interface GitChangesetOptions {
   diffText: string;
   id: Scope;
+  ignoreFiles?: readonly string[];
   label: string;
   nameStatus: string;
   numstat: string;
@@ -263,6 +265,8 @@ export function buildGitChangeset(options: GitChangesetOptions): Changeset {
       tooLarge: check.tooLarge,
     });
   }
+
+  markIgnoredFiles(files, options.ignoreFiles ?? DEFAULT_IGNORE_FILES);
 
   return {
     files,
