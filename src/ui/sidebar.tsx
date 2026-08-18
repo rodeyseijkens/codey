@@ -416,11 +416,12 @@ function CommitFileRow(props: {
         backgroundColor: selected ? C.selection : C.bg,
         flexDirection: "row",
         height: 1,
-        paddingLeft: 3,
+        paddingLeft: 1,
         paddingRight: 1,
       }}
     >
-      <text style={{ fg: icons[fileColor(path)], width: 2 }}>
+      <text style={{ fg: icons[fileColor(path)], width: 3 }}>
+        {"\u2009"}
         {fileIcon(path)}
       </text>
       <text
