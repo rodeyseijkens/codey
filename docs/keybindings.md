@@ -114,6 +114,10 @@ creates a commit from the currently staged changes (`git commit -m "..."`).
   (`git add -A`) and commits on confirmation.
 - If there is nothing to commit at all, an info toast explains so.
 - `Esc` cancels the commit input at any point.
+- `Ctrl+C` clears the commit message but keeps the input open. The same
+  applies to the comment draft and any other input field: while a field is
+  active, `Ctrl+C` clears it instead of quitting codey (`Ctrl+C` still quits
+  outside input fields).
 
 The commit cursor survives a refresh (`r`) as long as its commit hash still
 exists; otherwise it resets to the first row.
