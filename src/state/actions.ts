@@ -969,6 +969,12 @@ export function cancelCommitDraft(): void {
   getStore().set({ commitDraft: null });
 }
 
+/** Clear the commit-message input, keeping the overlay open. */
+export function clearCommitDraft(): void {
+  const store = getStore();
+  store.set({ draftClearTick: store.getState().draftClearTick + 1 });
+}
+
 async function commitMessage(root: string, message: string): Promise<void> {
   const store = getStore();
   try {

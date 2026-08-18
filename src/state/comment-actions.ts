@@ -101,6 +101,19 @@ export function cancelCommentDraft(): void {
   getStore().set({ commentDraft: null });
 }
 
+/** Clear the active comment draft text, keeping the input open. */
+export function clearCommentDraft(): void {
+  const store = getStore();
+  const { commentDraft } = store.getState();
+  if (!commentDraft) {
+    return;
+  }
+  store.set({
+    commentDraft: { ...commentDraft, text: "" },
+    draftClearTick: store.getState().draftClearTick + 1,
+  });
+}
+
 export function updateCommentDraft(text: string): void {
   const store = getStore();
   const { commentDraft } = store.getState();

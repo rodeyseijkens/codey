@@ -15,6 +15,7 @@ import { submitCommitDraft } from "../state/actions";
 import { getStore, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { useKeymap } from "./keymap-context";
+import { useDraftClear } from "./use-draft-clear";
 
 function OverlayFrame(props: {
   title: string;
@@ -228,6 +229,7 @@ function CommitInputOverlay() {
   const { ui: C } = useColors();
   const textareaRef = useRef<TextareaRenderable | null>(null);
   const contentWidth = 68;
+  useDraftClear(textareaRef);
   return (
     <OverlayFrame
       height={5}

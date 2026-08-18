@@ -102,6 +102,7 @@ export interface AppState {
   commitView: { hash: string; file: FileDiff } | null;
   conflictNotice: string | null;
   cursorRow: number;
+  draftClearTick: number;
   fatalError: string | null;
   focus: FocusPane;
   gutterSign: boolean;
@@ -155,6 +156,7 @@ export function initialState(): AppState {
     commitView: null,
     conflictNotice: null,
     cursorRow: 0,
+    draftClearTick: 0,
     fatalError: null,
     focus: "sidebar",
     gutterSign: false,

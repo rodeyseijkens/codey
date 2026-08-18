@@ -5,6 +5,7 @@ import {
   type TextareaRenderable,
 } from "@opentui/core";
 import { useLayoutEffect, useRef } from "react";
+import { useDraftClear } from "../../../../use-draft-clear";
 import type { AgentAnnotation, DiffFile, LayoutMode } from "../../../core/types";
 import { sanitizeTerminalLine } from "../../../lib/terminalText";
 import { annotationRangeLabel, reviewNoteSource } from "../../lib/agentAnnotations";
@@ -128,6 +129,7 @@ export function CommentCard({
 }) {
   const textareaRef = useRef<TextareaRenderable | null>(null);
   const titleText = `${inlineNoteTitle(annotation, noteIndex, noteCount)} — ${annotationRangeLabel(annotation, file)}`;
+  useDraftClear(textareaRef);
   const { boxWidth, contentWidth } = agentNoteBoxLayout({
     anchorSide,
     layout,

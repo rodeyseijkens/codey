@@ -5,6 +5,7 @@ import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
 import {
   cancelCommitDraft,
   cancelPendingStage,
+  clearCommitDraft,
   closeOverlay,
   commitSelectNext,
   commitSelectNextFile,
@@ -42,6 +43,7 @@ import {
 } from "./actions";
 import {
   cancelCommentDraft,
+  clearCommentDraft,
   deleteCommentAtCursor,
   jumpToComment,
   openAddCommentDraft,
@@ -285,6 +287,17 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
     return;
   }
   const cmd = lookupCommand(keymap, chord);
+
+  if (chord.ctrl && !chord.alt && !chord.shift && chord.key === "c") {
+    if (state.commitDraft !== null) {
+      clearCommitDraft();
+    } else if (state.commentDraft) {
+      clearCommentDraft();
+    } else {
+      quit();
+    }
+    return;
+  }
 
   if (state.overlay) {
     if (cmd === "cancel" || chord.key === "escape") {

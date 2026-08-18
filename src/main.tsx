@@ -136,7 +136,7 @@ async function boot(opts: RunOptions): Promise<void> {
 
   const isPipedStdin = !process.stdin.isTTY;
   const rendererConfig: Parameters<typeof createCliRenderer>[0] = {
-    exitOnCtrlC: true,
+    exitOnCtrlC: false,
     useMouse: true,
   };
   if (isPipedStdin && (opts.mode === "pager" || opts.mode === "patch")) {
