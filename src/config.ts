@@ -1,11 +1,13 @@
 import { parse } from "smol-toml";
 import { z } from "zod";
+import { DEFAULT_IGNORE_FILES } from "./loaders/ignore";
 
 export const CONFIG_DIR = `${process.env.HOME ?? "~"}/.config/codey`;
 export const CONFIG_PATH = `${CONFIG_DIR}/config.toml`;
 
 export const ConfigSchema = z.strictObject({
   gutterSign: z.boolean().default(false),
+  ignoreFiles: z.array(z.string()).default(() => [...DEFAULT_IGNORE_FILES]),
   keybindings: z.record(z.string(), z.string()).default({}),
   lineNumbers: z.boolean().default(true),
   mode: z.enum(["split", "stack", "auto"]).default("auto"),

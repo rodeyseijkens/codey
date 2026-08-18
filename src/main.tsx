@@ -85,6 +85,7 @@ async function startSession(opts: RunOptions): Promise<void> {
     runtime = await buildRuntime({
       a: opts.a,
       b: opts.b,
+      ignoreFiles: config.ignoreFiles,
       mode: opts.mode,
       patchInput: opts.patchInput,
       rev: opts.rev,
@@ -97,6 +98,7 @@ async function startSession(opts: RunOptions): Promise<void> {
   }
 
   configureRuntime({
+    ignoreFiles: config.ignoreFiles,
     load: runtime.load,
     loaderMode: runtime.mode,
     repoRoot: runtime.repoRoot ?? process.cwd(),

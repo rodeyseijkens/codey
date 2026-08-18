@@ -6,6 +6,7 @@ import {
   getCommitFileDiff,
   gitLog,
 } from "../loaders/git-log";
+import { compileIgnorePatterns } from "../loaders/ignore";
 import type { FileDiff, LoaderMode, Scope } from "../types";
 import {
   deleteFiles,
@@ -29,6 +30,7 @@ import {
 } from "./store";
 
 export interface RuntimeConfig {
+  ignoreFiles: readonly string[];
   load: () => Promise<{
     changesets: import("../types.js").Changeset[];
     branch: string | null;
@@ -858,7 +860,8 @@ export async function selectCommitFile(
   }
 
   let diff = entry.diffByPath[filePath];
-  if (!diff) {
+  const ignored = compileIgnorePatterns(rt.ignoreFiles)(filePath);
+  if (!(ignored || diff)) {
     try {
       diff = await getCommitFileDiff(rt.repoRoot, hash, filePath);
       const updated = store.getState().commitEntries.map((c) => {
@@ -880,7 +883,8 @@ export async function selectCommitFile(
   const file: FileDiff = {
     additions: 0,
     deletions: 0,
-    diff: diff ?? "",
+    diff: ignored ? "" : (diff ?? ""),
+    ignored,
     isBinary: false,
     path: filePath,
     status: "modified",

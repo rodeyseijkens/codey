@@ -70,6 +70,7 @@ function setupStore(init: Partial<AppState> = {}, repoRoot?: string): AppStore {
   setStore(store);
   if (repoRoot) {
     configureRuntime({
+      ignoreFiles: [],
       load: async () => ({
         branch: null,
         changesets: [],

@@ -118,6 +118,7 @@ describe("commit load more keeps scroll position", () => {
     });
     setStore(store);
     configureRuntime({
+      ignoreFiles: [],
       load: async () => ({
         branch: null,
         changesets: [],

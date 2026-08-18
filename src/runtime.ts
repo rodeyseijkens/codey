@@ -25,6 +25,7 @@ export type LoadFn = () => Promise<LoadResult>;
 export interface RuntimeOptions {
   a?: string;
   b?: string;
+  ignoreFiles?: readonly string[];
   mode: LoaderMode;
   patchInput?: string;
   rev?: string;
@@ -44,7 +45,7 @@ export async function buildRuntime(opts: RuntimeOptions): Promise<Runtime> {
       gitDir: null,
       load: async () => ({
         branch: null,
-        changesets: [await stdinPatch(opts.patchInput)],
+        changesets: [await stdinPatch(opts.patchInput, opts.ignoreFiles)],
         conflictNotice: null,
       }),
       mode: opts.mode,
@@ -66,7 +67,7 @@ export async function buildRuntime(opts: RuntimeOptions): Promise<Runtime> {
       gitDir,
       load: async () => ({
         branch: await currentBranch(repoRoot),
-        changesets: [await gitShow(rev, repoRoot)],
+        changesets: [await gitShow(rev, repoRoot, opts.ignoreFiles)],
         conflictNotice: null,
       }),
       mode: opts.mode,
@@ -84,7 +85,7 @@ export async function buildRuntime(opts: RuntimeOptions): Promise<Runtime> {
       gitDir,
       load: async () => ({
         branch: await currentBranch(repoRoot),
-        changesets: [await twoFile(a, b, repoRoot)],
+        changesets: [await twoFile(a, b, repoRoot, opts.ignoreFiles)],
         conflictNotice: null,
       }),
       mode: opts.mode,
@@ -97,8 +98,8 @@ export async function buildRuntime(opts: RuntimeOptions): Promise<Runtime> {
     gitDir,
     load: async () => {
       const [staged, changes, branch, conflicts] = await Promise.all([
-        gitStaged(repoRoot),
-        gitUnstaged(repoRoot),
+        gitStaged(repoRoot, opts.ignoreFiles),
+        gitUnstaged(repoRoot, opts.ignoreFiles),
         currentBranch(repoRoot),
         detectConflicts(gitDir),
       ]);
