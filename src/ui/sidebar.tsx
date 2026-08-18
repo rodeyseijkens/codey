@@ -3,6 +3,8 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { buildFileTree, type TreeNode, visibleTreeNodes } from "../lib/tree";
 import {
   clearCommitView,
+  focusCommits,
+  focusSidebar,
   loadCommits,
   loadMoreCommits,
   selectCommitFile,
@@ -99,6 +101,7 @@ function FileRow(props: {
 
   const handleClick = (e: MouseEvent) => {
     if (e.button === 0) {
+      focusSidebar();
       selectFile(scope, index);
     }
   };
@@ -158,6 +161,7 @@ function DirRow(props: {
 
   const handleClick = (e: MouseEvent) => {
     if (e.button === 0) {
+      focusSidebar();
       selectDir(scope, node.path);
       toggleTreeFolder(scope, node.path);
     }
@@ -306,6 +310,7 @@ function Section(props: { cs: Changeset; width: number }) {
 
   const handleHeaderClick = (e: MouseEvent) => {
     if (e.button === 0) {
+      focusSidebar();
       selectSection(cs.id);
       toggleCollapse(cs.id);
     }
@@ -542,17 +547,20 @@ function CommitLog(props: { width: number }) {
   const handleHeaderMouseDown = (
     row: Extract<CommitRow, { kind: "header" }>
   ) => {
+    focusCommits();
     store.set({ commitCursor: commitRowKey(row) });
     toggleCommitExpand(row.hash);
   };
 
   const handleFileMouseDown = (row: Extract<CommitRow, { kind: "file" }>) => {
+    focusCommits();
     store.set({ commitCursor: commitRowKey(row) });
     clearCommitView();
     selectCommitFile(row.hash, row.path);
   };
 
   const handleLoadMoreMouseDown = () => {
+    focusCommits();
     store.set({ commitCursor: "commit-load-more" });
     loadMoreCommits(true);
   };
@@ -609,6 +617,11 @@ function CommitLog(props: { width: number }) {
 
   return (
     <box
+      onMouseDown={(e) => {
+        if (e.button === 0) {
+          focusCommits();
+        }
+      }}
       style={{
         border: ["top"],
         borderColor: state.focus === "commits" ? C.accent : C.border,
@@ -685,6 +698,11 @@ export function Sidebar() {
       }}
     >
       <scrollbox
+        onMouseDown={(e) => {
+          if (e.button === 0) {
+            focusSidebar();
+          }
+        }}
         ref={(el: ScrollBoxRenderable) => {
           scrollRef.current = el;
         }}
