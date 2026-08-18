@@ -114,7 +114,18 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 All keybindings are customizable in `~/.config/codey/config.toml` under `[keybindings]`. Press `?` inside the app for the full live list.
 
-Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, and custom keybindings live in `~/.config/codey/config.toml`.
+Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, and custom keybindings live in `~/.config/codey/config.toml`.
+
+### Ignoring files in the diff
+
+Lock files and dependency checksums are not loaded into the diff view by default: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `bun.lockb`, `Cargo.lock`, `Gemfile.lock`, `poetry.lock`, `Pipfile.lock`, `go.sum`, `composer.lock`, `Package.resolved`, `packages.lock.json`, `pubspec.lock`, `uv.lock`, `mix.lock`, `deno.lock`, `flake.lock`, `.terraform.lock.hcl`, and `gradle.lockfile`. They still appear in the file list — selecting one shows a placeholder instead of its diff.
+
+Set `ignoreFiles` to **replace** the default list with your own glob patterns. Patterns match the repo-relative path; `*` matches within a path segment, `**` crosses directories, and `?` matches a single character. A pattern without `/` matches that name at any depth. An empty list disables the filter.
+
+```toml
+# ~/.config/codey/config.toml
+ignoreFiles = ["**/package-lock.json", "**/pnpm-lock.yaml", "**/*.snap"]
+```
 ---
 
 ## Documentation
