@@ -1466,7 +1466,14 @@ function renderRow(
       const visualLineCount = Math.max(leftLayout.lines.length, rightLayout.lines.length);
 
       baseRow = (
-        <box id={anchorId} style={{ width: "100%", flexDirection: "column" }}>
+        <box
+          id={anchorId}
+          style={{
+            flexDirection: "column",
+            height: visualLineCount,
+            width: "100%",
+          }}
+        >
           {Array.from({ length: visualLineCount }, (_, index) => {
             const leftLine = leftLayout.lines[index] ?? {
               gutterText: " ".repeat(leftLayout.gutterWidth),
@@ -1608,7 +1615,14 @@ function renderRow(
       );
 
       baseRow = (
-        <box id={anchorId} style={{ width: "100%", flexDirection: "column" }}>
+        <box
+          id={anchorId}
+          style={{
+            flexDirection: "column",
+            height: layout.lines.length,
+            width: "100%",
+          }}
+        >
           {layout.lines.map((line, index) => {
             let styledRow: StyledText;
             if (isChunkCompatibleWrappedHighlight(cellHighlight)) {
