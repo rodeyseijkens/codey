@@ -372,7 +372,7 @@ export function DiffPane() {
   const viewMode = resolveViewMode(state.layoutMode, dims.width);
   const contentWidth = Math.max(
     10,
-    dims.width - (state.sidebarVisible ? state.sidebarWidth : 0)
+    dims.width - (state.sidebarVisible ? state.sidebarWidth + 2 : 0)
   );
 
   useKeyboard((e) => {
