@@ -8,7 +8,6 @@ import {
   commitSelectNextFile,
   commitSelectPrev,
   commitToggleCursorRow,
-  configureRuntime,
   confirmCommitAll,
   focusCommits,
   focusPrev,
@@ -69,7 +68,7 @@ function setupStore(init: Partial<AppState> = {}, repoRoot?: string): AppStore {
   const store = new AppStore({ keymap, ...init });
   setStore(store);
   if (repoRoot) {
-    configureRuntime({
+    store.set({
       ignoreFiles: [],
       load: async () => ({
         branch: null,

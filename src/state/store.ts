@@ -106,10 +106,16 @@ export interface AppState {
   fatalError: string | null;
   focus: FocusPane;
   gutterSign: boolean;
+  ignoreFiles: readonly string[];
   keymap: ResolvedKeymap;
   lastFile: { index: number; scope: Scope } | null;
   layoutMode: DiffMode;
   lineNumbers: boolean;
+  load: () => Promise<{
+    changesets: Changeset[];
+    branch: string | null;
+    conflictNotice: string | null;
+  }>;
   loaderMode: LoaderMode;
   loading: boolean;
   overlay: Overlay | null;
@@ -160,10 +166,16 @@ export function initialState(): AppState {
     fatalError: null,
     focus: "sidebar",
     gutterSign: false,
+    ignoreFiles: [],
     keymap: defaultKeymap(),
     lastFile: null,
     layoutMode: "auto",
     lineNumbers: true,
+    load: async () => ({
+      branch: null,
+      changesets: [],
+      conflictNotice: null,
+    }),
     loaderMode: "diff",
     loading: false,
     overlay: null,

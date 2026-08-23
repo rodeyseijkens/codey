@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { testRender } from "@opentui/react/test-utils";
 import { act } from "react";
 import { resolveKeymap } from "../src/keymap/index";
-import { configureRuntime, loadMoreCommits } from "../src/state/actions";
+import { loadMoreCommits } from "../src/state/actions";
 import { AppStore, setStore } from "../src/state/store";
 import type { CommitEntry, FileStatus } from "../src/types";
 import { Sidebar } from "../src/ui/sidebar";
@@ -117,7 +117,7 @@ describe("commit load more keeps scroll position", () => {
       keymap: keymapRes.keymap,
     });
     setStore(store);
-    configureRuntime({
+    store.set({
       ignoreFiles: [],
       load: async () => ({
         branch: null,

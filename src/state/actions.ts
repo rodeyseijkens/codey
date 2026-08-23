@@ -7,7 +7,7 @@ import {
   gitLog,
 } from "../loaders/git-log";
 import { compileIgnorePatterns } from "../loaders/ignore";
-import type { FileDiff, LoaderMode, Scope } from "../types";
+import type { FileDiff, Scope } from "../types";
 import {
   deleteFiles,
   GitError,
@@ -28,37 +28,6 @@ import {
   type SidebarRow,
   type SidebarView,
 } from "./store";
-
-export interface RuntimeConfig {
-  ignoreFiles: readonly string[];
-  load: () => Promise<{
-    changesets: import("../types.js").Changeset[];
-    branch: string | null;
-    conflictNotice: string | null;
-  }>;
-  loaderMode: LoaderMode;
-  repoRoot: string;
-  stagingEnabled: boolean;
-}
-
-let runtime: RuntimeConfig | null = null;
-
-export function configureRuntime(cfg: RuntimeConfig): void {
-  runtime = cfg;
-  const store = getStore();
-  store.set({
-    loaderMode: cfg.loaderMode,
-    repoRoot: cfg.repoRoot,
-    stagingEnabled: cfg.stagingEnabled,
-  });
-}
-
-export function getRuntime(): RuntimeConfig {
-  if (!runtime) {
-    throw new Error("runtime not configured");
-  }
-  return runtime;
-}
 
 function preserveSelection(
   store: AppStore,
@@ -98,10 +67,10 @@ function preserveSelection(
 
 export async function refresh(): Promise<void> {
   const store = getStore();
-  const rt = getRuntime();
+  const { load: loadFn } = store.getState();
   store.set({ loading: true });
   try {
-    const { changesets, branch, conflictNotice } = await rt.load();
+    const { changesets, branch, conflictNotice } = await loadFn();
     const prevSel = store.getState().selection;
     store.set({
       anchorRow: null,
@@ -365,8 +334,8 @@ function selectionPaths(
 
 export async function stageSelected(): Promise<void> {
   const store = getStore();
-  const rt = getRuntime();
-  if (!rt.stagingEnabled) {
+  const { stagingEnabled } = store.getState();
+  if (!stagingEnabled) {
     store.showToast("warn", "staging is disabled in this mode");
     return;
   }
@@ -385,7 +354,11 @@ export async function stageSelected(): Promise<void> {
     return;
   }
   try {
-    await stageFiles(rt.repoRoot, target.paths);
+    const { repoRoot } = store.getState();
+    if (!repoRoot) {
+      return;
+    }
+    await stageFiles(repoRoot, target.paths);
     store.showToast(
       "success",
       bulk
@@ -403,8 +376,8 @@ export async function stageSelected(): Promise<void> {
 
 export async function stageAll(): Promise<void> {
   const store = getStore();
-  const rt = getRuntime();
-  if (!rt.stagingEnabled) {
+  const { stagingEnabled } = store.getState();
+  if (!stagingEnabled) {
     store.showToast("warn", "staging is disabled in this mode");
     return;
   }
@@ -424,7 +397,11 @@ export async function stageAll(): Promise<void> {
     return;
   }
   try {
-    await stageFiles(rt.repoRoot, paths);
+    const { repoRoot } = store.getState();
+    if (!repoRoot) {
+      return;
+    }
+    await stageFiles(repoRoot, paths);
     store.showToast("success", `staged ${paths.length} file(s)`);
     await refresh();
   } catch (err) {
@@ -437,8 +414,8 @@ export async function stageAll(): Promise<void> {
 
 export async function unstageSelected(): Promise<void> {
   const store = getStore();
-  const rt = getRuntime();
-  if (!rt.stagingEnabled) {
+  const { stagingEnabled } = store.getState();
+  if (!stagingEnabled) {
     store.showToast("warn", "staging is disabled in this mode");
     return;
   }
@@ -459,7 +436,11 @@ export async function unstageSelected(): Promise<void> {
   }
   const bulk = target.paths.length > 1;
   try {
-    await unstageFiles(rt.repoRoot, target.paths);
+    const { repoRoot } = store.getState();
+    if (!repoRoot) {
+      return;
+    }
+    await unstageFiles(repoRoot, target.paths);
     store.showToast(
       "success",
       bulk
@@ -477,7 +458,10 @@ export async function unstageSelected(): Promise<void> {
 
 async function discardPaths(scope: Scope, paths: string[]): Promise<void> {
   const store = getStore();
-  const rt = getRuntime();
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
+    return;
+  }
   const cs = store.changeset(scope);
   const untracked = new Set(
     (cs?.files ?? [])
@@ -486,10 +470,10 @@ async function discardPaths(scope: Scope, paths: string[]): Promise<void> {
   );
   const tracked = paths.filter((p) => !untracked.has(p));
   if (tracked.length > 0) {
-    await restoreWorktreeFiles(rt.repoRoot, tracked);
+    await restoreWorktreeFiles(repoRoot, tracked);
   }
   if (untracked.size > 0) {
-    await deleteFiles(rt.repoRoot, [...untracked]);
+    await deleteFiles(repoRoot, [...untracked]);
   }
 }
 
@@ -547,8 +531,8 @@ export async function confirmDiscardAll(): Promise<void> {
 
 export async function unstageAll(): Promise<void> {
   const store = getStore();
-  const rt = getRuntime();
-  if (!rt.stagingEnabled) {
+  const { stagingEnabled } = store.getState();
+  if (!stagingEnabled) {
     store.showToast("warn", "staging is disabled in this mode");
     return;
   }
@@ -564,7 +548,11 @@ export async function unstageAll(): Promise<void> {
   }
   const paths = staged.files.map((f) => f.path);
   try {
-    await unstageFiles(rt.repoRoot, paths);
+    const { repoRoot } = store.getState();
+    if (!repoRoot) {
+      return;
+    }
+    await unstageFiles(repoRoot, paths);
     store.showToast("success", `unstaged ${paths.length} file(s)`);
     await refresh();
   } catch (err) {
@@ -581,9 +569,12 @@ export async function confirmPendingStage(): Promise<void> {
   if (!pending) {
     return;
   }
-  const rt = getRuntime();
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
+    return;
+  }
   try {
-    await stageFiles(rt.repoRoot, pending.paths);
+    await stageFiles(repoRoot, pending.paths);
     store.clearCommentsFor(pending.scope, pending.paths);
     store.set({ pendingStage: null });
     store.showToast(
@@ -669,22 +660,13 @@ export function closeOverlay(): void {
 
 export async function loadCommits(): Promise<void> {
   const store = getStore();
-  let rt: RuntimeConfig;
-  try {
-    rt = getRuntime();
-  } catch {
-    return;
-  }
-  if (!rt.repoRoot || store.getState().commitLoading) {
+  const { repoRoot } = store.getState();
+  if (!repoRoot || store.getState().commitLoading) {
     return;
   }
   store.set({ commitEntries: [], commitLoading: true, commitOffset: 0 });
   try {
-    const { commits, hasMore, behind, ahead } = await gitLog(
-      rt.repoRoot,
-      0,
-      10
-    );
+    const { commits, hasMore, behind, ahead } = await gitLog(repoRoot, 0, 10);
     store.set({
       commitAhead: ahead,
       commitBehind: behind,
@@ -703,13 +685,8 @@ export async function loadCommits(): Promise<void> {
 
 export async function loadMoreCommits(followCursor = false): Promise<void> {
   const store = getStore();
-  let rt: RuntimeConfig;
-  try {
-    rt = getRuntime();
-  } catch {
-    return;
-  }
-  if (!rt.repoRoot) {
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
     return;
   }
   const state = store.getState();
@@ -720,7 +697,7 @@ export async function loadMoreCommits(followCursor = false): Promise<void> {
   try {
     const before = state.commitEntries.length;
     const { commits, hasMore, behind, ahead } = await gitLog(
-      rt.repoRoot,
+      repoRoot,
       state.commitOffset + 10,
       10
     );
@@ -845,13 +822,8 @@ export async function selectCommitFile(
   filePath: string
 ): Promise<void> {
   const store = getStore();
-  let rt: RuntimeConfig;
-  try {
-    rt = getRuntime();
-  } catch {
-    return;
-  }
-  if (!rt.repoRoot) {
+  const { repoRoot, ignoreFiles } = store.getState();
+  if (!repoRoot) {
     return;
   }
   const entry = store.getState().commitEntries.find((c) => c.hash === hash);
@@ -860,10 +832,10 @@ export async function selectCommitFile(
   }
 
   let diff = entry.diffByPath[filePath];
-  const ignored = compileIgnorePatterns(rt.ignoreFiles)(filePath);
+  const ignored = compileIgnorePatterns(ignoreFiles)(filePath);
   if (!(ignored || diff)) {
     try {
-      diff = await getCommitFileDiff(rt.repoRoot, hash, filePath);
+      diff = await getCommitFileDiff(repoRoot, hash, filePath);
       const updated = store.getState().commitEntries.map((c) => {
         if (c.hash !== hash) {
           return c;
@@ -905,18 +877,13 @@ export function clearCommitView(): void {
 
 async function gitRemoteCommand(args: string[], verb: string): Promise<void> {
   const store = getStore();
-  let rt: RuntimeConfig;
-  try {
-    rt = getRuntime();
-  } catch {
-    return;
-  }
-  if (!rt.repoRoot) {
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
     return;
   }
   store.set({ remoteBusy: verb === "pull" ? "pull" : "push" });
   try {
-    await gitThrow(args, rt.repoRoot);
+    await gitThrow(args, repoRoot);
     store.showToast("success", `git ${verb} succeeded`);
     await refresh();
   } catch (err) {
@@ -934,16 +901,11 @@ export function gitPull(): void {
 
 export async function gitPush(): Promise<void> {
   const store = getStore();
-  let rt: RuntimeConfig;
-  try {
-    rt = getRuntime();
-  } catch {
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
     return;
   }
-  if (!rt.repoRoot) {
-    return;
-  }
-  const { ahead, behind } = await getBranchAheadBehind(rt.repoRoot);
+  const { ahead, behind } = await getBranchAheadBehind(repoRoot);
   if (ahead > 0 && behind > 0) {
     store.set({ overlay: { kind: "confirm-force-push" } });
     return;
@@ -1002,15 +964,15 @@ export async function submitCommitDraft(text: string): Promise<void> {
     store.showToast("info", "empty commit message");
     return;
   }
-  const rt = getRuntime();
-  if (!rt.repoRoot) {
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
     store.set({ commitDraft: null });
     return;
   }
   const staged = store.changeset("staged");
   if (staged && staged.files.length > 0) {
     store.set({ commitDraft: null });
-    await commitMessage(rt.repoRoot, trimmed);
+    await commitMessage(repoRoot, trimmed);
     return;
   }
   const changes = store.changeset("changes");
@@ -1034,13 +996,13 @@ export async function confirmCommitAll(): Promise<void> {
   }
   const { message } = overlay;
   store.set({ overlay: null });
-  const rt = getRuntime();
-  if (!rt.repoRoot) {
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
     return;
   }
   try {
-    await gitThrow(["add", "-A"], rt.repoRoot);
-    await gitThrow(["commit", "-m", message], rt.repoRoot);
+    await gitThrow(["add", "-A"], repoRoot);
+    await gitThrow(["commit", "-m", message], repoRoot);
     store.showToast("success", "committed all changes");
     await refresh();
   } catch (err) {

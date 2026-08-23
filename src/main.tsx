@@ -5,7 +5,7 @@ import { loadConfig } from "./config";
 import { captureTurnBaseline, isHerdrPlugin } from "./herdr/bridge";
 import { resolveKeymap } from "./keymap/index";
 import { buildRuntime, type Runtime } from "./runtime";
-import { configureRuntime, refresh } from "./state/actions";
+import { refresh } from "./state/actions";
 import { setQuitHandler, setRestartHandler } from "./state/dispatch";
 import { AppStore, getStore, setStore } from "./state/store";
 import type { DiffMode, LoaderMode } from "./types";
@@ -67,6 +67,7 @@ async function startSession(opts: RunOptions): Promise<void> {
 
   store.set({
     gutterSign: config.gutterSign,
+    ignoreFiles: config.ignoreFiles,
     keymap: keymapRes.keymap,
     layoutMode: opts.flags.mode ? (opts.flags.mode as DiffMode) : config.mode,
     lineNumbers: config.lineNumbers,
@@ -97,7 +98,7 @@ async function startSession(opts: RunOptions): Promise<void> {
     return;
   }
 
-  configureRuntime({
+  store.set({
     ignoreFiles: config.ignoreFiles,
     load: runtime.load,
     loaderMode: runtime.mode,
