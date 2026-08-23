@@ -50,7 +50,7 @@ import {
   openEditCommentDraft,
   visualSelect,
 } from "./comment-actions";
-import { type AppState, getStore } from "./store";
+import { type AppState, type AppStore, getStore } from "./store";
 
 let quitHandler: (() => void) | null = null;
 let restartHandler: (() => void) | null = null;
@@ -87,19 +87,21 @@ function commitFileShown(state: AppState): boolean {
   return state.commitView !== null && state.selection === null;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: its allowed for now
-export function dispatchCommand(cmd: CommandId): void {
-  const store = getStore();
-  const state = store.getState();
+interface CommandHandler {
+  guard?: (state: AppState) => boolean;
+  run: (store: AppStore, state: AppState) => void;
+}
 
-  switch (cmd) {
-    case "quit":
-      quit();
-      return;
-    case "help":
-      store.set({ commentDraft: null, overlay: { kind: "help" } });
-      return;
-    case "cancel":
+function buildRegistry(): Map<CommandId, CommandHandler> {
+  const r = new Map<CommandId, CommandHandler>();
+
+  r.set("quit", { run: () => quit() });
+  r.set("help", {
+    run: (store) =>
+      store.set({ commentDraft: null, overlay: { kind: "help" } }),
+  });
+  r.set("cancel", {
+    run: (store, state) => {
       if (state.pendingStage) {
         cancelPendingStage();
         return;
@@ -114,83 +116,75 @@ export function dispatchCommand(cmd: CommandId): void {
       if (state.commitView) {
         store.set({ commitView: null });
       }
-      return;
-    case "select-prev":
+    },
+  });
+  r.set("select-prev", {
+    run: (_, state) => {
       if (state.focus === "sidebar") {
         selectPrev();
       } else if (state.focus === "commits") {
         void commitSelectPrev();
       }
-      return;
-    case "select-next":
+    },
+  });
+  r.set("select-next", {
+    run: (_, state) => {
       if (state.focus === "sidebar") {
         selectNext();
       } else if (state.focus === "commits") {
         void commitSelectNext();
       }
-      return;
-    case "prev-file":
+    },
+  });
+  r.set("prev-file", {
+    run: (_, state) => {
       if (state.focus === "diff") {
         selectPrev();
       } else if (state.focus === "commits") {
         void commitSelectPrevFile();
       }
-      return;
-    case "next-file":
+    },
+  });
+  r.set("next-file", {
+    run: (_, state) => {
       if (state.focus === "diff") {
         selectNext();
       } else if (state.focus === "commits") {
         void commitSelectNextFile();
       }
-      return;
-    case "focus-toggle":
-      toggleFocus();
-      return;
-    case "focus-prev":
-      focusPrev();
-      return;
-    case "focus-sidebar":
-      focusSidebar();
-      return;
-    case "focus-diff":
-      focusDiff();
-      return;
-    case "focus-commits":
-      focusCommits();
-      return;
-    case "git-pull":
-      if (state.focus === "commits" && state.remoteBusy === null) {
-        gitPull();
-      }
-      return;
-    case "git-push":
-      if (state.focus === "commits" && state.remoteBusy === null) {
-        gitPush();
-      }
-      return;
-    case "toggle-sidebar":
-      toggleSidebar();
-      return;
-    case "collapse-section":
+    },
+  });
+  r.set("focus-toggle", { run: () => toggleFocus() });
+  r.set("focus-prev", { run: () => focusPrev() });
+  r.set("focus-sidebar", { run: () => focusSidebar() });
+  r.set("focus-diff", { run: () => focusDiff() });
+  r.set("focus-commits", { run: () => focusCommits() });
+  r.set("git-pull", {
+    guard: (state) => state.focus === "commits" && state.remoteBusy === null,
+    run: () => gitPull(),
+  });
+  r.set("git-push", {
+    guard: (state) => state.focus === "commits" && state.remoteBusy === null,
+    run: () => gitPush(),
+  });
+  r.set("toggle-sidebar", { run: () => toggleSidebar() });
+  r.set("collapse-section", {
+    run: (_, state) => {
       if (state.focus === "sidebar") {
         toggleSelectedRow();
       } else if (state.focus === "commits") {
         void commitToggleCursorRow();
       }
-      return;
-    case "sidebar-shrink":
-      resizeSidebar(-4);
-      return;
-    case "sidebar-grow":
-      resizeSidebar(4);
-      return;
-    case "visual-select":
-      if (commitFileShown(state)) {
-        return;
-      }
-      visualSelect();
-      return;
-    case "add-comment":
+    },
+  });
+  r.set("sidebar-shrink", { run: () => resizeSidebar(-4) });
+  r.set("sidebar-grow", { run: () => resizeSidebar(4) });
+  r.set("visual-select", {
+    guard: (state) => !commitFileShown(state),
+    run: () => visualSelect(),
+  });
+  r.set("add-comment", {
+    run: (_, state) => {
       if (state.focus === "commits") {
         openCommitDraft();
         return;
@@ -199,79 +193,66 @@ export function dispatchCommand(cmd: CommandId): void {
         return;
       }
       openAddCommentDraft();
-      return;
-    case "edit-comment":
-      if (commitFileShown(state)) {
-        return;
-      }
-      openEditCommentDraft();
-      return;
-    case "delete-comment":
-      if (commitFileShown(state)) {
-        return;
-      }
-      deleteCommentAtCursor();
-      return;
-    case "next-comment":
-      if (commitFileShown(state)) {
-        return;
-      }
-      jumpToComment(1);
-      return;
-    case "prev-comment":
-      if (commitFileShown(state)) {
-        return;
-      }
-      jumpToComment(-1);
-      return;
-    case "send-comments":
-      void sendComments();
-      return;
-    case "copy":
-      void copySelection();
-      return;
-    case "stage-file":
-      if (commitFileShown(state)) {
-        return;
-      }
-      void stageSelected();
-      return;
-    case "stage-all":
-      if (commitFileShown(state)) {
-        return;
-      }
-      void stageAll();
-      return;
-    case "unstage-file":
-      if (commitFileShown(state)) {
-        return;
-      }
-      void unstageSelected();
-      return;
-    case "unstage-all":
-      if (commitFileShown(state)) {
-        return;
-      }
-      void unstageAll();
-      return;
-    case "refresh":
-      void refresh();
-      return;
-    case "toggle-layout":
-      cycleLayout();
-      return;
-    case "toggle-view":
-      toggleSidebarView();
-      return;
-    case "wrap-text":
-      store.set({ wrapLines: !state.wrapLines });
-      return;
-    case "prev-hunk":
-    case "next-hunk":
-      return;
-    default:
-      return;
+    },
+  });
+  r.set("edit-comment", {
+    guard: (state) => !commitFileShown(state),
+    run: () => openEditCommentDraft(),
+  });
+  r.set("delete-comment", {
+    guard: (state) => !commitFileShown(state),
+    run: () => deleteCommentAtCursor(),
+  });
+  r.set("next-comment", {
+    guard: (state) => !commitFileShown(state),
+    run: () => jumpToComment(1),
+  });
+  r.set("prev-comment", {
+    guard: (state) => !commitFileShown(state),
+    run: () => jumpToComment(-1),
+  });
+  r.set("send-comments", { run: () => void sendComments() });
+  r.set("copy", { run: () => void copySelection() });
+  r.set("stage-file", {
+    guard: (state) => !commitFileShown(state),
+    run: () => void stageSelected(),
+  });
+  r.set("stage-all", {
+    guard: (state) => !commitFileShown(state),
+    run: () => void stageAll(),
+  });
+  r.set("unstage-file", {
+    guard: (state) => !commitFileShown(state),
+    run: () => void unstageSelected(),
+  });
+  r.set("unstage-all", {
+    guard: (state) => !commitFileShown(state),
+    run: () => void unstageAll(),
+  });
+  r.set("refresh", { run: () => void refresh() });
+  r.set("toggle-layout", { run: () => cycleLayout() });
+  r.set("toggle-view", { run: () => toggleSidebarView() });
+  r.set("wrap-text", {
+    run: (store, state) => store.set({ wrapLines: !state.wrapLines }),
+  });
+  // prev-hunk and next-hunk are handled in the diff pane directly, not here.
+
+  return r;
+}
+
+const COMMAND_REGISTRY = buildRegistry();
+
+export function dispatchCommand(cmd: CommandId): void {
+  const store = getStore();
+  const handler = COMMAND_REGISTRY.get(cmd);
+  if (!handler) {
+    return;
   }
+  const state = store.getState();
+  if (handler.guard && !handler.guard(state)) {
+    return;
+  }
+  handler.run(store, state);
 }
 
 export function openHelpOverlay(): void {
