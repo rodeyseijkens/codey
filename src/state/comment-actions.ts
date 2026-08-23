@@ -1,9 +1,5 @@
-import {
-  buildCanonicalDiffRows,
-  type CanonicalDiffRow,
-  canonicalRowLabel,
-  createHunkDiffFilesFromPatch,
-} from "../ui/hunk-diff/opentui";
+import { diffRowsFromPatch } from "../diff/from-patch";
+import { type CanonicalDiffRow, canonicalRowLabel } from "../diff/rows";
 import { getStore } from "./store";
 
 function rowsOfSelectedFile() {
@@ -12,11 +8,11 @@ function rowsOfSelectedFile() {
   if (!sel?.file.diff) {
     return null;
   }
-  const [file] = createHunkDiffFilesFromPatch(sel.file.diff, sel.file.path);
-  if (!file) {
+  const rows = diffRowsFromPatch(sel.file.diff);
+  if (rows.length === 0) {
     return null;
   }
-  return { rows: buildCanonicalDiffRows(file), sel };
+  return { rows, sel };
 }
 
 /** Context snippet for one canonical row range, used by the agent payload. */
