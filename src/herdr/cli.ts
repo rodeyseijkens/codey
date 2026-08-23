@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // Headless herdr action runner for the codey plugin. Invoked by the plugin
 // manifest's [[actions]] and [[events]] as `codey-herdr <action>`.
-import { autoOpenPane, closePanes, openPane, togglePane } from "./bridge";
+import { autoOpenPane, closePanes, openPane, togglePane } from "./index";
 
 const [, , action] = process.argv;
 

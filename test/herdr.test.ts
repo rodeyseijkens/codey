@@ -7,7 +7,7 @@ import {
   getAgentPicker,
   isHerdrPlugin,
   sendToAgent,
-} from "../src/herdr/bridge";
+} from "../src/herdr";
 import { loadManifest, MANIFEST_PATH } from "../src/herdr/manifest";
 import type { Comment } from "../src/types";
 

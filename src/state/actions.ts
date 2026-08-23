@@ -1,4 +1,4 @@
-import { isHerdrPlugin, sendToAgent } from "../herdr/bridge";
+import { isHerdrPlugin, sendToAgent } from "../herdr";
 import { copyText, formatCommentsAsMarkdown } from "../lib/clipboard";
 import { treeKey } from "../lib/tree";
 import {

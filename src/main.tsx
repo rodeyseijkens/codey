@@ -2,7 +2,7 @@ import { type CliRenderer, createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
 import { Command } from "commander";
 import { loadConfig } from "./config";
-import { captureTurnBaseline, isHerdrPlugin } from "./herdr/bridge";
+import { captureTurnBaseline, isHerdrPlugin } from "./herdr";
 import { resolveKeymap } from "./keymap/index";
 import { buildRuntime, type Runtime } from "./runtime";
 import { refresh } from "./state/actions";

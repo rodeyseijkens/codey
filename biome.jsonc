@@ -50,6 +50,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["src/herdr/index.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }
