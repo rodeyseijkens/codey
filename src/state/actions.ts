@@ -10,6 +10,7 @@ import { compileIgnorePatterns } from "../loaders/ignore";
 import type { FileDiff, Scope } from "../types";
 import {
   deleteFiles,
+  editCommit,
   GitError,
   gitThrow,
   resetCommit,
@@ -1032,6 +1033,28 @@ export async function confirmGitReset(
     store.showToast(
       "error",
       `reset failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+export async function confirmGitEdit(
+  action: "squash" | "fixup" | "drop" | "amend",
+  hash: string
+): Promise<void> {
+  const store = getStore();
+  const { repoRoot } = store.getState();
+  store.set({ overlay: null });
+  if (!repoRoot) {
+    return;
+  }
+  try {
+    await editCommit(repoRoot, action, hash);
+    store.showToast("success", `${action} ${hash.slice(0, 7)}`);
+    await refresh();
+  } catch (err) {
+    store.showToast(
+      "error",
+      `edit failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }

@@ -75,7 +75,8 @@ export type Overlay =
   | { kind: "confirm-force-push" }
   | { kind: "help" }
   | { kind: "palette" }
-  | { kind: "reset-commits"; hash: string };
+  | { kind: "reset-commits"; hash: string }
+  | { kind: "edit-commit"; hash: string };
 
 /** An in-progress inline comment being typed into the diff body. */
 export interface CommentDraft {
