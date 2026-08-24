@@ -69,6 +69,8 @@ export interface HunkDiffBodyProps {
   notes?: HunkDiffNote[];
   /** Reports the rendered y-offset of the cursor row (accounts for note blocks). */
   onCursorOffsetResolved?: (offset: number) => void;
+  /** Called when a diff row is clicked, with the canonical row index. */
+  onRowMouseDown?: (canonicalRowIndex: number) => void;
   selectedHunkIndex?: number;
   showHunkHeaders?: boolean;
   showLineNumbers?: boolean;

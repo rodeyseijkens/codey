@@ -269,6 +269,7 @@ export function HunkDiffBody({
   cursorRow,
   lineHighlights,
   onCursorOffsetResolved,
+  onRowMouseDown,
   notes = [],
 }: HunkDiffBodyProps) {
   const resolvedTheme = resolveTheme(theme, null);
@@ -317,6 +318,21 @@ export function HunkDiffBody({
     () => buildGuideSideByLayoutRow(rows, canonicalRows, notes),
     [rows, canonicalRows, notes]
   );
+
+  const layoutToCanonical = useMemo(() => {
+    const map = new Map<number, number>();
+    for (let i = 0; i < canonicalRows.length; i += 1) {
+      const cr = canonicalRows[i];
+      if (!cr) {
+        continue;
+      }
+      const layoutIndex = resolveLayoutRow(cr, canonicalRows, i, rows);
+      if (layoutIndex >= 0) {
+        map.set(layoutIndex, i);
+      }
+    }
+    return map;
+  }, [canonicalRows, rows]);
 
   const lineNumberDigits = useMemo(
     () => String(internalFile ? findMaxLineNumber(internalFile) : 1).length,
@@ -447,7 +463,16 @@ export function HunkDiffBody({
         const { row } = planned;
         const rowIndex = rows.indexOf(row);
         return (
-          <box key={row.key} style={{ flexDirection: "column", width: "100%" }}>
+          <box
+            key={row.key}
+            onMouseDown={() => {
+              const ci = layoutToCanonical.get(rowIndex);
+              if (ci !== undefined) {
+                onRowMouseDown?.(ci);
+              }
+            }}
+            style={{ flexDirection: "column", width: "100%" }}
+          >
             <DiffRowView
               codeHorizontalOffset={horizontalOffset}
               cursorHighlight={

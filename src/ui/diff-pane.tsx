@@ -551,6 +551,9 @@ export function DiffPane() {
               setForceScrollToTop(true);
             }
           }}
+          onRowMouseDown={(index) => {
+            getStore().set({ cursorRow: index });
+          }}
           showHunkHeaders={false}
           showLineNumbers={state.lineNumbers}
           tabWidth={state.tabWidth}
