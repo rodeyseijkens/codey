@@ -169,6 +169,34 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
     guard: (state) => state.focus === "commits" && state.remoteBusy === null,
     run: () => gitPush(),
   });
+  r.set("git-reset", {
+    guard: (state) => state.focus === "commits",
+    run: (store) => {
+      const cursorRow = store.commitCursorRow();
+      if (
+        cursorRow &&
+        (cursorRow.kind === "header" || cursorRow.kind === "file")
+      ) {
+        store.set({
+          overlay: { hash: cursorRow.hash, kind: "reset-commits" },
+        });
+      }
+    },
+  });
+  r.set("git-edit", {
+    guard: (state) => state.focus === "commits",
+    run: (store) => {
+      const cursorRow = store.commitCursorRow();
+      if (
+        cursorRow &&
+        (cursorRow.kind === "header" || cursorRow.kind === "file")
+      ) {
+        store.set({
+          overlay: { hash: cursorRow.hash, kind: "edit-commit" },
+        });
+      }
+    },
+  });
   r.set("toggle-sidebar", { run: () => toggleSidebar() });
   r.set("collapse-section", {
     run: (_, state) => {
@@ -354,38 +382,14 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   }
 
   if (
-    !cmd &&
-    chord.key === "g" &&
-    !chord.ctrl &&
-    !chord.alt &&
-    !chord.shift &&
-    state.focus === "commits"
-  ) {
-    const cursorRow = store.commitCursorRow();
-    if (
-      cursorRow &&
-      (cursorRow.kind === "header" || cursorRow.kind === "file")
-    ) {
-      store.set({ overlay: { hash: cursorRow.hash, kind: "reset-commits" } });
-      return;
-    }
-  }
-
-  if (
     chord.key === "e" &&
     !chord.ctrl &&
     !chord.alt &&
     !chord.shift &&
     state.focus === "commits"
   ) {
-    const cursorRow = store.commitCursorRow();
-    if (
-      cursorRow &&
-      (cursorRow.kind === "header" || cursorRow.kind === "file")
-    ) {
-      store.set({ overlay: { hash: cursorRow.hash, kind: "edit-commit" } });
-      return;
-    }
+    dispatchCommand("git-edit");
+    return;
   }
 
   if (cmd) {

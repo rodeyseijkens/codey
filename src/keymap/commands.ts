@@ -38,7 +38,9 @@ export type CommandId =
   | "page-cursor-half-up"
   | "page-cursor-half-down"
   | "cancel"
-  | "wrap-text";
+  | "wrap-text"
+  | "git-reset"
+  | "git-edit";
 
 export const ALL_COMMANDS: readonly CommandId[] = [
   "quit",
@@ -79,6 +81,8 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "page-down",
   "page-cursor-half-up",
   "page-cursor-half-down",
+  "git-reset",
+  "git-edit",
 ] as const;
 
 export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
@@ -94,8 +98,10 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   "focus-prev": "Cycle focus to the previous pane",
   "focus-sidebar": "Focus the changes pane",
   "focus-toggle": "Cycle focus: changes → diff → commits",
+  "git-edit": "Edit selected commit (squash/fixup/drop/amend)",
   "git-pull": "Pull from the remote (commit pane)",
   "git-push": "Push to the remote (commit pane)",
+  "git-reset": "Reset to selected commit (mixed/soft/hard)",
   help: "Show help overlay",
   "next-comment": "Jump to next comment",
   "next-file": "Jump to next file",
@@ -139,6 +145,7 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "focus-toggle": "tab",
   "git-pull": "p",
   "git-push": "P",
+  "git-reset": "g",
   help: "?",
   "next-comment": "n",
   "next-file": "f",
@@ -221,6 +228,8 @@ export const COMMAND_SECTIONS: ReadonlyArray<{
       "focus-commits",
       "git-pull",
       "git-push",
+      "git-reset",
+      "git-edit",
     ],
     title: "Commits",
   },
