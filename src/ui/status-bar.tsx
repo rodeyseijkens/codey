@@ -65,19 +65,19 @@ export function BottomBar() {
     content = "loading...";
   } else if (!state.stagingEnabled) {
     content =
-      "j/k move · ]/[ hunk · f/F file · Tab focus · c comment · s send · ? help — staging disabled in this mode";
+      "j/k move · ]/[ hunk · f/F file · c comment · s send · ? help — staging disabled in this mode";
   } else if (state.focus === "commits") {
     content =
-      "j/k move · space expand · f/F file · c commit · p pull · P push · Tab focus · ? help";
+      "j/k move · space expand · f/F file · c commit · p pull · P push · g reset · e edit · ? help";
   } else if (state.focus === "sidebar") {
     content =
-      "j/k move · space collapse · Tab focus diff · a stage · A stage all · u unstage/discard · U discard all · ? help";
+      "j/k move · space collapse · a stage · A stage all · u unstage/discard · U discard all · ? help";
   } else {
     const commitShown = state.commitView !== null && state.selection === null;
     if (commitShown) {
       content = state.wrapLines
-        ? "j/k move · ]/[ hunk · w unwrap · Tab focus · ? help"
-        : "j/k move · ]/[ hunk · w wrap · Tab focus · ? help";
+        ? "j/k move · ]/[ hunk · w unwrap · ? help"
+        : "j/k move · ]/[ hunk · w wrap · ? help";
     } else {
       content = state.wrapLines
         ? "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · s send · w unwrap · ? help"
