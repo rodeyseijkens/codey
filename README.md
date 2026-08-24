@@ -100,14 +100,20 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 | Key                 | Action                                              |
 | ------------------- | --------------------------------------------------- |
-| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log           |
-| `0` / `1` / `2`     | Focus changes / diff / commit log directly          |
-| `p` / `P`           | Pull / push to the remote (commit pane)             |
+| `j` / `k`           | Move selection down / up                            |
+| `f` / `F`           | Next / previous file                                |
+| `Space`             | Expand/collapse commit                              |
+| `c`                 | Open commit input                                   |
+| `p` / `P`           | Pull / push to the remote                           |
+| `g`                 | Reset to selected commit (mixed/soft/hard)          |
+| `e`                 | Edit selected commit (squash/fixup/drop/amend)      |
 
 #### Global
 
 | Key                 | Action                                              |
 | ------------------- | --------------------------------------------------- |
+| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log           |
+| `0` / `1` / `2`     | Focus changes / diff / commit log directly          |
 | `?`                 | Show help overlay                                   |
 | `q`                 | Quit                                                |
 | `Esc`               | Cancel overlay                                      |
