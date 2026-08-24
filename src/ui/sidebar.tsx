@@ -462,7 +462,7 @@ function CommitLoadMoreRow(props: {
       id={id}
       onMouseDown={onMouseDown}
       style={{
-        backgroundColor: selected ? C.selection : C.panel,
+        backgroundColor: selected ? C.selection : undefined,
         flexDirection: "row",
         height: 1,
         justifyContent: "center",
@@ -471,7 +471,7 @@ function CommitLoadMoreRow(props: {
       }}
     >
       <text style={{ fg: selected ? C.fg : C.dim }}>
-        {loading ? "loading..." : "load more"}
+        {loading ? "loading..." : "\u{f4d9} load more"}
       </text>
     </box>
   );
