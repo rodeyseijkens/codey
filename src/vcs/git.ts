@@ -144,6 +144,14 @@ export async function deleteFiles(
   await Promise.all(paths.map((rel) => Bun.file(join(root, rel)).delete()));
 }
 
+export async function resetCommit(
+  root: string,
+  mode: "mixed" | "soft" | "hard",
+  hash: string
+): Promise<void> {
+  await gitThrow(["reset", `--${mode}`, hash], root);
+}
+
 export function parseNameStatusLine(line: string): {
   status: string;
   from?: string;
