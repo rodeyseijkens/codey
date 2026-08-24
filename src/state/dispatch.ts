@@ -16,6 +16,7 @@ import {
   confirmDiscard,
   confirmDiscardAll,
   confirmForcePush,
+  confirmGitReset,
   confirmPendingStage,
   copySelection,
   cycleLayout,
@@ -303,6 +304,14 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
       (chord.key === "y" || chord.key === "return" || chord.key === "enter")
     ) {
       void confirmCommitAll();
+    } else if (state.overlay.kind === "reset-commits") {
+      if (chord.key === "m") {
+        void confirmGitReset("mixed", state.overlay.hash);
+      } else if (chord.key === "s") {
+        void confirmGitReset("soft", state.overlay.hash);
+      } else if (chord.key === "h") {
+        void confirmGitReset("hard", state.overlay.hash);
+      }
     }
     return;
   }
@@ -331,6 +340,24 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
       return;
     }
     cancelPendingStage();
+  }
+
+  if (
+    !cmd &&
+    chord.key === "g" &&
+    !chord.ctrl &&
+    !chord.alt &&
+    !chord.shift &&
+    state.focus === "commits"
+  ) {
+    const cursorRow = store.commitCursorRow();
+    if (
+      cursorRow &&
+      (cursorRow.kind === "header" || cursorRow.kind === "file")
+    ) {
+      store.set({ overlay: { hash: cursorRow.hash, kind: "reset-commits" } });
+      return;
+    }
   }
 
   if (cmd) {

@@ -12,6 +12,7 @@ import {
   deleteFiles,
   GitError,
   gitThrow,
+  resetCommit,
   restoreWorktreeFiles,
   stageFiles,
   unstageFiles,
@@ -1009,6 +1010,28 @@ export async function confirmCommitAll(): Promise<void> {
     store.showToast(
       "error",
       `commit failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+export async function confirmGitReset(
+  mode: "mixed" | "soft" | "hard",
+  hash: string
+): Promise<void> {
+  const store = getStore();
+  const { repoRoot } = store.getState();
+  store.set({ overlay: null });
+  if (!repoRoot) {
+    return;
+  }
+  try {
+    await resetCommit(repoRoot, mode, hash);
+    store.showToast("success", `reset ${mode} to ${hash.slice(0, 7)}`);
+    await refresh();
+  } catch (err) {
+    store.showToast(
+      "error",
+      `reset failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }

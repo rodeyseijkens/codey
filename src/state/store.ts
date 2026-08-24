@@ -63,13 +63,19 @@ export interface PendingStage {
   scope: Scope;
 }
 
+export type OverlayKind<K extends Overlay["kind"]> = Extract<
+  Overlay,
+  { kind: K }
+>;
+
 export type Overlay =
   | { kind: "confirm-discard"; scope: Scope; paths: string[]; bulk: boolean }
   | { kind: "confirm-discard-all" }
   | { kind: "confirm-commit-all"; message: string }
   | { kind: "confirm-force-push" }
   | { kind: "help" }
-  | { kind: "palette" };
+  | { kind: "palette" }
+  | { kind: "reset-commits"; hash: string };
 
 /** An in-progress inline comment being typed into the diff body. */
 export interface CommentDraft {
