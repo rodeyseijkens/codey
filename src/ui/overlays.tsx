@@ -11,8 +11,8 @@ import {
   COMMAND_SECTIONS,
   type CommandId,
 } from "../keymap/commands";
-import { submitCommitDraft } from "../state/actions";
-import { getStore, useAppState } from "../state/store";
+import { confirmGitReset, submitCommitDraft } from "../state/actions";
+import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { useKeymap } from "./keymap-context";
 import { useDraftClear } from "./use-draft-clear";
@@ -161,10 +161,7 @@ function HelpOverlay() {
 }
 
 function ConfirmDiscardOverlay(props: {
-  overlay: Extract<
-    import("../state/store.js").Overlay,
-    { kind: "confirm-discard" }
-  >;
+  overlay: OverlayKind<"confirm-discard">;
 }) {
   const { overlay } = props;
   const { ui: C } = useColors();
@@ -258,6 +255,59 @@ function CommitInputOverlay() {
   );
 }
 
+function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
+  const { ui: C } = useColors();
+  const shortHash = props.overlay.hash.slice(0, 7);
+  const store = getStore();
+  return (
+    <OverlayFrame
+      height={10}
+      title={`Reset to ${shortHash}`}
+      titleEnd={<text style={{ fg: C.dim }}>esc</text>}
+      width={50}
+    >
+      <text style={{ fg: C.dim }}>
+        Choose reset mode, or press esc to cancel:
+      </text>
+      <box style={{ flexDirection: "column" }}>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitReset("mixed", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>m</text>
+          <text style={{ fg: C.fg }}>Mixed</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} keep working tree</text>
+        </box>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitReset("soft", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>s</text>
+          <text style={{ fg: C.fg }}>Soft</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} keep staged + working</text>
+        </box>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitReset("hard", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>h</text>
+          <text style={{ fg: C.fg }}>Hard</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} discard all changes</text>
+        </box>
+      </box>
+    </OverlayFrame>
+  );
+}
+
 export function Overlays() {
   const state = useAppState();
   const { overlay } = state;
@@ -281,6 +331,9 @@ export function Overlays() {
   }
   if (overlay.kind === "help") {
     return <HelpOverlay />;
+  }
+  if (overlay.kind === "reset-commits") {
+    return <GitResetOverlay overlay={overlay} />;
   }
   return null;
 }
