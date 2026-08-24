@@ -152,6 +152,44 @@ export async function resetCommit(
   await gitThrow(["reset", `--${mode}`, hash], root);
 }
 
+export async function editCommit(
+  root: string,
+  action: "squash" | "fixup" | "drop" | "amend",
+  hash: string
+): Promise<void> {
+  if (action === "amend") {
+    await gitThrow(["commit", "--amend", "--no-edit"], root);
+    return;
+  }
+  if (action === "drop") {
+    await gitThrow(["rebase", "--onto", `${hash}^`, hash], root);
+    return;
+  }
+  const proc = Bun.spawn(["git", "rebase", "-i", `${hash}^`], {
+    cwd: root,
+    env: {
+      ...process.env,
+      GIT_SEQUENCE_EDITOR: `sed -i '0,/^pick/s//${action}/'`,
+      GIT_TERMINAL_PROMPT: "0",
+    },
+    stderr: "pipe",
+    stdin: "ignore",
+    stdout: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  if (exitCode !== 0) {
+    throw new GitError(
+      `git rebase failed: ${stderr.trim() || stdout.trim()}`,
+      stderr,
+      exitCode
+    );
+  }
+}
+
 export function parseNameStatusLine(line: string): {
   status: string;
   from?: string;
