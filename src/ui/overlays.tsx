@@ -11,7 +11,11 @@ import {
   COMMAND_SECTIONS,
   type CommandId,
 } from "../keymap/commands";
-import { confirmGitReset, submitCommitDraft } from "../state/actions";
+import {
+  confirmGitEdit,
+  confirmGitReset,
+  submitCommitDraft,
+} from "../state/actions";
 import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { useKeymap } from "./keymap-context";
@@ -308,6 +312,70 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
   );
 }
 
+function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
+  const { ui: C } = useColors();
+  const shortHash = props.overlay.hash.slice(0, 7);
+  const store = getStore();
+  return (
+    <OverlayFrame
+      height={11}
+      title={`Edit ${shortHash}`}
+      titleEnd={<text style={{ fg: C.dim }}>esc</text>}
+      width={50}
+    >
+      <text style={{ fg: C.dim }}>
+        Choose action for {shortHash}, or press esc to cancel:
+      </text>
+      <box style={{ flexDirection: "column" }}>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitEdit("squash", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>s</text>
+          <text style={{ fg: C.fg }}>Squash</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} combine into parent</text>
+        </box>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitEdit("fixup", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>f</text>
+          <text style={{ fg: C.fg }}>Fixup</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} combine, discard message</text>
+        </box>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitEdit("drop", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>d</text>
+          <text style={{ fg: C.fg }}>Drop</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} remove this commit</text>
+        </box>
+        <box
+          onMouseDown={async () => {
+            store.set({ overlay: null });
+            await confirmGitEdit("amend", props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>a</text>
+          <text style={{ fg: C.fg }}>Amend</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} add staged changes</text>
+        </box>
+      </box>
+    </OverlayFrame>
+  );
+}
+
 export function Overlays() {
   const state = useAppState();
   const { overlay } = state;
@@ -334,6 +402,9 @@ export function Overlays() {
   }
   if (overlay.kind === "reset-commits") {
     return <GitResetOverlay overlay={overlay} />;
+  }
+  if (overlay.kind === "edit-commit") {
+    return <GitEditOverlay overlay={overlay} />;
   }
   return null;
 }
