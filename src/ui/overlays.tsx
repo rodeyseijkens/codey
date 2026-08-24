@@ -105,9 +105,17 @@ function HelpOverlay() {
   }));
   const byCmd = new Map(entries.map((e) => [e.cmd, e]));
   const sections = COMMAND_SECTIONS.map((section) => ({
-    entries: section.commands
-      .map((cmd) => byCmd.get(cmd))
-      .filter((e): e is NonNullable<typeof e> => e !== undefined),
+    entries: section.commands.map((cmd) => {
+      const e = byCmd.get(cmd);
+      if (e) {
+        return e;
+      }
+      return {
+        chord: "",
+        cmd,
+        desc: COMMAND_DESCRIPTIONS[cmd as CommandId] ?? "",
+      };
+    }),
     title: section.title,
   }));
   const leftover = entries.filter((e) => !byCmd.has(e.cmd));
@@ -139,10 +147,20 @@ function HelpOverlay() {
                 <text style={{ fg: C.border }}>{"─".repeat(40)}</text>
               ) : null}
               <text style={{ fg: C.accent }}>{section.title}</text>
-              {section.entries.map((e) => (
-                <box key={e.cmd} style={{ flexDirection: "row", height: 1 }}>
-                  <text style={{ fg: C.yellow, width: 16 }}>{e.chord}</text>
-                  <text style={{ fg: C.dim }}>{e.desc}</text>
+              {section.entries.map((entry) => (
+                <box
+                  key={entry.cmd}
+                  style={{ flexDirection: "row", height: 1 }}
+                >
+                  <text
+                    style={{
+                      fg: entry.chord ? C.yellow : C.dim,
+                      width: 16,
+                    }}
+                  >
+                    {entry.chord || "—"}
+                  </text>
+                  <text style={{ fg: C.dim }}>{entry.desc}</text>
                 </box>
               ))}
             </box>
