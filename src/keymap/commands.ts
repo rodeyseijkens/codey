@@ -143,6 +143,7 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "focus-prev": "shift+tab",
   "focus-sidebar": "1",
   "focus-toggle": "tab",
+  "git-edit": "e",
   "git-pull": "p",
   "git-push": "P",
   "git-reset": "g",
