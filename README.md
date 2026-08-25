@@ -68,55 +68,54 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 #### Changes Pane
 
-| Key                 | Action                                              |
-| ------------------- | --------------------------------------------------- |
-| `j` / `k`           | Move selection down / up                            |
-| `f` / `F`           | Next / previous file                                |
-| `Space`             | Collapse/expand row (section, folder, commit header)|
-| `b`                 | Toggle sidebar                                      |
-| `t`                 | Toggle sidebar view (tree / list)                   |
-| `<` / `>`           | Shrink / grow sidebar                               |
-| `a` / `A`           | Stage file / Stage all files                        |
-| `u` / `U`           | Unstage file / Unstage all files                    |
-| `r`                 | Refresh (reload from git)                           |
-| `m`                 | Cycle layout (split / stack / auto)                 |
-| `w`                 | Toggle line wrapping                                |
+| Key       | Action                                               |
+| --------- | ---------------------------------------------------- |
+| `j` / `k` | Move selection down / up                             |
+| `f` / `F` | Next / previous file                                 |
+| `Space`   | Collapse/expand row (section, folder, commit header) |
+| `b`       | Toggle sidebar                                       |
+| `t`       | Toggle sidebar view (tree / list)                    |
+| `<` / `>` | Shrink / grow sidebar                                |
+| `a` / `A` | Stage file / Stage all files                         |
+| `u` / `U` | Unstage file / Unstage all files                     |
+| `r`       | Refresh (reload from git)                            |
+| `m`       | Cycle layout (split / stack / auto)                  |
+| `w`       | Toggle line wrapping                                 |
 
 #### Diff Pane
 
-| Key                 | Action                                              |
-| ------------------- | --------------------------------------------------- |
-| `[` / `]`           | Previous / next hunk                                |
-| `Ctrl+f` / `Ctrl+b` | Page down / up                                      |
-| `Ctrl+d` / `Ctrl+u` | Half-page down / up                                 |
-| `v`                 | Start line/range selection for comments             |
+| Key                 | Action                                                        |
+| ------------------- | ------------------------------------------------------------- |
+| `[` / `]`           | Previous / next hunk                                          |
+| `Ctrl+f` / `Ctrl+b` | Page down / up                                                |
+| `Ctrl+d` / `Ctrl+u` | Half-page down / up                                           |
+| `v`                 | Start line/range selection for comments                       |
 | `c`                 | Add transient comment; in the commit log, open a commit input |
-| `d` / `e`           | Delete / edit comment on current line               |
-| `n` / `N`           | Next / previous comment                             |
-| `s`                 | Send comments (standalone: copy to clipboard)       |
-| `y`                 | Copy selection to clipboard                         |
+| `d` / `e`           | Delete / edit comment on current line                         |
+| `n` / `N`           | Next / previous comment                                       |
+| `s`                 | Send comments (standalone: copy to clipboard)                 |
+| `y`                 | Copy selection to clipboard                                   |
 
 #### Commits Pane
 
-| Key                 | Action                                              |
-| ------------------- | --------------------------------------------------- |
-| `j` / `k`           | Move selection down / up                            |
-| `f` / `F`           | Next / previous file                                |
-| `Space`             | Expand/collapse commit                              |
-| `c`                 | Open commit input                                   |
-| `p` / `P`           | Pull / push to the remote                           |
-| `g`                 | Reset to selected commit (mixed/soft/hard)          |
-| `e`                 | Edit selected commit (squash/fixup/drop/amend)      |
+| Key       | Action                                                        |
+| --------- | ------------------------------------------------------------- |
+| `j` / `k` | Move selection down / up                                      |
+| `f` / `F` | Next / previous file                                          |
+| `Space`   | Expand/collapse commit                                        |
+| `c`       | Open commit input                                             |
+| `p` / `P` | Pull / push to the remote                                     |
+| `g`       | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
 
 #### Global
 
-| Key                 | Action                                              |
-| ------------------- | --------------------------------------------------- |
-| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log           |
-| `0` / `1` / `2`     | Focus changes / diff / commit log directly          |
-| `?`                 | Show help overlay                                   |
-| `q`                 | Quit                                                |
-| `Esc`               | Cancel overlay                                      |
+| Key                 | Action                                     |
+| ------------------- | ------------------------------------------ |
+| `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log   |
+| `0` / `1` / `2`     | Focus changes / diff / commit log directly |
+| `?`                 | Show help overlay                          |
+| `q`                 | Quit                                       |
+| `Esc`               | Cancel overlay                             |
 
 All keybindings are customizable in `~/.config/codey/config.toml` under `[keybindings]`. Press `?` inside the app for the full live list.
 
@@ -132,6 +131,7 @@ Set `ignoreFiles` to **replace** the default list with your own glob patterns. P
 # ~/.config/codey/config.toml
 ignoreFiles = ["**/package-lock.json", "**/pnpm-lock.yaml", "**/*.snap"]
 ```
+
 ---
 
 ## Documentation
@@ -139,6 +139,7 @@ ignoreFiles = ["**/package-lock.json", "**/pnpm-lock.yaml", "**/*.snap"]
 - [Keybindings](docs/keybindings.md) — Full keymap reference
 
 ---
+
 ## Relationship to hunk
 
 `codey` incorporates a **modified copy of [`hunk-diff`](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff)** (MIT licensed) for its diff rendering engine, and shares the same [OpenTUI](https://github.com/anomalyco/opentui) foundation. It is not a direct fork of the full hunk application — rather, it adapts the diff renderer for a two-section staged/unstaged review UX with transient comments and a commit log sidebar.
@@ -151,7 +152,7 @@ ignoreFiles = ["**/package-lock.json", "**/pnpm-lock.yaml", "**/*.snap"]
 
 ---
 
-## Related Projects 
+## Related Projects
 
 - [hunk](https://github.com/modem-dev/hunk) — The upstream project: multi-file review stream, inline AI annotations, Git/Jujutsu/Sapling support
 - [herdr-reviewr](https://github.com/persiyanov/herdr-reviewr) — Code-review sidebar for herdr: comment on agent diffs, send back, view PR checks/comments

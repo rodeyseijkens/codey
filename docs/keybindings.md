@@ -61,6 +61,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `0`     | focus-diff       | Focus the diff pane                                      |
 | `1`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
 | `2`     | focus-commits    | Focus the commit log (re-shows the sidebar)              |
+| `g`     | git-edit         | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
 | `p`     | git-pull         | Pull from the remote (commit pane only)                  |
 | `P`     | git-push         | Push to the remote (commit pane only)                    |
 
