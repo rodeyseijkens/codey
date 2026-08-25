@@ -54,18 +54,18 @@ function truncatePath(path: string, max: number): string {
   return `${path.slice(0, max - 1)}…`;
 }
 
-const FILE_CHROME = { base: 8, comment: 4 };
-const DIR_CHROME = 7;
-
-function fileNameMax(
-  width: number,
-  depth: number,
-  hasComment: boolean
-): number {
-  return (
-    width - FILE_CHROME.base - (hasComment ? FILE_CHROME.comment : 0) - depth
-  );
+function splitPath(displayPath: string): [string, string] {
+  if (displayPath.includes(" -> ")) {
+    return [displayPath, ""];
+  }
+  const idx = displayPath.lastIndexOf("/");
+  if (idx === -1) {
+    return [displayPath, ""];
+  }
+  return [displayPath.slice(idx + 1), displayPath.slice(0, idx)];
 }
+
+const DIR_CHROME = 7;
 
 function dirNameMax(width: number, depth: number): number {
   return width - DIR_CHROME - depth;
@@ -80,19 +80,9 @@ function FileRow(props: {
   name: string;
   scope: Changeset["id"];
   selected: boolean;
-  width: number;
 }) {
-  const {
-    commentCount,
-    depth,
-    file,
-    focused,
-    index,
-    name,
-    scope,
-    selected,
-    width,
-  } = props;
+  const { commentCount, depth, file, focused, index, name, scope, selected } =
+    props;
   const { ui: C, icons } = useColors();
   const letter =
     file.status === "added" && file.notice === "untracked"
@@ -121,15 +111,22 @@ function FileRow(props: {
       <text style={{ fg: icons[fileColor(file.path)], width: 2 }}>
         {fileIcon(file.path)}
       </text>
-      <text
+      <box
         style={{
-          fg: selected ? C.fg : C.dim,
+          flexDirection: "row",
           flexGrow: 1,
-          overflow: "hidden",
         }}
       >
-        {truncatePath(name, fileNameMax(width, depth, commentCount > 0))}
-      </text>
+        <text style={{ fg: selected ? C.fg : C.dim }}>
+          {splitPath(name)[0]}
+        </text>
+        {splitPath(name)[1] ? (
+          <text style={{ fg: C.faint, overflow: "hidden" }}>
+            {" "}
+            {splitPath(name)[1]}
+          </text>
+        ) : null}
+      </box>
       {commentCount > 0 ? (
         <text style={{ fg: C.commentFg, width: 4 }}> ◆{commentCount}</text>
       ) : null}
@@ -201,9 +198,8 @@ function ListBody(props: {
   cs: Changeset;
   focused: boolean;
   sel: ReturnType<typeof useAppState>["selection"];
-  width: number;
 }) {
-  const { cs, focused, sel, width } = props;
+  const { cs, focused, sel } = props;
   const { ui: C } = useColors();
   if (cs.files.length === 0) {
     return (
@@ -227,7 +223,6 @@ function ListBody(props: {
           selected={
             sel?.kind === "file" && sel.scope === cs.id && sel.index === index
           }
-          width={width}
         />
       ))}
     </>
@@ -291,7 +286,6 @@ function TreeBody(props: {
             selected={
               sel?.kind === "file" && sel.scope === cs.id && sel.index === index
             }
-            width={width}
           />
         );
       })}
@@ -329,14 +323,7 @@ function Section(props: { cs: Changeset; width: number }) {
       />
     );
   } else {
-    body = (
-      <ListBody
-        cs={cs}
-        focused={state.focus === "sidebar"}
-        sel={sel}
-        width={width}
-      />
-    );
+    body = <ListBody cs={cs} focused={state.focus === "sidebar"} sel={sel} />;
   }
   return (
     <box style={{ flexDirection: "column" }}>
@@ -409,9 +396,8 @@ function CommitFileRow(props: {
   onMouseDown: (e: MouseEvent) => void;
   path: string;
   selected: boolean;
-  width: number;
 }) {
-  const { file, id, onMouseDown, path, selected, width } = props;
+  const { file, id, onMouseDown, path, selected } = props;
   const { icons, ui: C } = useColors();
   return (
     <box
@@ -429,15 +415,20 @@ function CommitFileRow(props: {
         {"\u2009"}
         {fileIcon(path)}
       </text>
-      <text
+      <box
         style={{
-          fg: C.fg,
+          flexDirection: "row",
           flexGrow: 1,
-          overflow: "hidden",
         }}
       >
-        {truncatePath(path, fileNameMax(width, 2, false))}
-      </text>
+        <text style={{ fg: C.fg }}>{splitPath(path)[0]}</text>
+        {splitPath(path)[1] ? (
+          <text style={{ fg: C.faint, overflow: "hidden" }}>
+            {" "}
+            {splitPath(path)[1]}
+          </text>
+        ) : null}
+      </box>
       {file ? (
         <text style={{ fg: statusColor(file.status, C), width: 2 }}>
           {statusIcon(file.status)}
@@ -627,7 +618,6 @@ function CommitLog(props: { width: number }) {
             onMouseDown={() => handleFileMouseDown(row)}
             path={row.path}
             selected={selected}
-            width={props.width}
           />
         );
       }
