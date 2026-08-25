@@ -3,6 +3,8 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { buildFileTree, type TreeNode, visibleTreeNodes } from "../lib/tree";
 import {
   clearCommitView,
+  commitRevert,
+  copyCommitHash,
   focusCommits,
   focusSidebar,
   loadCommits,
@@ -38,8 +40,10 @@ import {
   fileIcon,
   folderColor,
   folderIcon,
+  GIT_COPY_ICON,
   GIT_PULL_ICON,
   GIT_PUSH_ICON,
+  GIT_UNDO_ICON,
   SPINNER_FRAMES,
   STATUS_UNTRACKED,
 } from "./icons";
@@ -357,10 +361,17 @@ function CommitHeaderRow(props: {
   const { commit, expanded, id, onMouseDown, selected, width } = props;
   const { ui: C } = useColors();
   const hasPushIcon = Boolean(commit && !commit.isPushed);
+  const [hovered, setHovered] = useState(false);
+  const iconWidth = hovered ? 4 : 0;
   return (
+    // biome-ignore lint/a11y/useKeyWithMouseEvents: TUI, no onFocus
     <box
       id={id}
       onMouseDown={onMouseDown}
+      onMouseOut={() => {
+        setHovered(false);
+      }}
+      onMouseOver={() => setHovered(true)}
       style={{
         backgroundColor: selected ? C.selection : C.bg,
         flexDirection: "row",
@@ -384,8 +395,34 @@ function CommitHeaderRow(props: {
           overflow: "hidden",
         }}
       >
-        {truncatePath(commit?.message ?? "", width - 4 - (hasPushIcon ? 2 : 0))}
+        {truncatePath(
+          commit?.message ?? "",
+          width - 4 - (hasPushIcon ? 2 : 0) - iconWidth
+        )}
       </text>
+      {hovered && commit ? (
+        <>
+          <text
+            onMouseDown={(e: MouseEvent) => {
+              e.stopPropagation();
+              commitRevert(commit.hash);
+            }}
+            style={{ fg: C.fg }}
+          >
+            {GIT_UNDO_ICON}
+          </text>
+          <text
+            onMouseDown={(e: MouseEvent) => {
+              e.stopPropagation();
+              copyCommitHash(commit.hash);
+            }}
+            style={{ fg: C.fg }}
+          >
+            {" "}
+            {GIT_COPY_ICON}
+          </text>
+        </>
+      ) : null}
     </box>
   );
 }
@@ -508,34 +545,33 @@ function CommitLog(props: { width: number }) {
     }
   }, [commitEntries.length, commitLoading, repoRoot]);
 
+  const rows = store.commitRows();
+  const cursorRowIndex = rows.findIndex(
+    (row) => commitRowKey(row) === commitCursor
+  );
+
   useEffect(() => {
-    if (!commitCursor) {
+    if (commitCursor === null || cursorRowIndex < 0) {
       return;
     }
     const scroll: ScrollBoxRenderable | null = scrollRef.current;
     if (!scroll) {
       return;
     }
-    const rows = store.commitRows();
-    const target = rows.findIndex((row) => commitRowKey(row) === commitCursor);
-    if (target < 0) {
-      return;
-    }
     const viewportHeight = scroll.viewport.height;
     const top = scroll.scrollTop;
     const bottom = top + viewportHeight - 1;
     let next = top;
-    if (target < top) {
-      next = target;
-    } else if (target > bottom) {
-      next = target - viewportHeight + 1;
+    if (cursorRowIndex < top) {
+      next = cursorRowIndex;
+    } else if (cursorRowIndex > bottom) {
+      next = cursorRowIndex - viewportHeight + 1;
     }
     if (next !== top) {
       scroll.scrollTop = Math.max(0, next);
     }
-  }, [commitCursor, store.commitRows]);
+  }, [cursorRowIndex, commitCursor]);
 
-  const rows = store.commitRows();
   const byHash = new Map(commitEntries.map((c) => [c.hash, c]));
 
   const handleHeaderMouseDown = (

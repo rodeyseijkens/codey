@@ -336,7 +336,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
   const store = getStore();
   return (
     <OverlayFrame
-      height={11}
+      height={12}
       title={`Edit ${shortHash}`}
       titleEnd={<text style={{ fg: C.dim }}>esc</text>}
       width={50}
@@ -388,6 +388,18 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
           <text style={{ fg: C.yellow, width: 3 }}>a</text>
           <text style={{ fg: C.fg }}>Amend</text>
           <text style={{ fg: C.dim }}>{"\u2003"} add staged changes</text>
+        </box>
+        <box
+          onMouseDown={() => {
+            store.set({
+              overlay: { hash: props.overlay.hash, kind: "reset-commits" },
+            });
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>r</text>
+          <text style={{ fg: C.fg }}>Reset</text>
+          <text style={{ fg: C.dim }}>{"\u2003"} mixed/soft/hard reset</text>
         </box>
       </box>
     </OverlayFrame>
