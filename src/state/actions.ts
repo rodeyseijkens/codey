@@ -945,11 +945,14 @@ export function clearCommitDraft(): void {
 
 async function commitMessage(root: string, message: string): Promise<void> {
   const store = getStore();
+  store.set({ commitLoading: true });
   try {
     await gitThrow(["commit", "-m", message], root);
     store.showToast("success", "committed");
+    store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
+    store.set({ commitLoading: false });
     store.showToast(
       "error",
       `commit failed: ${err instanceof Error ? err.message : String(err)}`
@@ -1002,12 +1005,15 @@ export async function confirmCommitAll(): Promise<void> {
   if (!repoRoot) {
     return;
   }
+  store.set({ commitLoading: true });
   try {
     await gitThrow(["add", "-A"], repoRoot);
     await gitThrow(["commit", "-m", message], repoRoot);
     store.showToast("success", "committed all changes");
+    store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
+    store.set({ commitLoading: false });
     store.showToast(
       "error",
       `commit failed: ${err instanceof Error ? err.message : String(err)}`
@@ -1025,11 +1031,14 @@ export async function confirmGitReset(
   if (!repoRoot) {
     return;
   }
+  store.set({ commitLoading: true });
   try {
     await resetCommit(repoRoot, mode, hash);
     store.showToast("success", `reset ${mode} to ${hash.slice(0, 7)}`);
+    store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
+    store.set({ commitLoading: false });
     store.showToast(
       "error",
       `reset failed: ${err instanceof Error ? err.message : String(err)}`
@@ -1047,11 +1056,14 @@ export async function confirmGitEdit(
   if (!repoRoot) {
     return;
   }
+  store.set({ commitLoading: true });
   try {
     await editCommit(repoRoot, action, hash);
     store.showToast("success", `${action} ${hash.slice(0, 7)}`);
+    store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
+    store.set({ commitLoading: false });
     store.showToast(
       "error",
       `edit failed: ${err instanceof Error ? err.message : String(err)}`
