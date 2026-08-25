@@ -7,6 +7,7 @@ import {
   cancelPendingStage,
   clearCommitDraft,
   closeOverlay,
+  commitMove,
   commitSelectNext,
   commitSelectNextFile,
   commitSelectPrev,
@@ -169,20 +170,6 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
     guard: (state) => state.focus === "commits" && state.remoteBusy === null,
     run: () => gitPush(),
   });
-  r.set("git-reset", {
-    guard: (state) => state.focus === "commits",
-    run: (store) => {
-      const cursorRow = store.commitCursorRow();
-      if (
-        cursorRow &&
-        (cursorRow.kind === "header" || cursorRow.kind === "file")
-      ) {
-        store.set({
-          overlay: { hash: cursorRow.hash, kind: "reset-commits" },
-        });
-      }
-    },
-  });
   r.set("git-edit", {
     guard: (state) => state.focus === "commits",
     run: (store) => {
@@ -196,6 +183,14 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
         });
       }
     },
+  });
+  r.set("commit-move-up", {
+    guard: (state) => state.focus === "commits",
+    run: () => void commitMove(-1),
+  });
+  r.set("commit-move-down", {
+    guard: (state) => state.focus === "commits",
+    run: () => void commitMove(1),
   });
   r.set("toggle-sidebar", { run: () => toggleSidebar() });
   r.set("collapse-section", {
@@ -350,6 +345,10 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
         void confirmGitEdit("drop", state.overlay.hash);
       } else if (chord.key === "a") {
         void confirmGitEdit("amend", state.overlay.hash);
+      } else if (chord.key === "r") {
+        store.set({
+          overlay: { hash: state.overlay.hash, kind: "reset-commits" },
+        });
       }
     }
     return;
@@ -379,17 +378,6 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
       return;
     }
     cancelPendingStage();
-  }
-
-  if (
-    chord.key === "e" &&
-    !chord.ctrl &&
-    !chord.alt &&
-    !chord.shift &&
-    state.focus === "commits"
-  ) {
-    dispatchCommand("git-edit");
-    return;
   }
 
   if (cmd) {

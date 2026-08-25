@@ -39,8 +39,9 @@ export type CommandId =
   | "page-cursor-half-down"
   | "cancel"
   | "wrap-text"
-  | "git-reset"
-  | "git-edit";
+  | "git-edit"
+  | "commit-move-up"
+  | "commit-move-down";
 
 export const ALL_COMMANDS: readonly CommandId[] = [
   "quit",
@@ -81,8 +82,9 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "page-down",
   "page-cursor-half-up",
   "page-cursor-half-down",
-  "git-reset",
   "git-edit",
+  "commit-move-up",
+  "commit-move-down",
 ] as const;
 
 export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
@@ -90,6 +92,8 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
     "Add a transient comment on the selected line/range; in the commit log, open a commit input",
   cancel: "Cancel overlay or pending confirmation",
   "collapse-section": "Collapse/expand the selected row (section or folder)",
+  "commit-move-down": "Move selected commit down in history (rebase)",
+  "commit-move-up": "Move selected commit up in history (rebase)",
   copy: "Copy selection/diff to clipboard",
   "delete-comment": "Delete the comment on the current line",
   "edit-comment": "Edit the comment on the current line",
@@ -98,10 +102,10 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   "focus-prev": "Cycle focus to the previous pane",
   "focus-sidebar": "Focus the changes pane",
   "focus-toggle": "Cycle focus: changes → diff → commits",
-  "git-edit": "Edit selected commit (squash/fixup/drop/amend)",
+  "git-edit": "Edit selected commit (squash/fixup/drop/amend); r for reset",
   "git-pull": "Pull from the remote (commit pane)",
   "git-push": "Push to the remote (commit pane)",
-  "git-reset": "Reset to selected commit (mixed/soft/hard)",
+
   help: "Show help overlay",
   "next-comment": "Jump to next comment",
   "next-file": "Jump to next file",
@@ -135,6 +139,8 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "add-comment": "c",
   cancel: "escape",
   "collapse-section": "space",
+  "commit-move-down": "alt+j",
+  "commit-move-up": "alt+k",
   copy: "y",
   "delete-comment": "d",
   "edit-comment": "e",
@@ -143,10 +149,9 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "focus-prev": "shift+tab",
   "focus-sidebar": "1",
   "focus-toggle": "tab",
-  "git-edit": "e",
+  "git-edit": "g",
   "git-pull": "p",
   "git-push": "P",
-  "git-reset": "g",
   help: "?",
   "next-comment": "n",
   "next-file": "f",
@@ -229,8 +234,9 @@ export const COMMAND_SECTIONS: ReadonlyArray<{
       "focus-commits",
       "git-pull",
       "git-push",
-      "git-reset",
       "git-edit",
+      "commit-move-up",
+      "commit-move-down",
     ],
     title: "Commits",
   },

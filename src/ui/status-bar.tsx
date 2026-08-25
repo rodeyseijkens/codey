@@ -68,7 +68,7 @@ export function BottomBar() {
       "j/k move · ]/[ hunk · f/F file · c comment · s send · ? help — staging disabled in this mode";
   } else if (state.focus === "commits") {
     content =
-      "j/k move · space expand · f/F file · c commit · p pull · P push · g reset · e edit · ? help";
+      "j/k move · space expand · f/F file · c commit · p pull · P push · g edit · alt+j/k reorder · ? help";
   } else if (state.focus === "sidebar") {
     content =
       "j/k move · space collapse · a stage · A stage all · u unstage/discard · U discard all · ? help";
