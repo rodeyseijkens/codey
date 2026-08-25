@@ -10,8 +10,13 @@ export class GitError extends Error {
   readonly stderr: string;
   readonly exitCode: number;
 
-  constructor(message: string, stderr: string, exitCode: number) {
-    super(message);
+  constructor(
+    message: string,
+    stderr: string,
+    exitCode: number,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
     this.name = "GitError";
     this.stderr = stderr;
     this.exitCode = exitCode;
@@ -165,11 +170,30 @@ export async function editCommit(
     await gitThrow(["rebase", "--onto", `${hash}^`, hash], root);
     return;
   }
-  const proc = Bun.spawn(["git", "rebase", "-i", `${hash}^`], {
+  const shortHash = hash.slice(0, 7);
+  let base: string;
+  let sequenceEditor: string;
+  try {
+    await gitThrow(["rev-parse", "--verify", `${hash}~2`], root);
+    base = `${hash}~2`;
+    sequenceEditor = `sed -i '2s/^pick/${action}/'`;
+  } catch {
+    base = "--root";
+    sequenceEditor = `sed -i '/^pick .*${shortHash}/s/^pick/${action}/'`;
+  }
+  await rebaseWithSequenceEditor(root, base, sequenceEditor);
+}
+
+async function rebaseWithSequenceEditor(
+  root: string,
+  base: string,
+  sequenceEditor: string
+): Promise<void> {
+  const proc = Bun.spawn(["git", "rebase", "-i", base], {
     cwd: root,
     env: {
       ...process.env,
-      GIT_SEQUENCE_EDITOR: `sed -i '0,/^pick/s//${action}/'`,
+      GIT_SEQUENCE_EDITOR: sequenceEditor,
       GIT_TERMINAL_PROMPT: "0",
     },
     stderr: "pipe",
@@ -188,6 +212,58 @@ export async function editCommit(
       exitCode
     );
   }
+}
+
+export async function reorderCommit(
+  root: string,
+  olderHash: string
+): Promise<void> {
+  const stashesBefore = await gitThrow(["stash", "list"], root);
+  await gitThrow(["stash", "push", "-m", "reorder-rebase-stash"], root);
+  const stashesAfter = await gitThrow(["stash", "list"], root);
+  const stashed = stashesAfter !== stashesBefore;
+  try {
+    await rebaseWithSequenceEditor(
+      root,
+      `${olderHash}^`,
+      `sed -i '1{h;d};2{G}'`
+    );
+  } catch (e) {
+    if (stashed) {
+      try {
+        await gitThrow(["stash", "apply"], root);
+      } catch (applyErr) {
+        gitThrow(["stash", "drop"], root).catch(() => undefined);
+        // biome-ignore lint/style/useErrorCause: cause passed via GitError options
+        throw new GitError(
+          "reorder rebase failed and stash apply conflicted — stash preserved as 'reorder-rebase-stash'",
+          "",
+          1,
+          { cause: applyErr }
+        );
+      }
+      await gitThrow(["stash", "drop"], root).catch(() => undefined);
+    }
+    throw e;
+  }
+  if (stashed) {
+    try {
+      await gitThrow(["stash", "apply"], root);
+      await gitThrow(["stash", "drop"], root);
+    } catch (applyErr) {
+      // biome-ignore lint/style/useErrorCause: cause passed via GitError options
+      throw new GitError(
+        "reorder rebase succeeded but stash apply conflicted — stash preserved as 'reorder-rebase-stash'",
+        "",
+        1,
+        { cause: applyErr }
+      );
+    }
+  }
+}
+
+export async function undoCommit(root: string, hash: string): Promise<void> {
+  await gitThrow(["reset", "--soft", `${hash}^`], root);
 }
 
 export function parseNameStatusLine(line: string): {

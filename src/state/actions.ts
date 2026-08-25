@@ -13,9 +13,11 @@ import {
   editCommit,
   GitError,
   gitThrow,
+  reorderCommit,
   resetCommit,
   restoreWorktreeFiles,
   stageFiles,
+  undoCommit,
   unstageFiles,
 } from "../vcs/git";
 import {
@@ -1068,5 +1070,74 @@ export async function confirmGitEdit(
       "error",
       `edit failed: ${err instanceof Error ? err.message : String(err)}`
     );
+  }
+}
+
+export async function commitMove(dir: 1 | -1): Promise<void> {
+  const store = getStore();
+  const { repoRoot, commitEntries } = store.getState();
+  if (!repoRoot) {
+    return;
+  }
+  const row = store.commitCursorRow();
+  if (!row || row.kind === "load-more") {
+    return;
+  }
+  const { hash } = row;
+  const idx = commitEntries.findIndex((e) => e.hash === hash);
+  if (idx < 0) {
+    return;
+  }
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= commitEntries.length) {
+    return;
+  }
+  const olderHash = dir === -1 ? hash : commitEntries[idx + 1]?.hash;
+  if (!olderHash) {
+    return;
+  }
+  store.set({ commitLoading: true });
+  try {
+    await reorderCommit(repoRoot, olderHash);
+    const label = dir === -1 ? "up" : "down";
+    store.showToast("success", `moved ${hash.slice(0, 7)} ${label}`);
+    store.set({ commitLoading: false });
+    await refresh();
+  } catch (err) {
+    store.set({ commitLoading: false });
+    store.showToast(
+      "error",
+      `move failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+export async function commitRevert(hash: string): Promise<void> {
+  const store = getStore();
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
+    return;
+  }
+  store.set({ commitLoading: true });
+  try {
+    await undoCommit(repoRoot, hash);
+    store.showToast("success", `undone ${hash.slice(0, 7)}`);
+    store.set({ commitLoading: false });
+    await refresh();
+  } catch (err) {
+    store.set({ commitLoading: false });
+    store.showToast(
+      "error",
+      `revert failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+export async function copyCommitHash(hash: string): Promise<void> {
+  const result = await copyText(hash);
+  if (result.ok) {
+    getStore().showToast("success", "copied hash to clipboard");
+  } else {
+    getStore().showToast("error", `clipboard failed: ${result.error}`);
   }
 }
