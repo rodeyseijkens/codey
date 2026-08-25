@@ -465,14 +465,16 @@ function CommitLoadMoreRow(props: {
         backgroundColor: selected ? C.selection : undefined,
         flexDirection: "row",
         height: 1,
-        justifyContent: "center",
         paddingLeft: 1,
         paddingRight: 1,
       }}
     >
-      <text style={{ fg: selected ? C.fg : C.dim }}>
-        {loading ? "loading..." : "\u{f4d9} load more"}
+      <text style={{ fg: selected ? C.fg : C.dim, flexGrow: 1 }}>
+        {loading ? "loading..." : "load more"}
       </text>
+      {loading ? null : (
+        <text style={{ fg: selected ? C.fg : C.dim }}>{"\u{f4d9}"}</text>
+      )}
     </box>
   );
 }
