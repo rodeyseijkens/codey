@@ -426,9 +426,10 @@ export function DiffPane() {
     return (
       <box
         style={{
+          alignItems: "center",
           backgroundColor: C.bg,
           flexGrow: 1,
-          paddingLeft: 2,
+          justifyContent: "center",
         }}
       >
         <text style={{ fg: C.faint }}>No file selected — j/k to navigate</text>
@@ -440,9 +441,10 @@ export function DiffPane() {
     return (
       <box
         style={{
+          alignItems: "center",
           backgroundColor: C.bg,
           flexGrow: 1,
-          paddingLeft: 2,
+          justifyContent: "center",
         }}
       >
         <text style={{ fg: C.faint }}>Ignored file — no diff loaded</text>
@@ -454,9 +456,10 @@ export function DiffPane() {
     return (
       <box
         style={{
+          alignItems: "center",
           backgroundColor: C.bg,
           flexGrow: 1,
-          paddingLeft: 2,
+          justifyContent: "center",
         }}
       >
         <text style={{ fg: C.faint }}>Binary file — no diff</text>
@@ -468,9 +471,10 @@ export function DiffPane() {
     return (
       <box
         style={{
+          alignItems: "center",
           backgroundColor: C.bg,
           flexGrow: 1,
-          paddingLeft: 2,
+          justifyContent: "center",
         }}
       >
         <text style={{ fg: C.yellow }}>
@@ -484,9 +488,10 @@ export function DiffPane() {
     return (
       <box
         style={{
+          alignItems: "center",
           backgroundColor: C.bg,
           flexGrow: 1,
-          paddingLeft: 2,
+          justifyContent: "center",
         }}
       >
         <text style={{ fg: C.faint }}>No diff content</text>
