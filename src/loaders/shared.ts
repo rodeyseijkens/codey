@@ -8,12 +8,12 @@ const RENAME_FROM_RE = /^rename from (.+)$/;
 const BINARY_DIFF_RE = /^Binary files .* and (.+) differ$/;
 const BINARY_LINE_RE = /^Binary files /m;
 
-export interface NameStatusEntry {
+export type NameStatusEntry = {
   code: string;
   from?: string;
   status: FileStatus;
   to: string;
-}
+};
 
 export function statusFromCode(code: string): FileStatus {
   switch (code[0]) {
@@ -49,12 +49,12 @@ export function parseNameStatus(text: string): NameStatusEntry[] {
   return out;
 }
 
-export interface NumstatEntry {
+export type NumstatEntry = {
   additions: number;
   deletions: number;
   isBinary: boolean;
   path: string;
-}
+};
 
 function resolveNumstatPath(path: string): string {
   const sep = path.indexOf(" => ");
@@ -117,53 +117,23 @@ function stripGitPath(path: string): string {
   return s;
 }
 
-export function sectionNewPath(section: string): string | null {
-  const lines = section.split("\n");
+function findRename(lines: string[], re: RegExp): string | null {
   for (const line of lines) {
-    const match = RENAME_TO_RE.exec(line);
-    const path = match?.[1];
-    if (path) {
-      return stripGitPath(path);
-    }
-  }
-  for (const line of lines) {
-    if (!line.startsWith("+++ ")) {
+    const match: RegExpExecArray | null = re.exec(line);
+    if (!match) {
       continue;
     }
-    const rest = (line.slice(4).split("\t")[0] ?? "").trim();
-    if (rest && rest !== "/dev/null") {
-      return stripGitPath(rest);
-    }
-  }
-  for (const line of lines) {
-    const match = BINARY_DIFF_RE.exec(line.trim());
-    const path = match?.[1];
+    const [, path] = match;
     if (path) {
-      return stripGitPath(path.trim());
-    }
-  }
-  const [header] = lines;
-  if (header?.startsWith("diff --git ")) {
-    const rest = header.slice("diff --git ".length);
-    const idx = rest.lastIndexOf(" b/");
-    if (idx >= 0) {
-      return stripGitPath(rest.slice(idx + 3).trim());
+      return stripGitPath(path);
     }
   }
   return null;
 }
 
-export function sectionOldPath(section: string): string | null {
-  const lines = section.split("\n");
+function findPrefixLine(lines: string[], prefix: string): string | null {
   for (const line of lines) {
-    const match = RENAME_FROM_RE.exec(line);
-    const path = match?.[1];
-    if (path) {
-      return stripGitPath(path);
-    }
-  }
-  for (const line of lines) {
-    if (!line.startsWith("--- ")) {
+    if (!line.startsWith(prefix)) {
       continue;
     }
     const rest = (line.slice(4).split("\t")[0] ?? "").trim();
@@ -171,25 +141,95 @@ export function sectionOldPath(section: string): string | null {
       return stripGitPath(rest);
     }
   }
+  return null;
+}
+
+function findBinaryLine(lines: string[]): string | null {
+  for (const line of lines) {
+    const match: RegExpExecArray | null = BINARY_DIFF_RE.exec(line.trim());
+    if (!match) {
+      continue;
+    }
+    const [, path] = match;
+    if (path) {
+      return stripGitPath(path.trim());
+    }
+  }
+  return null;
+}
+
+function findPathInLines(
+  lines: string[],
+  renameRe: RegExp,
+  prefix: string,
+  includeBinary: boolean,
+): string | null {
+  const byRename = findRename(lines, renameRe);
+  if (byRename) {
+    return byRename;
+  }
+  const byPrefix = findPrefixLine(lines, prefix);
+  if (byPrefix) {
+    return byPrefix;
+  }
+  if (includeBinary) {
+    const byBinary = findBinaryLine(lines);
+    if (byBinary) {
+      return byBinary;
+    }
+  }
+  return null;
+}
+
+function sectionPath(
+  section: string,
+  renameRe: RegExp,
+  prefix: string,
+  includeBinary: boolean,
+  extractFromDiffGit: (rest: string) => string | null,
+): string | null {
+  const lines = section.split("\n");
+  const path = findPathInLines(lines, renameRe, prefix, includeBinary);
+  if (path) {
+    return path;
+  }
   const [header] = lines;
   if (header?.startsWith("diff --git ")) {
+    return extractFromDiffGit(header);
+  }
+  return null;
+}
+
+export function sectionNewPath(section: string): string | null {
+  return sectionPath(section, RENAME_TO_RE, "+++ ", true, (header) => {
+    const rest = header.slice("diff --git ".length);
+    const idx = rest.lastIndexOf(" b/");
+    if (idx >= 0) {
+      return stripGitPath(rest.slice(idx + 3).trim());
+    }
+    return null;
+  });
+}
+
+export function sectionOldPath(section: string): string | null {
+  return sectionPath(section, RENAME_FROM_RE, "--- ", false, (header) => {
     const rest = header.slice("diff --git ".length);
     const idx = rest.indexOf(" b/");
     if (idx > 0) {
       return stripGitPath(rest.slice(2, idx).trim());
     }
-  }
-  return null;
+    return null;
+  });
 }
 
 export function sectionIsBinary(section: string): boolean {
   return BINARY_LINE_RE.test(section);
 }
 
-export interface SizeCheck {
+export type SizeCheck = {
   notice?: string;
   tooLarge: boolean;
-}
+};
 
 export function checkDiffLimits(diff: string): SizeCheck {
   if (diff.length === 0) {
@@ -208,7 +248,7 @@ export function checkDiffLimits(diff: string): SizeCheck {
 
 export function countDiffLines(
   diff: string,
-  kind: "additions" | "deletions"
+  kind: "additions" | "deletions",
 ): number {
   const marker = kind === "additions" ? "+" : "-";
   const header = kind === "additions" ? "+++" : "---";
@@ -221,14 +261,14 @@ export function countDiffLines(
   return count;
 }
 
-export interface GitChangesetOptions {
+export type GitChangesetOptions = {
   diffText: string;
   id: Scope;
   ignoreFiles?: readonly string[];
   label: string;
   nameStatus: string;
   numstat: string;
-}
+};
 
 export function buildGitChangeset(options: GitChangesetOptions): Changeset {
   const numByPath = new Map<string, NumstatEntry>();

@@ -1,5 +1,6 @@
 import type { CommitEntry, FileStatus } from "../types";
 import { gitThrow } from "../vcs/git";
+import { statusFromCode } from "./shared";
 
 const LOG_FORMAT = "%H%n%s%n%an%n%ai%n";
 const WHITESPACE_RE = /\s+/;
@@ -7,7 +8,7 @@ const WHITESPACE_RE = /\s+/;
 export async function gitLog(
   cwd: string,
   offset: number,
-  limit: number
+  limit: number,
 ): Promise<{
   commits: CommitEntry[];
   hasMore: boolean;
@@ -22,7 +23,7 @@ export async function gitLog(
       `--skip=${offset}`,
       `-n${limit + 1}`,
     ],
-    cwd
+    cwd,
   );
   const parsed = parseLogOutput(logOutput);
   const hasMore = parsed.length > limit;
@@ -104,14 +105,14 @@ function parseLogOutput(text: string): Array<{
 
 /** Local-only (ahead) and remote-only (behind) commit counts for the current branch. */
 export async function getBranchAheadBehind(
-  cwd: string
+  cwd: string,
 ): Promise<{ ahead: number; behind: number }> {
   try {
     const upstream = await gitThrow(["rev-parse", "--abbrev-ref", "@{u}"], cwd);
     const [behindStr, aheadStr] = (
       await gitThrow(
         ["rev-list", "--left-right", "--count", `${upstream.trim()}...HEAD`],
-        cwd
+        cwd,
       )
     )
       .trim()
@@ -126,7 +127,7 @@ export async function getBranchAheadBehind(
 }
 
 async function getPushedState(
-  cwd: string
+  cwd: string,
 ): Promise<{ ahead: number; behind: number; unpushed: Set<string> }> {
   try {
     const upstream = await gitThrow(["rev-parse", "--abbrev-ref", "@{u}"], cwd);
@@ -136,7 +137,7 @@ async function getPushedState(
     const [behindStr] = (
       await gitThrow(
         ["rev-list", "--left-right", "--count", `${base}...HEAD`],
-        cwd
+        cwd,
       )
     )
       .trim()
@@ -153,7 +154,7 @@ async function getPushedState(
 
 async function getCommitFiles(
   cwd: string,
-  hash: string
+  hash: string,
 ): Promise<
   Array<{
     additions: number;
@@ -199,7 +200,7 @@ async function getCommitFiles(
         continue;
       }
       const path = rest.join("\t");
-      const status = codeToStatus(code);
+      const status = statusFromCode(code);
       const nums = numByPath.get(path);
       files.push({
         additions: nums?.additions ?? 0,
@@ -217,28 +218,11 @@ async function getCommitFiles(
 export async function getCommitFileDiff(
   cwd: string,
   hash: string,
-  path: string
+  path: string,
 ): Promise<string> {
   const out = await gitThrow(
     ["show", "--no-color", "--format=", hash, "--", path],
-    cwd
+    cwd,
   );
   return out;
-}
-
-function codeToStatus(code: string): FileStatus {
-  switch (code[0]) {
-    case "A":
-      return "added";
-    case "D":
-      return "deleted";
-    case "R":
-      return "renamed";
-    case "C":
-      return "copied";
-    case "T":
-      return "type-changed";
-    default:
-      return "modified";
-  }
 }

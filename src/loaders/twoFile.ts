@@ -1,7 +1,7 @@
-// biome-ignore lint/style/useFilenamingConvention: spec requires this filename
 import { resolve } from "node:path";
 import type { BunFile } from "bun";
 import { createTwoFilesPatch } from "diff";
+
 import type { Changeset, FileDiff } from "../types";
 import { MAX_DIFF_BYTES } from "../types";
 import { git, gitThrow } from "../vcs/git";
@@ -16,7 +16,7 @@ import {
 async function isGitRef(rev: string, cwd: string): Promise<boolean> {
   const res = await git(
     ["rev-parse", "--verify", "--quiet", `${rev}^{commit}`],
-    cwd
+    cwd,
   );
   return res.exitCode === 0;
 }
@@ -25,7 +25,7 @@ async function twoFileDiff(
   a: string,
   b: string,
   cwd: string,
-  ignoreFiles: readonly string[]
+  ignoreFiles: readonly string[],
 ): Promise<Changeset> {
   const base = ["diff", "--no-color", "-M", a, b];
   const [nameStatus, numstat, diffText] = await Promise.all([
@@ -64,7 +64,7 @@ async function twoFilePath(
   a: string,
   b: string,
   cwd: string,
-  ignoreFiles: readonly string[]
+  ignoreFiles: readonly string[],
 ): Promise<Changeset> {
   const label = `diff ${a}..${b}`;
   const [fileA, fileB] = await Promise.all([
@@ -110,11 +110,15 @@ async function twoFilePath(
     files,
     id: "single",
     label,
-    stats: {
-      additions: files.reduce((sum, f) => sum + f.additions, 0),
-      deletions: files.reduce((sum, f) => sum + f.deletions, 0),
-      files: files.length,
-    },
+    stats: (() => {
+      let additions = 0;
+      let deletions = 0;
+      for (const f of files) {
+        additions += f.additions;
+        deletions += f.deletions;
+      }
+      return { additions, deletions, files: files.length };
+    })(),
   };
 }
 
@@ -122,7 +126,7 @@ export async function twoFile(
   a: string,
   b: string,
   cwd: string,
-  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES,
 ): Promise<Changeset> {
   const [refA, refB] = await Promise.all([isGitRef(a, cwd), isGitRef(b, cwd)]);
   if (refA && refB) {

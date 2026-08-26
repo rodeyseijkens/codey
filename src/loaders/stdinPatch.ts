@@ -1,6 +1,6 @@
-// biome-ignore lint/style/useFilenamingConvention: spec requires this filename
 import type { StructuredPatch } from "diff";
 import { formatPatch, parsePatch } from "diff";
+
 import type { Changeset, FileDiff, FileStatus } from "../types";
 import { DEFAULT_IGNORE_FILES, markIgnoredFiles } from "./ignore";
 import {
@@ -26,7 +26,7 @@ function stripPrefix(path: string): string {
 function inferStatus(
   section: string,
   oldName: string | undefined,
-  newName: string | undefined
+  newName: string | undefined,
 ): FileStatus {
   if (NEW_FILE_MODE_RE.test(section)) {
     return "added";
@@ -89,7 +89,7 @@ function buildPatchFile(section: string): FileDiff | null {
 
 export async function stdinPatch(
   input?: string,
-  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES,
 ): Promise<Changeset> {
   const text = input ?? (await new Response(process.stdin).text());
   const rawSections = text.includes("diff --git ")
@@ -110,10 +110,14 @@ export async function stdinPatch(
     files,
     id: "single",
     label: "patch",
-    stats: {
-      additions: files.reduce((sum, file) => sum + file.additions, 0),
-      deletions: files.reduce((sum, file) => sum + file.deletions, 0),
-      files: files.length,
-    },
+    stats: (() => {
+      let additions = 0;
+      let deletions = 0;
+      for (const file of files) {
+        additions += file.additions;
+        deletions += file.deletions;
+      }
+      return { additions, deletions, files: files.length };
+    })(),
   };
 }

@@ -1,15 +1,17 @@
-export interface ClipboardResult {
+import { commentKey, type Scope } from "../types";
+
+export type ClipboardResult = {
   error?: string;
   method?: "osc52" | "pbcopy" | "wl-copy" | "xclip" | "xsel";
   ok: boolean;
-}
+};
 
 type Osc52Writer = (text: string) => boolean;
 
 async function pipeToTool(
   cmd: string[],
   text: string,
-  method: ClipboardResult["method"]
+  method: ClipboardResult["method"],
 ): Promise<ClipboardResult> {
   try {
     const proc = Bun.spawn(cmd, {
@@ -32,7 +34,7 @@ async function pipeToTool(
 
 export async function copyText(
   text: string,
-  osc52?: Osc52Writer
+  osc52?: Osc52Writer,
 ): Promise<ClipboardResult> {
   const { platform } = process;
   if (platform === "darwin") {
@@ -50,7 +52,7 @@ export async function copyText(
     const xclip = await pipeToTool(
       ["xclip", "-selection", "clipboard"],
       text,
-      "xclip"
+      "xclip",
     );
     if (xclip.ok) {
       return xclip;
@@ -58,7 +60,7 @@ export async function copyText(
     const xsel = await pipeToTool(
       ["xsel", "--clipboard", "--input"],
       text,
-      "xsel"
+      "xsel",
     );
     if (xsel.ok) {
       return xsel;
@@ -76,18 +78,18 @@ export async function copyText(
 export function formatCommentsAsMarkdown(
   title: string,
   comments: {
-    scope: string;
+    scope: Scope;
     path: string;
     startRow: number;
     endRow: number;
     context: string;
     text: string;
-  }[]
+  }[],
 ): string {
   const lines: string[] = [`# ${title}`, ""];
   const byFile = new Map<string, typeof comments>();
   for (const c of comments) {
-    const key = `${c.scope}:${c.path}`;
+    const key = commentKey(c.scope, c.path);
     const arr = byFile.get(key) ?? [];
     arr.push(c);
     byFile.set(key, arr);
