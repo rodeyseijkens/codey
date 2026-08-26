@@ -78,6 +78,13 @@ export type Overlay =
   | { kind: "reset-commits"; hash: string }
   | { kind: "edit-commit"; hash: string };
 
+export interface DiffSearch {
+  index: number;
+  matches: number[];
+  open: boolean;
+  query: string;
+}
+
 /** An in-progress inline comment being typed into the diff body. */
 export interface CommentDraft {
   commentId?: string;
@@ -109,6 +116,7 @@ export interface AppState {
   commitView: { hash: string; file: FileDiff } | null;
   conflictNotice: string | null;
   cursorRow: number;
+  diffSearch: DiffSearch | null;
   draftClearTick: number;
   fatalError: string | null;
   focus: FocusPane;
@@ -169,6 +177,7 @@ export function initialState(): AppState {
     commitView: null,
     conflictNotice: null,
     cursorRow: 0,
+    diffSearch: null,
     draftClearTick: 0,
     fatalError: null,
     focus: "sidebar",

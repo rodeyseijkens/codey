@@ -231,7 +231,12 @@ export function handleDiffPaneKey(
   scrollRef: ScrollBoxRenderable | null = null
 ): void {
   const s = store.getState();
-  if (s.focus !== "diff" || s.overlay || s.commentDraft) {
+  if (
+    s.focus !== "diff" ||
+    s.overlay ||
+    s.commentDraft ||
+    (s.diffSearch?.open ?? false)
+  ) {
     return;
   }
   const chord = keyEventToChord(e);
@@ -390,6 +395,9 @@ export function DiffPane() {
         store.set({ cursorRow: firstChange });
       } else {
         setPendingFirstChange(null);
+      }
+      if (store.getState().diffSearch) {
+        store.set({ diffSearch: null });
       }
     }
   }, [file?.path, rows, store]);
@@ -567,6 +575,40 @@ export function DiffPane() {
           wrapLines={state.wrapLines}
         />
       </scrollbox>
+      {state.diffSearch ? (
+        <box
+          style={{
+            backgroundColor: C.selection,
+            minWidth: 30,
+            overflow: "hidden",
+            paddingLeft: 1,
+            paddingRight: 1,
+            position: "absolute",
+            right: 0,
+            top: 0,
+          }}
+        >
+          <box style={{ flexDirection: "row", overflow: "hidden" }}>
+            <text style={{ fg: C.fg, flexGrow: 1, overflow: "hidden" }}>
+              {`\uf422 ${state.diffSearch.query}${state.diffSearch.open ? "\u258c" : ""}`}
+            </text>
+            {(() => {
+              const { index, matches, query } = state.diffSearch;
+              if (matches.length > 0) {
+                return (
+                  <text style={{ fg: C.accent, marginLeft: 1 }}>
+                    {`${index + 1}/${matches.length}`}
+                  </text>
+                );
+              }
+              if (query.length > 0) {
+                return <text style={{ fg: C.red, marginLeft: 1 }}>0/0</text>;
+              }
+              return null;
+            })()}
+          </box>
+        </box>
+      ) : null}
     </box>
   );
 }

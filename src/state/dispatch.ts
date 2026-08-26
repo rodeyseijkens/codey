@@ -53,6 +53,14 @@ import {
   openEditCommentDraft,
   visualSelect,
 } from "./comment-actions";
+import {
+  acceptDiffSearch,
+  closeDiffSearch,
+  diffSearchNext,
+  diffSearchPrev,
+  openDiffSearch,
+  setDiffSearchQuery,
+} from "./search-actions";
 import { type AppState, type AppStore, getStore } from "./store";
 
 let quitHandler: (() => void) | null = null;
@@ -303,6 +311,49 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
       quit();
     }
     return;
+  }
+
+  if (
+    state.focus === "diff" &&
+    !state.overlay &&
+    !state.commentDraft &&
+    !state.commitDraft &&
+    !(chord.alt || chord.ctrl || chord.shift) &&
+    chord.key === "/"
+  ) {
+    openDiffSearch();
+    return;
+  }
+
+  const { diffSearch } = state;
+  if (diffSearch && state.focus === "diff") {
+    if (diffSearch.open) {
+      const { name } = e;
+      if (name === "escape") {
+        closeDiffSearch();
+      } else if (name === "enter" || name === "return") {
+        void acceptDiffSearch();
+      } else if (name === "backspace") {
+        setDiffSearchQuery(diffSearch.query.slice(0, -1));
+      } else if (name === "space") {
+        setDiffSearchQuery(`${diffSearch.query} `);
+      } else if (!(e.ctrl || e.meta) && name.length === 1) {
+        setDiffSearchQuery(diffSearch.query + name);
+      }
+      return;
+    }
+    if (chord.key === "escape") {
+      closeDiffSearch();
+      return;
+    }
+    if (chord.key === "n") {
+      if (chord.shift) {
+        diffSearchPrev();
+      } else {
+        diffSearchNext();
+      }
+      return;
+    }
   }
 
   if (state.overlay) {
