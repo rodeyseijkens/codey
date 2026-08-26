@@ -1,5 +1,6 @@
 import { parse } from "smol-toml";
 import { z } from "zod";
+
 import { DEFAULT_IGNORE_FILES } from "./loaders/ignore";
 
 export const CONFIG_DIR = `${process.env.HOME ?? "~"}/.config/codey`;
@@ -25,7 +26,7 @@ export type ConfigLoadResult =
   | { ok: false; error: string; path: string };
 
 export async function loadConfig(
-  path = CONFIG_PATH
+  path = CONFIG_PATH,
 ): Promise<ConfigLoadResult> {
   const file = Bun.file(path);
   if (!(await file.exists())) {

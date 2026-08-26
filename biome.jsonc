@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core", "ultracite/biome/react"],
   "files": {
     "includes": [
@@ -12,11 +12,72 @@
       "!src/ui/hunk-diff/core",
       "!src/ui/hunk-diff/ui",
       "!src/ui/hunk-diff/lib",
-      "!src/ui/hunk-diff/opentui/model.ts"
+      "!src/ui/hunk-diff/opentui"
     ]
   },
+  "formatter": {
+    "useEditorconfig": true
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "noUselessElse": "error",
+        "useConsistentCurlyBraces": "error",
+        "useBlockStatements": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "requireAscii": true,
+            "filenameCases": ["camelCase", "kebab-case"]
+          }
+        },
+        "noExportedImports": "warn",
+        "useConsistentTypeDefinitions": {
+          "level": "error",
+          "options": {
+            "style": "type"
+          }
+        },
+        "useErrorCause": "off"
+      },
+      "performance": {
+        "noNamespaceImport": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn",
+        "noVoid": "off"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off",
+        "noShadowRestrictedNames": "off",
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": [
+              "error",
+              "warn",
+              "info",
+              "debug",
+              "trace",
+              "time",
+              "timeEnd"
+            ]
+          }
+        },
+        "noLeakedRender": "off"
+      },
+      "correctness": {
+        "noSwitchDeclarations": "error"
+      }
+    }
+  },
   "javascript": {
-    "globals": ["Bun"]
+    "globals": ["Bun"],
+    "formatter": {
+      "trailingCommas": "all",
+      "quoteStyle": "double"
+    }
   },
   "overrides": [
     {
@@ -61,5 +122,27 @@
         }
       }
     }
-  ]
+  ],
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":NODE:",
+              ["react"],
+              ["next", "next/**"],
+              ["expo", "expo/**"],
+              [":PACKAGE:", "!@repo/**"],
+              ":BLANK_LINE:",
+              [":ALIAS:", "@repo/**"],
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  }
 }

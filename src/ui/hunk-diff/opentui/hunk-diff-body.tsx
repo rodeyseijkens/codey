@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+
 import { DEFAULT_TAB_WIDTH } from "../core/tabWidth";
 import type { AgentAnnotation } from "../core/types";
 import {
@@ -29,7 +30,7 @@ function splitLineMatchesCursor(
     ReturnType<typeof buildSplitRows>[number],
     { type: "split-line" }
   >,
-  cursor: CanonicalDiffRow
+  cursor: CanonicalDiffRow,
 ): boolean {
   if (cursor.kind === "add") {
     return row.right.lineNumber === cursor.newLine;
@@ -48,7 +49,7 @@ function stackLineMatchesCursor(
     ReturnType<typeof buildStackRows>[number],
     { type: "stack-line" }
   >,
-  cursor: CanonicalDiffRow
+  cursor: CanonicalDiffRow,
 ): boolean {
   if (cursor.kind === "add") {
     return row.cell.newLineNumber === cursor.newLine;
@@ -67,11 +68,11 @@ function resolveLayoutRow(
   cursor: CanonicalDiffRow,
   canonicalRows: readonly CanonicalDiffRow[],
   canonicalIndex: number,
-  rows: ReturnType<typeof buildStackRows>
+  rows: ReturnType<typeof buildStackRows>,
 ): number {
   if (cursor.kind === "header") {
     return rows.findIndex(
-      (row) => row.type === "hunk-header" && row.hunkIndex === cursor.hunkIndex
+      (row) => row.type === "hunk-header" && row.hunkIndex === cursor.hunkIndex,
     );
   }
   if (cursor.kind === "gap") {
@@ -97,7 +98,7 @@ function resolveLayoutRow(
   }
 
   const headerIndex = rows.findIndex(
-    (row) => row.type === "hunk-header" && row.hunkIndex === cursor.hunkIndex
+    (row) => row.type === "hunk-header" && row.hunkIndex === cursor.hunkIndex,
   );
   if (headerIndex < 0) {
     return -1;
@@ -122,7 +123,7 @@ function buildRowsForLayout(
   layout: "split" | "stack",
   highlighted: ReturnType<typeof useHighlightedDiff>,
   theme: ReturnType<typeof resolveTheme>,
-  tabWidth: number
+  tabWidth: number,
 ): ReturnType<typeof buildStackRows> {
   if (layout === "split") {
     return buildSplitRows(internalFile, highlighted, theme, tabWidth);
@@ -143,7 +144,7 @@ type PlannedBodyRow =
 function buildPlannedRows(
   rows: ReturnType<typeof buildStackRows>,
   canonicalRows: readonly CanonicalDiffRow[],
-  notes: readonly HunkDiffNote[]
+  notes: readonly HunkDiffNote[],
 ): PlannedBodyRow[] {
   const notesByLayoutIndex = new Map<number, HunkDiffNote[]>();
   for (const note of notes) {
@@ -155,7 +156,7 @@ function buildPlannedRows(
       canonical,
       canonicalRows,
       note.anchorRow,
-      rows
+      rows,
     );
     if (layoutIndex < 0) {
       continue;
@@ -180,7 +181,7 @@ function buildPlannedRows(
 function buildGuideSideByLayoutRow(
   rows: ReturnType<typeof buildStackRows>,
   canonicalRows: readonly CanonicalDiffRow[],
-  notes: readonly HunkDiffNote[]
+  notes: readonly HunkDiffNote[],
 ): Map<number, "old" | "new"> {
   const map = new Map<number, "old" | "new">();
   for (const note of notes) {
@@ -194,7 +195,7 @@ function buildGuideSideByLayoutRow(
         canonical,
         canonicalRows,
         index,
-        rows
+        rows,
       );
       if (layoutIndex < 0 || map.has(layoutIndex)) {
         continue;
@@ -209,7 +210,7 @@ function lineRangeForRows(
   rows: readonly CanonicalDiffRow[],
   startRow: number,
   endRow: number,
-  side: "old" | "new"
+  side: "old" | "new",
 ): [number, number] | undefined {
   const lines: number[] = [];
   const last = Math.min(endRow, rows.length - 1);
@@ -228,7 +229,7 @@ function lineRangeForRows(
 
 function noteToAnnotation(
   note: HunkDiffNote,
-  rows: readonly CanonicalDiffRow[]
+  rows: readonly CanonicalDiffRow[],
 ): AgentAnnotation {
   const start = note.guideStartRow ?? note.anchorRow;
   return {
@@ -243,7 +244,7 @@ function noteToAnnotation(
 
 function noteAnchorSide(
   note: HunkDiffNote,
-  rows: readonly CanonicalDiffRow[]
+  rows: readonly CanonicalDiffRow[],
 ): "old" | "new" {
   const row = rows[note.anchorRow];
   if (row?.kind === "add") {
@@ -275,7 +276,7 @@ export function HunkDiffBody({
   const resolvedTheme = resolveTheme(theme, null);
   const internalFile = useMemo(
     () => (file ? toInternalDiffFile(file) : undefined),
-    [file]
+    [file],
   );
   const resolvedHighlighted = useHighlightedDiff({
     file: internalFile,
@@ -290,33 +291,33 @@ export function HunkDiffBody({
             layout,
             resolvedHighlighted,
             resolvedTheme,
-            tabWidth
+            tabWidth,
           )
         : [],
-    [internalFile, layout, resolvedHighlighted, resolvedTheme, tabWidth]
+    [internalFile, layout, resolvedHighlighted, resolvedTheme, tabWidth],
   );
   const canonicalRows = useMemo(
     () => (file ? buildCanonicalDiffRows(file) : []),
-    [file]
+    [file],
   );
   const cursor = useMemo(
     () => (cursorRow === undefined ? undefined : canonicalRows[cursorRow]),
-    [cursorRow, canonicalRows]
+    [cursorRow, canonicalRows],
   );
   const resolvedCursorRow = useMemo(
     () =>
       cursor && cursorRow !== undefined
         ? resolveLayoutRow(cursor, canonicalRows, cursorRow, rows)
         : -1,
-    [cursor, cursorRow, canonicalRows, rows]
+    [cursor, cursorRow, canonicalRows, rows],
   );
   const plannedRows = useMemo(
     () => buildPlannedRows(rows, canonicalRows, notes),
-    [rows, canonicalRows, notes]
+    [rows, canonicalRows, notes],
   );
   const guideSideByLayoutRow = useMemo(
     () => buildGuideSideByLayoutRow(rows, canonicalRows, notes),
-    [rows, canonicalRows, notes]
+    [rows, canonicalRows, notes],
   );
 
   const layoutToCanonical = useMemo(() => {
@@ -336,7 +337,7 @@ export function HunkDiffBody({
 
   const lineNumberDigits = useMemo(
     () => String(internalFile ? findMaxLineNumber(internalFile) : 1).length,
-    [internalFile]
+    [internalFile],
   );
 
   const cursorOffset = useMemo(() => {
@@ -358,7 +359,7 @@ export function HunkDiffBody({
           showHunkHeaders,
           wrapLines,
           resolvedTheme,
-          gutterSign
+          gutterSign,
         );
       } else {
         offset += measureCommentCardHeight({
@@ -400,7 +401,7 @@ export function HunkDiffBody({
             style: "row",
           }
         : undefined,
-    [cursor, resolvedCursorRow, rows]
+    [cursor, resolvedCursorRow, rows],
   );
 
   if (!internalFile) {

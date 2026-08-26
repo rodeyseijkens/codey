@@ -1,11 +1,11 @@
 import type { KeyEvent } from "@opentui/core";
 
-export interface KeyChord {
+export type KeyChord = {
   alt: boolean;
   ctrl: boolean;
   key: string;
   shift: boolean;
-}
+};
 
 export type ChordParseResult =
   | { ok: true; chord: KeyChord }
@@ -62,16 +62,16 @@ const KNOWN_KEYS = new Set([
   "space",
 ]);
 
-interface ModifierParse {
+type ModifierParse = {
   alt: boolean;
   ctrl: boolean;
   key: string | null;
   shift: boolean;
-}
+};
 
 function parseModifiers(
   parts: string[],
-  input: string
+  input: string,
 ): ModifierParse | { error: string } {
   let ctrl = false;
   let alt = false;

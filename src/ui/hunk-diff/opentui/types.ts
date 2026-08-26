@@ -1,16 +1,17 @@
 import type { FileDiffMetadata } from "@pierre/diffs";
+
 import type { LineHighlightPaintIndex } from "../ui/diff/lineHighlightPaint";
 
 export type HunkDiffLayout = "split" | "stack";
 
 /** Line stats shown by public Hunk OpenTUI primitives. */
-export interface HunkDiffStats {
+export type HunkDiffStats = {
   additions: number;
   deletions: number;
-}
+};
 
 /** Input accepted by public OpenTUI components before defaults are normalized. */
-export interface HunkDiffFileInput {
+export type HunkDiffFileInput = {
   id: string;
   isBinary?: boolean;
   isTooLarge?: boolean;
@@ -22,7 +23,7 @@ export interface HunkDiffFileInput {
   previousPath?: string;
   stats?: HunkDiffStats;
   statsTruncated?: boolean;
-}
+};
 
 /** Normalized diff file returned by createHunkDiffFile and patch helpers. */
 export interface HunkDiffFile extends Omit<HunkDiffFileInput, "stats"> {
@@ -30,7 +31,7 @@ export interface HunkDiffFile extends Omit<HunkDiffFileInput, "stats"> {
 }
 
 /** One inline comment anchored to a canonical row, rendered as a note card. */
-export interface HunkDiffNote {
+export type HunkDiffNote = {
   /** Canonical row index the note block appears after. */
   anchorRow: number;
   /** Renders an inline composer prefilled with `text` instead of the note body. */
@@ -47,10 +48,10 @@ export interface HunkDiffNote {
   /** Called with the composer value when the draft is saved. */
   onSave?: (text: string) => void;
   text: string;
-}
+};
 
 /** Public props shared by single-file diff body and view components. */
-export interface HunkDiffBodyProps {
+export type HunkDiffBodyProps = {
   /**
    * Index of the cursor row in the canonical (stack) row list, resolved
    * against the rendered layout. The cursor paints a full-row background
@@ -79,4 +80,4 @@ export interface HunkDiffBodyProps {
   theme?: string;
   width: number;
   wrapLines?: boolean;
-}
+};

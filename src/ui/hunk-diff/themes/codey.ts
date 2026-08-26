@@ -16,7 +16,7 @@ export type IconColorKey =
   | "red"
   | "yellow";
 
-export interface IconColors {
+export type IconColors = {
   aqua: string;
   beige: string;
   blue: string;
@@ -26,9 +26,9 @@ export interface IconColors {
   purple: string;
   red: string;
   yellow: string;
-}
+};
 
-export interface UiColors {
+export type UiColors = {
   accent: string;
   bg: string;
   border: string;
@@ -51,12 +51,12 @@ export interface UiColors {
   successBg: string;
   warnBg: string;
   yellow: string;
-}
+};
 
-export interface CodeyThemeColors {
+export type CodeyThemeColors = {
   icons: IconColors;
   ui: UiColors;
-}
+};
 
 const GITHUB_DARK: CodeyThemeColors = {
   icons: {
