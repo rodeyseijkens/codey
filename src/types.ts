@@ -8,7 +8,7 @@ export type FileStatus =
   | "copied"
   | "type-changed";
 
-export interface FileDiff {
+export type FileDiff = {
   additions: number;
   deletions: number;
   diff: string;
@@ -19,22 +19,22 @@ export interface FileDiff {
   path: string;
   status: FileStatus;
   tooLarge: boolean;
-}
+};
 
-export interface ChangesetStats {
+export type ChangesetStats = {
   additions: number;
   deletions: number;
   files: number;
-}
+};
 
-export interface Changeset {
+export type Changeset = {
   files: FileDiff[];
   id: Scope;
   label: string;
   stats: ChangesetStats;
-}
+};
 
-export interface Comment {
+export type Comment = {
   context: string;
   createdAt: number;
   endRow: number;
@@ -44,9 +44,51 @@ export interface Comment {
   startRow: number;
   text: string;
   updatedAt: number;
-}
+};
 
 export type DiffMode = "split" | "stack" | "auto";
+
+export const DIFF_MODES: readonly DiffMode[] = ["split", "stack", "auto"];
+
+export const LAYOUT_MODES = {
+  auto: "auto",
+  split: "split",
+  stack: "stack",
+} as const;
+
+export function parseDiffMode(s: string | undefined): DiffMode | undefined {
+  if (
+    s === LAYOUT_MODES.split ||
+    s === LAYOUT_MODES.stack ||
+    s === LAYOUT_MODES.auto
+  ) {
+    return s;
+  }
+}
+
+export const SIDEBAR_VIEWS = {
+  list: "list",
+  tree: "tree",
+} as const;
+
+export type SidebarView = (typeof SIDEBAR_VIEWS)[keyof typeof SIDEBAR_VIEWS];
+
+export function parseSidebarView(
+  s: string | undefined,
+): SidebarView | undefined {
+  if (s === SIDEBAR_VIEWS.tree || s === SIDEBAR_VIEWS.list) {
+    return s;
+  }
+}
+
+export const TOAST_KINDS = {
+  error: "error",
+  info: "info",
+  success: "success",
+  warn: "warn",
+} as const;
+
+export type ToastKind = (typeof TOAST_KINDS)[keyof typeof TOAST_KINDS];
 
 export type LoaderMode = "diff" | "show" | "twoFile" | "patch" | "pager";
 
@@ -68,14 +110,14 @@ export function fileDiffKey(file: FileDiff): string {
     : file.path;
 }
 
-export interface CommitFile {
+export type CommitFile = {
   additions: number;
   deletions: number;
   path: string;
   status: FileStatus;
-}
+};
 
-export interface CommitEntry {
+export type CommitEntry = {
   author: string;
   date: string;
   diffByPath: Record<string, string>;
@@ -85,7 +127,7 @@ export interface CommitEntry {
   message: string;
   shortHash: string;
   stats: { additions: number; deletions: number; files: number };
-}
+};
 
 export function commentKey(scope: Scope, path: string): string {
   return `${scope}:${path}`;
