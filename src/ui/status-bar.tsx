@@ -86,7 +86,7 @@ function bottomBarContent(
     return {
       color: C.dim,
       content:
-        "j/k move · space collapse · a stage · A stage all · u unstage/discard · U discard all · ? help",
+        "j/k move · space collapse · a stage · A stage all · u unstage/discard · U discard all · b sidebar · t view · </> resize · r refresh · m layout · w wrap · ? help",
     };
   }
   const commitShown = state.commitView !== null && state.selection === null;
@@ -101,8 +101,8 @@ function bottomBarContent(
   return {
     color: C.dim,
     content: state.wrapLines
-      ? "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · s send · w unwrap · ? help"
-      : "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · s send · w wrap · ? help",
+      ? "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · y copy · s send · w unwrap · ? help"
+      : "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · y copy · s send · w wrap · ? help",
   };
 }
 
