@@ -72,12 +72,12 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | --------- | ---------------------------------------------------- |
 | `j` / `k` | Move selection down / up                             |
 | `f` / `F` | Next / previous file                                 |
-| `Space`   | Collapse/expand row (section, folder, commit header) |
+| `Space`   | Collapse/expand row (section, folder)                |
 | `b`       | Toggle sidebar                                       |
 | `t`       | Toggle sidebar view (tree / list)                    |
 | `<` / `>` | Shrink / grow sidebar                                |
 | `a` / `A` | Stage file / Stage all files                         |
-| `u` / `U` | Unstage file / Unstage all files                     |
+| `u` / `U` | Unstage staged file / Unstage all staged files; discard working-tree changes from the changes scope |
 | `r`       | Refresh (reload from git)                            |
 | `m`       | Cycle layout (split / stack / auto)                  |
 | `w`       | Toggle line wrapping                                 |
@@ -98,14 +98,15 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 #### Commits Pane
 
-| Key       | Action                                                        |
-| --------- | ------------------------------------------------------------- |
-| `j` / `k` | Move selection down / up                                      |
-| `f` / `F` | Next / previous file                                          |
-| `Space`   | Expand/collapse commit                                        |
-| `c`       | Open commit input                                             |
-| `p` / `P` | Pull / push to the remote                                     |
-| `g`       | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
+| Key           | Action                                                        |
+| ------------- | ------------------------------------------------------------- |
+| `j` / `k`     | Move selection down / up                                      |
+| `f` / `F`     | Next / previous file                                          |
+| `Space`       | Expand/collapse commit                                        |
+| `c`           | Open commit input                                             |
+| `p` / `P`     | Pull / push to the remote                                     |
+| `g`           | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
+| `Alt+j` / `Alt+k` | Reorder commit up / down in history (interactive rebase)  |
 
 #### Global
 

@@ -27,8 +27,8 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `>`     | sidebar-grow     | Make the sidebar wider                                   |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
 | `A`     | stage-all        | Stage all changed files                                  |
-| `u`     | unstage-file     | Unstage selected file (`git restore --staged <file>`)    |
-| `U`     | unstage-all      | Unstage all staged files                                 |
+| `u`     | unstage-file     | Unstage selected file (`git restore --staged <file>`); discards working-tree changes in the changes scope |
+| `U`     | unstage-all      | Unstage all staged files; discards all working-tree changes in the changes scope |
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
 | `w`     | wrap-text        | Toggle diff line wrapping                                |
@@ -54,16 +54,23 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 ### Commits Pane
 
-| Key     | Command          | Description                                              |
-| ------- | ---------------- | -------------------------------------------------------- |
-| `tab`   | focus-toggle     | Cycle focus: changes → diff → commits                    |
+| Key      | Command          | Description                                              |
+| -------- | ---------------- | -------------------------------------------------------- |
+| `j`      | select-next      | Move cursor down (commit headers and file rows)          |
+| `k`      | select-prev      | Move cursor up                                           |
+| `f`      | next-file        | Jump cursor to next commit file row                      |
+| `F`      | prev-file        | Jump cursor to previous commit file row                  |
+| `space`  | collapse-section | Expand/collapse commit header (or load-more row)         |
+| `tab`    | focus-toggle     | Cycle focus: changes → diff → commits                    |
 | `shift+tab` | focus-prev    | Cycle focus the other way                                |
-| `0`     | focus-diff       | Focus the diff pane                                      |
-| `1`     | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
-| `2`     | focus-commits    | Focus the commit log (re-shows the sidebar)              |
-| `g`     | git-edit         | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
-| `p`     | git-pull         | Pull from the remote (commit pane only)                  |
-| `P`     | git-push         | Push to the remote (commit pane only)                    |
+| `0`      | focus-diff       | Focus the diff pane                                      |
+| `1`      | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
+| `2`      | focus-commits    | Focus the commit log (re-shows the sidebar)              |
+| `g`      | git-edit         | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
+| `p`      | git-pull         | Pull from the remote (commit pane only)                  |
+| `P`      | git-push         | Push to the remote (commit pane only)                    |
+| `alt+j`  | commit-move-down | Move selected commit down in history (interactive rebase)|
+| `alt+k`  | commit-move-up   | Move selected commit up in history (interactive rebase)  |
 
 ### Global
 
@@ -128,9 +135,11 @@ The help overlay (`?`) is scrollable with `j`/`k`, the arrow keys, and
 
 ## Stage keys (`a` / `A` / `u` / `U`)
 
-Staging is real `git add` against the index — it mutates your repository. These keys
-are exclusive to `codey diff` (two-group mode); in `show`, two-file, `patch`, and
-`pager` modes they are disabled with a hint toast.
+Staging is real `git add` against the index — it mutates your repository. In the
+changes scope `u`/`U` opens a confirm-discard dialog that runs `git restore` and
+`rm` to drop working-tree changes. These keys are exclusive to `codey diff`
+(two-group mode); in `show`, two-file, `patch`, and `pager` modes they are disabled
+with a hint toast.
 
 Guard: staging a file that still has pending unsent comments warns first
 (`N comment(s) will be cleared — press again to confirm`). Pressing a stage key again
