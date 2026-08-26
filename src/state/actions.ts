@@ -7,7 +7,8 @@ import {
   gitLog,
 } from "../loaders/git-log";
 import { compileIgnorePatterns } from "../loaders/ignore";
-import type { FileDiff, Scope } from "../types";
+import type { FileDiff, Scope, SidebarView } from "../types";
+import { DIFF_MODES, SIDEBAR_VIEWS, TOAST_KINDS } from "../types";
 import {
   deleteFiles,
   editCommit,
@@ -30,12 +31,23 @@ import {
   rowKey,
   type Selection,
   type SidebarRow,
-  type SidebarView,
 } from "./store";
+
+export const SIDEBAR_MIN_WIDTH = 16;
+export const SIDEBAR_MAX_WIDTH = 80;
+export const SIDEBAR_RESIZE_STEP = 4;
+const COMMIT_PAGE_SIZE = 10;
+
+function toastError(store: AppStore, action: string, err: unknown): void {
+  store.showToast(
+    TOAST_KINDS.error,
+    `${action} failed: ${err instanceof Error ? err.message : String(err)}`,
+  );
+}
 
 function preserveSelection(
   store: AppStore,
-  prevSel: Selection | null
+  prevSel: Selection | null,
 ): Selection | null {
   if (prevSel) {
     const rows = store.sidebarRows();
@@ -50,7 +62,7 @@ function preserveSelection(
         const byPath = rows.find(
           (r) =>
             r.kind === "file" &&
-            store.changeset(r.scope)?.files[r.index]?.path === path
+            store.changeset(r.scope)?.files[r.index]?.path === path,
         );
         if (byPath) {
           return byPath;
@@ -58,7 +70,7 @@ function preserveSelection(
       }
     } else if (prevSel.kind === "dir") {
       const byPath = rows.find(
-        (r) => r.kind === "dir" && r.path === prevSel.path
+        (r) => r.kind === "dir" && r.path === prevSel.path,
       );
       if (byPath) {
         return byPath;
@@ -278,20 +290,25 @@ export function toggleTreeFolder(scope: Scope, dirPath: string): void {
 export function toggleSidebarView(): void {
   const store = getStore();
   const next: SidebarView =
-    store.getState().sidebarView === "tree" ? "list" : "tree";
+    store.getState().sidebarView === SIDEBAR_VIEWS.tree
+      ? SIDEBAR_VIEWS.list
+      : SIDEBAR_VIEWS.tree;
   store.set({ sidebarView: next });
   repairSelection(store);
 }
 
 export function resizeSidebar(delta: number): void {
   const store = getStore();
-  const w = Math.max(16, Math.min(80, store.getState().sidebarWidth + delta));
+  const w = Math.max(
+    SIDEBAR_MIN_WIDTH,
+    Math.min(SIDEBAR_MAX_WIDTH, store.getState().sidebarWidth + delta),
+  );
   store.set({ sidebarWidth: w });
 }
 
 export function cycleLayout(): void {
   const store = getStore();
-  const modes: Array<"split" | "stack" | "auto"> = ["split", "stack", "auto"];
+  const modes = DIFF_MODES;
   const current = store.getState().layoutMode;
   const idx = modes.indexOf(current);
   const next = modes[(idx + 1) % modes.length];
@@ -301,7 +318,7 @@ export function cycleLayout(): void {
 function buildPendingStage(
   scope: Scope,
   paths: string[],
-  bulk: boolean
+  bulk: boolean,
 ): PendingStage | null {
   const store = getStore();
   const count = store.pendingCommentCount(scope, paths);
@@ -312,7 +329,7 @@ function buildPendingStage(
 }
 
 function selectionPaths(
-  store: AppStore
+  store: AppStore,
 ): { paths: string[]; scope: Scope } | null {
   const sel = store.getState().selection;
   if (!sel) {
@@ -340,7 +357,7 @@ export async function stageSelected(): Promise<void> {
   const store = getStore();
   const { stagingEnabled } = store.getState();
   if (!stagingEnabled) {
-    store.showToast("warn", "staging is disabled in this mode");
+    store.showToast(TOAST_KINDS.warn, "staging is disabled in this mode");
     return;
   }
   const target = selectionPaths(store);
@@ -353,7 +370,7 @@ export async function stageSelected(): Promise<void> {
     store.set({ pendingStage: pending });
     store.showToast(
       "warn",
-      `${pending.commentCount} comment(s) will be cleared — press again to confirm`
+      `${pending.commentCount} comment(s) will be cleared — press again to confirm`,
     );
     return;
   }
@@ -367,13 +384,13 @@ export async function stageSelected(): Promise<void> {
       "success",
       bulk
         ? `staged ${target.paths.length} file(s)`
-        : `staged ${target.paths[0]}`
+        : `staged ${target.paths[0]}`,
     );
     await refresh();
   } catch (err) {
     store.showToast(
       "error",
-      `stage failed: ${err instanceof Error ? err.message : String(err)}`
+      `stage failed: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }
@@ -382,12 +399,12 @@ export async function stageAll(): Promise<void> {
   const store = getStore();
   const { stagingEnabled } = store.getState();
   if (!stagingEnabled) {
-    store.showToast("warn", "staging is disabled in this mode");
+    store.showToast(TOAST_KINDS.warn, "staging is disabled in this mode");
     return;
   }
   const changes = store.changeset("changes");
   if (!changes || changes.files.length === 0) {
-    store.showToast("info", "no changes to stage");
+    store.showToast(TOAST_KINDS.info, "no changes to stage");
     return;
   }
   const paths = changes.files.map((f) => f.path);
@@ -396,7 +413,7 @@ export async function stageAll(): Promise<void> {
     store.set({ pendingStage: pending });
     store.showToast(
       "warn",
-      `${pending.commentCount} comment(s) will be cleared — press again to confirm`
+      `${pending.commentCount} comment(s) will be cleared — press again to confirm`,
     );
     return;
   }
@@ -406,13 +423,10 @@ export async function stageAll(): Promise<void> {
       return;
     }
     await stageFiles(repoRoot, paths);
-    store.showToast("success", `staged ${paths.length} file(s)`);
+    store.showToast(TOAST_KINDS.success, `staged ${paths.length} file(s)`);
     await refresh();
   } catch (err) {
-    store.showToast(
-      "error",
-      `stage-all failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "stage-all", err);
   }
 }
 
@@ -420,7 +434,7 @@ export async function unstageSelected(): Promise<void> {
   const store = getStore();
   const { stagingEnabled } = store.getState();
   if (!stagingEnabled) {
-    store.showToast("warn", "staging is disabled in this mode");
+    store.showToast(TOAST_KINDS.warn, "staging is disabled in this mode");
     return;
   }
   const target = selectionPaths(store);
@@ -449,14 +463,11 @@ export async function unstageSelected(): Promise<void> {
       "success",
       bulk
         ? `unstaged ${target.paths.length} file(s)`
-        : `unstaged ${target.paths[0]}`
+        : `unstaged ${target.paths[0]}`,
     );
     await refresh();
   } catch (err) {
-    store.showToast(
-      "error",
-      `unstage failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "unstage", err);
   }
 }
 
@@ -470,7 +481,7 @@ async function discardPaths(scope: Scope, paths: string[]): Promise<void> {
   const untracked = new Set(
     (cs?.files ?? [])
       .filter((f) => paths.includes(f.path) && f.status === "added")
-      .map((f) => f.path)
+      .map((f) => f.path),
   );
   const tracked = paths.filter((p) => !untracked.has(p));
   if (tracked.length > 0) {
@@ -496,14 +507,11 @@ export async function confirmDiscard(): Promise<void> {
       "success",
       bulk
         ? `discarded changes in ${paths.length} file(s)`
-        : `discarded changes in ${paths[0] ?? ""}`
+        : `discarded changes in ${paths[0] ?? ""}`,
     );
     await refresh();
   } catch (err) {
-    store.showToast(
-      "error",
-      `discard failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "discard", err);
   }
 }
 
@@ -523,13 +531,13 @@ export async function confirmDiscardAll(): Promise<void> {
   try {
     await discardPaths("changes", paths);
     store.clearCommentsFor("changes", paths);
-    store.showToast("success", `discarded changes in ${paths.length} file(s)`);
+    store.showToast(
+      TOAST_KINDS.success,
+      `discarded changes in ${paths.length} file(s)`,
+    );
     await refresh();
   } catch (err) {
-    store.showToast(
-      "error",
-      `discard-all failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "discard-all", err);
   }
 }
 
@@ -537,7 +545,7 @@ export async function unstageAll(): Promise<void> {
   const store = getStore();
   const { stagingEnabled } = store.getState();
   if (!stagingEnabled) {
-    store.showToast("warn", "staging is disabled in this mode");
+    store.showToast(TOAST_KINDS.warn, "staging is disabled in this mode");
     return;
   }
   const changes = store.changeset("changes");
@@ -547,7 +555,7 @@ export async function unstageAll(): Promise<void> {
   }
   const staged = store.changeset("staged");
   if (!staged || staged.files.length === 0) {
-    store.showToast("info", "no staged files");
+    store.showToast(TOAST_KINDS.info, "no staged files");
     return;
   }
   const paths = staged.files.map((f) => f.path);
@@ -557,13 +565,10 @@ export async function unstageAll(): Promise<void> {
       return;
     }
     await unstageFiles(repoRoot, paths);
-    store.showToast("success", `unstaged ${paths.length} file(s)`);
+    store.showToast(TOAST_KINDS.success, `unstaged ${paths.length} file(s)`);
     await refresh();
   } catch (err) {
-    store.showToast(
-      "error",
-      `unstage-all failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "unstage-all", err);
   }
 }
 
@@ -583,40 +588,40 @@ export async function confirmPendingStage(): Promise<void> {
     store.set({ pendingStage: null });
     store.showToast(
       "success",
-      `staged ${pending.paths.length} file(s), cleared ${pending.commentCount} comment(s)`
+      `staged ${pending.paths.length} file(s), cleared ${pending.commentCount} comment(s)`,
     );
     await refresh();
   } catch (err) {
-    store.showToast(
-      "error",
-      `stage failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "stage", err);
   }
 }
 
 export function cancelPendingStage(): void {
   const store = getStore();
   store.set({ pendingStage: null });
-  store.showToast("info", "cancelled");
+  store.showToast(TOAST_KINDS.info, "cancelled");
 }
 
 export async function sendComments(): Promise<void> {
   const store = getStore();
   const { comments } = store.getState();
   if (comments.length === 0) {
-    store.showToast("info", "no comments to send");
+    store.showToast(TOAST_KINDS.info, "no comments to send");
     return;
   }
   if (isHerdrPlugin()) {
     try {
       await sendToAgent(comments);
       store.set({ comments: [] });
-      store.showToast("success", `sent ${comments.length} comment(s) to agent`);
+      store.showToast(
+        TOAST_KINDS.success,
+        `sent ${comments.length} comment(s) to agent`,
+      );
       return;
     } catch (err) {
       store.showToast(
         "error",
-        `agent send failed: ${err instanceof Error ? err.message : String(err)} — keeping comments`
+        `agent send failed: ${err instanceof Error ? err.message : String(err)} — keeping comments`,
       );
       return;
     }
@@ -627,12 +632,12 @@ export async function sendComments(): Promise<void> {
     store.set({ comments: [] });
     store.showToast(
       "success",
-      `copied ${comments.length} comment(s) to clipboard`
+      `copied ${comments.length} comment(s) to clipboard`,
     );
   } else {
     store.showToast(
       "error",
-      `clipboard failed: ${result.error} — keeping comments`
+      `clipboard failed: ${result.error} — keeping comments`,
     );
   }
 }
@@ -641,14 +646,14 @@ export async function copySelection(): Promise<void> {
   const store = getStore();
   const sel = store.selectedFile();
   if (!sel) {
-    store.showToast("info", "nothing selected");
+    store.showToast(TOAST_KINDS.info, "nothing selected");
     return;
   }
   const result = await copyText(sel.file.diff);
   if (result.ok) {
-    store.showToast("success", "copied diff to clipboard");
+    store.showToast(TOAST_KINDS.success, "copied diff to clipboard");
   } else {
-    store.showToast("error", `clipboard failed: ${result.error}`);
+    store.showToast(TOAST_KINDS.error, `clipboard failed: ${result.error}`);
   }
 }
 
@@ -670,7 +675,11 @@ export async function loadCommits(): Promise<void> {
   }
   store.set({ commitEntries: [], commitLoading: true, commitOffset: 0 });
   try {
-    const { commits, hasMore, behind, ahead } = await gitLog(repoRoot, 0, 10);
+    const { commits, hasMore, behind, ahead } = await gitLog(
+      repoRoot,
+      0,
+      COMMIT_PAGE_SIZE,
+    );
     store.set({
       commitAhead: ahead,
       commitBehind: behind,
@@ -702,8 +711,8 @@ export async function loadMoreCommits(followCursor = false): Promise<void> {
     const before = state.commitEntries.length;
     const { commits, hasMore, behind, ahead } = await gitLog(
       repoRoot,
-      state.commitOffset + 10,
-      10
+      state.commitOffset + COMMIT_PAGE_SIZE,
+      COMMIT_PAGE_SIZE,
     );
     store.set({
       commitAhead: ahead,
@@ -711,7 +720,7 @@ export async function loadMoreCommits(followCursor = false): Promise<void> {
       commitEntries: [...state.commitEntries, ...commits],
       commitHasMore: hasMore,
       commitLoading: false,
-      commitOffset: state.commitOffset + 10,
+      commitOffset: state.commitOffset + COMMIT_PAGE_SIZE,
     });
     const [first] = commits;
     if (followCursor && first) {
@@ -767,7 +776,7 @@ export function commitSelectPrev(): Promise<void> {
 
 async function moveCommitCursorToFile(
   store: AppStore,
-  delta: -1 | 1
+  delta: -1 | 1,
 ): Promise<void> {
   const rows = store.commitRows();
   if (rows.length === 0) {
@@ -823,7 +832,7 @@ export async function commitToggleCursorRow(): Promise<void> {
 
 export async function selectCommitFile(
   hash: string,
-  filePath: string
+  filePath: string,
 ): Promise<void> {
   const store = getStore();
   const { repoRoot, ignoreFiles } = store.getState();
@@ -851,7 +860,7 @@ export async function selectCommitFile(
       });
       store.set({ commitEntries: updated });
     } catch {
-      store.showToast("error", `failed to load diff for ${filePath}`);
+      store.showToast(TOAST_KINDS.error, `failed to load diff for ${filePath}`);
       return;
     }
   }
@@ -888,12 +897,12 @@ async function gitRemoteCommand(args: string[], verb: string): Promise<void> {
   store.set({ remoteBusy: verb === "pull" ? "pull" : "push" });
   try {
     await gitThrow(args, repoRoot);
-    store.showToast("success", `git ${verb} succeeded`);
+    store.showToast(TOAST_KINDS.success, `git ${verb} succeeded`);
     await refresh();
   } catch (err) {
     const detail =
       err instanceof GitError ? err.stderr.trim() || err.message : String(err);
-    store.showToast("error", detail);
+    store.showToast(TOAST_KINDS.error, detail);
   } finally {
     store.set({ remoteBusy: null });
   }
@@ -950,15 +959,11 @@ async function commitMessage(root: string, message: string): Promise<void> {
   store.set({ commitLoading: true });
   try {
     await gitThrow(["commit", "-m", message], root);
-    store.showToast("success", "committed");
+    store.showToast(TOAST_KINDS.success, "committed");
     store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
-    store.set({ commitLoading: false });
-    store.showToast(
-      "error",
-      `commit failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "commit", err);
   }
 }
 
@@ -968,7 +973,7 @@ export async function submitCommitDraft(text: string): Promise<void> {
   const trimmed = text.trim();
   if (trimmed === "") {
     store.set({ commitDraft: null });
-    store.showToast("info", "empty commit message");
+    store.showToast(TOAST_KINDS.info, "empty commit message");
     return;
   }
   const { repoRoot } = store.getState();
@@ -991,7 +996,7 @@ export async function submitCommitDraft(text: string): Promise<void> {
     return;
   }
   store.set({ commitDraft: null });
-  store.showToast("info", "nothing to commit");
+  store.showToast(TOAST_KINDS.info, "nothing to commit");
 }
 
 /** Stage every working-tree change and commit after the confirm-commit-all overlay. */
@@ -1011,21 +1016,18 @@ export async function confirmCommitAll(): Promise<void> {
   try {
     await gitThrow(["add", "-A"], repoRoot);
     await gitThrow(["commit", "-m", message], repoRoot);
-    store.showToast("success", "committed all changes");
+    store.showToast(TOAST_KINDS.success, "committed all changes");
     store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
     store.set({ commitLoading: false });
-    store.showToast(
-      "error",
-      `commit failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "commit-all", err);
   }
 }
 
 export async function confirmGitReset(
   mode: "mixed" | "soft" | "hard",
-  hash: string
+  hash: string,
 ): Promise<void> {
   const store = getStore();
   const { repoRoot } = store.getState();
@@ -1036,21 +1038,21 @@ export async function confirmGitReset(
   store.set({ commitLoading: true });
   try {
     await resetCommit(repoRoot, mode, hash);
-    store.showToast("success", `reset ${mode} to ${hash.slice(0, 7)}`);
+    store.showToast(
+      TOAST_KINDS.success,
+      `reset ${mode} to ${hash.slice(0, 7)}`,
+    );
     store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
     store.set({ commitLoading: false });
-    store.showToast(
-      "error",
-      `reset failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "reset", err);
   }
 }
 
 export async function confirmGitEdit(
   action: "squash" | "fixup" | "drop" | "amend",
-  hash: string
+  hash: string,
 ): Promise<void> {
   const store = getStore();
   const { repoRoot } = store.getState();
@@ -1061,15 +1063,12 @@ export async function confirmGitEdit(
   store.set({ commitLoading: true });
   try {
     await editCommit(repoRoot, action, hash);
-    store.showToast("success", `${action} ${hash.slice(0, 7)}`);
+    store.showToast(TOAST_KINDS.success, `${action} ${hash.slice(0, 7)}`);
     store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
     store.set({ commitLoading: false });
-    store.showToast(
-      "error",
-      `edit failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "edit", err);
   }
 }
 
@@ -1106,7 +1105,7 @@ export async function commitMove(dir: 1 | -1): Promise<void> {
   try {
     await reorderCommit(repoRoot, olderHash);
     const label = dir === -1 ? "up" : "down";
-    store.showToast("success", `moved ${hash.slice(0, 7)} ${label}`);
+    store.showToast(TOAST_KINDS.success, `moved ${hash.slice(0, 7)} ${label}`);
     store.set({ commitLoading: false });
     await refresh();
     const rowsAfter = store.commitRows();
@@ -1121,10 +1120,7 @@ export async function commitMove(dir: 1 | -1): Promise<void> {
     }
   } catch (err) {
     store.set({ commitLoading: false });
-    store.showToast(
-      "error",
-      `move failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "move", err);
   }
 }
 
@@ -1137,23 +1133,23 @@ export async function commitRevert(hash: string): Promise<void> {
   store.set({ commitLoading: true });
   try {
     await undoCommit(repoRoot, hash);
-    store.showToast("success", `undone ${hash.slice(0, 7)}`);
+    store.showToast(TOAST_KINDS.success, `undone ${hash.slice(0, 7)}`);
     store.set({ commitLoading: false });
     await refresh();
   } catch (err) {
     store.set({ commitLoading: false });
-    store.showToast(
-      "error",
-      `revert failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+    toastError(store, "revert", err);
   }
 }
 
 export async function copyCommitHash(hash: string): Promise<void> {
   const result = await copyText(hash);
   if (result.ok) {
-    getStore().showToast("success", "copied hash to clipboard");
+    getStore().showToast(TOAST_KINDS.success, "copied hash to clipboard");
   } else {
-    getStore().showToast("error", `clipboard failed: ${result.error}`);
+    getStore().showToast(
+      TOAST_KINDS.error,
+      `clipboard failed: ${result.error}`,
+    );
   }
 }

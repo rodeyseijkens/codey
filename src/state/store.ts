@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+
 import { type ResolvedKeymap, resolveKeymap } from "../keymap/index";
 import { buildFileTree, visibleTreeNodes } from "../lib/tree";
 import type {
@@ -7,13 +8,17 @@ import type {
   CommitEntry,
   DiffMode,
   FileDiff,
-  LoaderMode,
   Scope,
+} from "../types";
+import {
+  LAYOUT_MODES,
+  type LoaderMode,
+  SIDEBAR_VIEWS,
+  type SidebarView,
+  type ToastKind,
 } from "../types";
 
 export type FocusPane = "sidebar" | "diff" | "commits";
-export type SidebarView = "tree" | "list";
-export type ToastKind = "info" | "success" | "warn" | "error";
 
 export type CommitRow =
   | { kind: "header"; hash: string; index: number }
@@ -33,10 +38,10 @@ export function commitRowKey(row: CommitRow): string {
   }
 }
 
-export interface Toast {
+export type Toast = {
   kind: ToastKind;
   message: string;
-}
+};
 
 export type SidebarRow =
   | { index: number; kind: "file"; scope: Scope }
@@ -56,12 +61,12 @@ export function rowKey(row: SidebarRow): string {
   }
 }
 
-export interface PendingStage {
+export type PendingStage = {
   bulk: boolean;
   commentCount: number;
   paths: string[];
   scope: Scope;
-}
+};
 
 export type OverlayKind<K extends Overlay["kind"]> = Extract<
   Overlay,
@@ -78,15 +83,15 @@ export type Overlay =
   | { kind: "reset-commits"; hash: string }
   | { kind: "edit-commit"; hash: string };
 
-export interface DiffSearch {
+export type DiffSearch = {
   index: number;
   matches: number[];
   open: boolean;
   query: string;
-}
+};
 
 /** An in-progress inline comment being typed into the diff body. */
-export interface CommentDraft {
+export type CommentDraft = {
   commentId?: string;
   context: string;
   endRow: number;
@@ -95,9 +100,9 @@ export interface CommentDraft {
   scope: Scope;
   startRow: number;
   text: string;
-}
+};
 
-export interface AppState {
+export type AppState = {
   anchorRow: number | null;
   branch: string | null;
   changesets: Changeset[];
@@ -147,7 +152,7 @@ export interface AppState {
   toast: Toast | null;
   watchActive: boolean;
   wrapLines: boolean;
-}
+};
 
 function defaultKeymap(): ResolvedKeymap {
   const res = resolveKeymap({});
@@ -185,7 +190,7 @@ export function initialState(): AppState {
     ignoreFiles: [],
     keymap: defaultKeymap(),
     lastFile: null,
-    layoutMode: "auto",
+    layoutMode: LAYOUT_MODES.auto,
     lineNumbers: true,
     load: async () => ({
       branch: null,
@@ -199,7 +204,7 @@ export function initialState(): AppState {
     remoteBusy: null,
     repoRoot: null,
     selection: null,
-    sidebarView: "tree",
+    sidebarView: SIDEBAR_VIEWS.tree,
     sidebarVisible: true,
     sidebarWidth: 32,
     stagingEnabled: true,
@@ -264,7 +269,7 @@ export class AppStore {
       if (this.state.collapsed[cs.id]) {
         continue;
       }
-      if (this.state.sidebarView === "tree") {
+      if (this.state.sidebarView === SIDEBAR_VIEWS.tree) {
         const tree = buildFileTree(cs.files);
         const visible = visibleTreeNodes(cs.id, tree, this.state.collapsedTree);
         for (const v of visible) {
@@ -354,14 +359,14 @@ export class AppStore {
 
   commentsFor(scope: Scope, path: string): Comment[] {
     return this.state.comments.filter(
-      (c) => c.scope === scope && c.path === path
+      (c) => c.scope === scope && c.path === path,
     );
   }
 
   pendingCommentCount(scope: Scope, paths: string[]): number {
     const set = new Set(paths);
     return this.state.comments.filter(
-      (c) => c.scope === scope && set.has(c.path)
+      (c) => c.scope === scope && set.has(c.path),
     ).length;
   }
 
@@ -369,7 +374,7 @@ export class AppStore {
     const set = new Set(paths);
     this.set({
       comments: this.state.comments.filter(
-        (c) => !(c.scope === scope && set.has(c.path))
+        (c) => !(c.scope === scope && set.has(c.path)),
       ),
     });
   }
@@ -387,8 +392,4 @@ export function setStore(store: AppStore): void {
 
 export function useAppState(): AppState {
   return useSyncExternalStore(activeStore.subscribe, activeStore.getState);
-}
-
-export function useStore(): AppStore {
-  return activeStore;
 }

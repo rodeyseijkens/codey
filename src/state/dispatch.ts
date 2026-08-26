@@ -1,4 +1,5 @@
 import type { KeyEvent } from "@opentui/core";
+
 import { type KeyChord, keyEventToChord } from "../keymap/chords";
 import type { CommandId } from "../keymap/commands";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
@@ -29,9 +30,9 @@ import {
   gitPull,
   gitPush,
   openCommitDraft,
-  openHelp,
   refresh,
   resizeSidebar,
+  SIDEBAR_RESIZE_STEP,
   selectNext,
   selectPrev,
   sendComments,
@@ -98,10 +99,10 @@ function commitFileShown(state: AppState): boolean {
   return state.commitView !== null && state.selection === null;
 }
 
-interface CommandHandler {
+type CommandHandler = {
   guard?: (state: AppState) => boolean;
   run: (store: AppStore, state: AppState) => void;
-}
+};
 
 function buildRegistry(): Map<CommandId, CommandHandler> {
   const r = new Map<CommandId, CommandHandler>();
@@ -210,8 +211,8 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
       }
     },
   });
-  r.set("sidebar-shrink", { run: () => resizeSidebar(-4) });
-  r.set("sidebar-grow", { run: () => resizeSidebar(4) });
+  r.set("sidebar-shrink", { run: () => resizeSidebar(-SIDEBAR_RESIZE_STEP) });
+  r.set("sidebar-grow", { run: () => resizeSidebar(SIDEBAR_RESIZE_STEP) });
   r.set("visual-select", {
     guard: (state) => !commitFileShown(state),
     run: () => visualSelect(),
@@ -288,10 +289,6 @@ export function dispatchCommand(cmd: CommandId): void {
   handler.run(store, state);
 }
 
-export function openHelpOverlay(): void {
-  openHelp();
-}
-
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: its allowed for now
 export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   const store = getStore();
@@ -329,16 +326,25 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   if (diffSearch && state.focus === "diff") {
     if (diffSearch.open) {
       const { name } = e;
-      if (name === "escape") {
-        closeDiffSearch();
-      } else if (name === "enter" || name === "return") {
-        void acceptDiffSearch();
-      } else if (name === "backspace") {
-        setDiffSearchQuery(diffSearch.query.slice(0, -1));
-      } else if (name === "space") {
-        setDiffSearchQuery(`${diffSearch.query} `);
-      } else if (!(e.ctrl || e.meta) && name.length === 1) {
-        setDiffSearchQuery(diffSearch.query + name);
+      switch (name) {
+        case "escape":
+          closeDiffSearch();
+          break;
+        case "enter":
+        case "return":
+          void acceptDiffSearch();
+          break;
+        case "backspace":
+          setDiffSearchQuery(diffSearch.query.slice(0, -1));
+          break;
+        case "space":
+          setDiffSearchQuery(`${diffSearch.query} `);
+          break;
+        default:
+          if (!(e.ctrl || e.meta) && name.length === 1) {
+            setDiffSearchQuery(diffSearch.query + name);
+          }
+          break;
       }
       return;
     }
@@ -357,50 +363,66 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   }
 
   if (state.overlay) {
-    if (cmd === "cancel" || chord.key === "escape") {
-      closeOverlay();
-    } else if (
-      state.overlay.kind === "confirm-force-push" &&
-      (chord.key === "y" || chord.key === "return" || chord.key === "enter")
-    ) {
-      confirmForcePush();
-    } else if (
-      state.overlay.kind === "confirm-discard" &&
-      (chord.key === "y" || chord.key === "return" || chord.key === "enter")
-    ) {
-      void confirmDiscard();
-    } else if (
-      state.overlay.kind === "confirm-discard-all" &&
-      (chord.key === "y" || chord.key === "return" || chord.key === "enter")
-    ) {
-      void confirmDiscardAll();
-    } else if (
-      state.overlay.kind === "confirm-commit-all" &&
-      (chord.key === "y" || chord.key === "return" || chord.key === "enter")
-    ) {
-      void confirmCommitAll();
-    } else if (state.overlay.kind === "reset-commits") {
-      if (chord.key === "m") {
-        void confirmGitReset("mixed", state.overlay.hash);
-      } else if (chord.key === "s") {
-        void confirmGitReset("soft", state.overlay.hash);
-      } else if (chord.key === "h") {
-        void confirmGitReset("hard", state.overlay.hash);
-      }
-    } else if (state.overlay.kind === "edit-commit") {
-      if (chord.key === "s") {
-        void confirmGitEdit("squash", state.overlay.hash);
-      } else if (chord.key === "f") {
-        void confirmGitEdit("fixup", state.overlay.hash);
-      } else if (chord.key === "d") {
-        void confirmGitEdit("drop", state.overlay.hash);
-      } else if (chord.key === "a") {
-        void confirmGitEdit("amend", state.overlay.hash);
-      } else if (chord.key === "r") {
-        store.set({
-          overlay: { hash: state.overlay.hash, kind: "reset-commits" },
-        });
-      }
+    const confirmKey =
+      chord.key === "y" || chord.key === "return" || chord.key === "enter";
+    const cancelKey = cmd === "cancel" || chord.key === "escape";
+
+    switch (true) {
+      case cancelKey:
+        closeOverlay();
+        break;
+      case state.overlay.kind === "confirm-force-push" && confirmKey:
+        confirmForcePush();
+        break;
+      case state.overlay.kind === "confirm-discard" && confirmKey:
+        void confirmDiscard();
+        break;
+      case state.overlay.kind === "confirm-discard-all" && confirmKey:
+        void confirmDiscardAll();
+        break;
+      case state.overlay.kind === "confirm-commit-all" && confirmKey:
+        void confirmCommitAll();
+        break;
+      case state.overlay.kind === "reset-commits":
+        switch (chord.key) {
+          case "m":
+            void confirmGitReset("mixed", state.overlay.hash);
+            break;
+          case "s":
+            void confirmGitReset("soft", state.overlay.hash);
+            break;
+          case "h":
+            void confirmGitReset("hard", state.overlay.hash);
+            break;
+          default:
+            break;
+        }
+        break;
+      case state.overlay.kind === "edit-commit":
+        switch (chord.key) {
+          case "s":
+            void confirmGitEdit("squash", state.overlay.hash);
+            break;
+          case "f":
+            void confirmGitEdit("fixup", state.overlay.hash);
+            break;
+          case "d":
+            void confirmGitEdit("drop", state.overlay.hash);
+            break;
+          case "a":
+            void confirmGitEdit("amend", state.overlay.hash);
+            break;
+          case "r":
+            store.set({
+              overlay: { hash: state.overlay.hash, kind: "reset-commits" },
+            });
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
     }
     return;
   }

@@ -44,7 +44,7 @@ export function setDiffSearchQuery(query: string): void {
   const matches = computeMatches(query);
   const index = Math.min(
     Math.max(0, current.index),
-    Math.max(0, matches.length - 1)
+    Math.max(0, matches.length - 1),
   );
   store.set({ diffSearch: { ...current, index, matches, query } });
 }
@@ -70,7 +70,7 @@ export function acceptDiffSearch(): void {
   });
 }
 
-export function diffSearchNext(): void {
+function diffSearchStep(dir: 1 | -1): void {
   const store = getStore();
   const ds = store.getState().diffSearch;
   if (!ds) {
@@ -79,25 +79,17 @@ export function diffSearchNext(): void {
   if (ds.matches.length === 0) {
     return;
   }
-  const index = (ds.index + 1) % ds.matches.length;
+  const index = (ds.index + dir + ds.matches.length) % ds.matches.length;
   const target = ds.matches[index];
   if (target !== undefined) {
     store.set({ cursorRow: target, diffSearch: { ...ds, index } });
   }
 }
 
+export function diffSearchNext(): void {
+  diffSearchStep(1);
+}
+
 export function diffSearchPrev(): void {
-  const store = getStore();
-  const ds = store.getState().diffSearch;
-  if (!ds) {
-    return;
-  }
-  if (ds.matches.length === 0) {
-    return;
-  }
-  const index = (ds.index - 1 + ds.matches.length) % ds.matches.length;
-  const target = ds.matches[index];
-  if (target !== undefined) {
-    store.set({ cursorRow: target, diffSearch: { ...ds, index } });
-  }
+  diffSearchStep(-1);
 }

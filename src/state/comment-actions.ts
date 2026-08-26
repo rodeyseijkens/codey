@@ -1,5 +1,6 @@
 import { diffRowsFromPatch } from "../diff/from-patch";
 import { type CanonicalDiffRow, canonicalRowLabel } from "../diff/rows";
+import { type Comment, TOAST_KINDS } from "../types";
 import { getStore } from "./store";
 
 function rowsOfSelectedFile() {
@@ -19,7 +20,7 @@ function rowsOfSelectedFile() {
 function contextForRange(
   rows: readonly CanonicalDiffRow[],
   startRow: number,
-  endRow: number
+  endRow: number,
 ) {
   const slice = rows.slice(startRow, endRow + 1);
   return slice
@@ -39,7 +40,7 @@ export function openAddCommentDraft(): void {
   const store = getStore();
   const ctx = rowsOfSelectedFile();
   if (!ctx) {
-    store.showToast("info", "no diff to comment on");
+    store.showToast(TOAST_KINDS.info, "no diff to comment on");
     return;
   }
   const { rows, sel } = ctx;
@@ -66,19 +67,15 @@ export function openAddCommentDraft(): void {
 
 /** Reopen an existing comment at the cursor as an inline edit draft. */
 export function openEditCommentDraft(): void {
-  const store = getStore();
-  const sel = store.selectedFile();
-  if (!sel) {
+  const found = findCommentAtCursor();
+  if (!found) {
+    getStore().showToast(
+      TOAST_KINDS.info,
+      "no comment on this line (c to add)",
+    );
     return;
   }
-  const cursor = store.getState().cursorRow;
-  const comment = store
-    .commentsFor(sel.scope, sel.file.path)
-    .find((c) => cursor >= c.startRow && cursor <= c.endRow);
-  if (!comment) {
-    store.showToast("info", "no comment on this line (c to add)");
-    return;
-  }
+  const { store, comment } = found;
   store.set({
     commentDraft: {
       commentId: comment.id,
@@ -124,7 +121,7 @@ export function deleteComment(id: string): void {
   store.set({
     comments: store.getState().comments.filter((c) => c.id !== id),
   });
-  store.showToast("success", "comment deleted");
+  store.showToast(TOAST_KINDS.success, "comment deleted");
 }
 
 /** Save the active draft: empty text cancels, edit updates, add inserts. */
@@ -148,10 +145,10 @@ export function saveCommentDraft(text: string): void {
         .comments.map((c) =>
           c.id === commentDraft.commentId
             ? { ...c, text: trimmed, updatedAt: now }
-            : c
+            : c,
         ),
     });
-    store.showToast("success", "comment updated");
+    store.showToast(TOAST_KINDS.success, "comment updated");
     return;
   }
   store.set({
@@ -171,27 +168,39 @@ export function saveCommentDraft(text: string): void {
       },
     ],
   });
-  store.showToast("success", "comment added");
+  store.showToast(TOAST_KINDS.success, "comment added");
 }
 
 export function deleteCommentAtCursor(): void {
+  const found = findCommentAtCursor();
+  if (!found) {
+    getStore().showToast(TOAST_KINDS.info, "no comment on this line");
+    return;
+  }
+  const { store, comment } = found;
+  store.set({
+    comments: store.getState().comments.filter((c) => c.id !== comment.id),
+  });
+  store.showToast(TOAST_KINDS.success, "comment deleted");
+}
+
+function findCommentAtCursor(): {
+  comment: Comment;
+  store: ReturnType<typeof getStore>;
+} | null {
   const store = getStore();
   const sel = store.selectedFile();
   if (!sel) {
-    return;
+    return null;
   }
   const cursor = store.getState().cursorRow;
   const comment = store
     .commentsFor(sel.scope, sel.file.path)
     .find((c) => cursor >= c.startRow && cursor <= c.endRow);
   if (!comment) {
-    store.showToast("info", "no comment on this line");
-    return;
+    return null;
   }
-  store.set({
-    comments: store.getState().comments.filter((c) => c.id !== comment.id),
-  });
-  store.showToast("success", "comment deleted");
+  return { comment, store };
 }
 
 export function jumpToComment(dir: 1 | -1): void {
@@ -204,7 +213,7 @@ export function jumpToComment(dir: 1 | -1): void {
     .commentsFor(sel.scope, sel.file.path)
     .sort((a, b) => a.startRow - b.startRow);
   if (comments.length === 0) {
-    store.showToast("info", "no comments on this file");
+    store.showToast(TOAST_KINDS.info, "no comments on this file");
     return;
   }
   const cursor = store.getState().cursorRow;
