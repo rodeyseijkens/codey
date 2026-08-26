@@ -1,6 +1,6 @@
-// biome-ignore lint/style/useFilenamingConvention: spec requires this filename
 import { join } from "node:path";
 import { createTwoFilesPatch } from "diff";
+
 import type { Changeset, FileDiff } from "../types";
 import { MAX_DIFF_BYTES } from "../types";
 import { gitThrow } from "../vcs/git";
@@ -83,7 +83,7 @@ async function buildUntrackedFile(cwd: string, rel: string): Promise<FileDiff> {
 
 export async function gitUnstaged(
   cwd: string,
-  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES
+  ignoreFiles: readonly string[] = DEFAULT_IGNORE_FILES,
 ): Promise<Changeset> {
   const base = ["diff", "--no-color", "-M", "-U999999"];
   const [nameStatus, numstat, diffText, untrackedText] = await Promise.all([
@@ -105,11 +105,11 @@ export async function gitUnstaged(
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
-      .map((rel) => buildUntrackedFile(cwd, rel))
+      .map((rel) => buildUntrackedFile(cwd, rel)),
   );
   markIgnoredFiles(untrackedFiles, ignoreFiles);
   const files = [...changeset.files, ...untrackedFiles].sort((a, b) =>
-    comparePaths(a.path, b.path)
+    comparePaths(a.path, b.path),
   );
   return {
     ...changeset,

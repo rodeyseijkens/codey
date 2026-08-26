@@ -1,10 +1,10 @@
 import { join } from "node:path";
 
-export interface GitResult {
+export type GitResult = {
   exitCode: number;
   stderr: string;
   stdout: string;
-}
+};
 
 export class GitError extends Error {
   readonly stderr: string;
@@ -14,7 +14,7 @@ export class GitError extends Error {
     message: string,
     stderr: string,
     exitCode: number,
-    options?: ErrorOptions
+    options?: ErrorOptions,
   ) {
     super(message, options);
     this.name = "GitError";
@@ -46,7 +46,7 @@ export async function gitThrow(args: string[], cwd: string): Promise<string> {
     throw new GitError(
       `git ${args.join(" ")} failed: ${detail}`,
       res.stderr,
-      res.exitCode
+      res.exitCode,
     );
   }
   return res.stdout;
@@ -80,12 +80,12 @@ export async function currentBranch(root: string): Promise<string> {
   return "(no commits)";
 }
 
-export interface ConflictState {
+export type ConflictState = {
   busy: boolean;
   cherryPicking: boolean;
   merging: boolean;
   rebasing: boolean;
-}
+};
 
 export async function detectConflicts(gitDir: string): Promise<ConflictState> {
   const [merge, cherry, rebaseMerge, rebaseApply] = await Promise.all([
@@ -117,7 +117,7 @@ export async function stageFiles(root: string, paths: string[]): Promise<void> {
 
 export async function unstageFiles(
   root: string,
-  paths: string[]
+  paths: string[],
 ): Promise<void> {
   if (paths.length === 0) {
     return;
@@ -134,7 +134,7 @@ export async function unstageFiles(
 
 export async function restoreWorktreeFiles(
   root: string,
-  paths: string[]
+  paths: string[],
 ): Promise<void> {
   if (paths.length === 0) {
     return;
@@ -144,7 +144,7 @@ export async function restoreWorktreeFiles(
 
 export async function deleteFiles(
   root: string,
-  paths: string[]
+  paths: string[],
 ): Promise<void> {
   await Promise.all(paths.map((rel) => Bun.file(join(root, rel)).delete()));
 }
@@ -152,7 +152,7 @@ export async function deleteFiles(
 export async function resetCommit(
   root: string,
   mode: "mixed" | "soft" | "hard",
-  hash: string
+  hash: string,
 ): Promise<void> {
   await gitThrow(["reset", `--${mode}`, hash], root);
 }
@@ -160,7 +160,7 @@ export async function resetCommit(
 export async function editCommit(
   root: string,
   action: "squash" | "fixup" | "drop" | "amend",
-  hash: string
+  hash: string,
 ): Promise<void> {
   if (action === "amend") {
     await gitThrow(["commit", "--amend", "--no-edit"], root);
@@ -187,7 +187,7 @@ export async function editCommit(
 async function rebaseWithSequenceEditor(
   root: string,
   base: string,
-  sequenceEditor: string
+  sequenceEditor: string,
 ): Promise<void> {
   const proc = Bun.spawn(["git", "rebase", "-i", base], {
     cwd: root,
@@ -209,14 +209,14 @@ async function rebaseWithSequenceEditor(
     throw new GitError(
       `git rebase failed: ${stderr.trim() || stdout.trim()}`,
       stderr,
-      exitCode
+      exitCode,
     );
   }
 }
 
 export async function reorderCommit(
   root: string,
-  olderHash: string
+  olderHash: string,
 ): Promise<void> {
   const stashesBefore = await gitThrow(["stash", "list"], root);
   await gitThrow(["stash", "push", "-m", "reorder-rebase-stash"], root);
@@ -226,7 +226,7 @@ export async function reorderCommit(
     await rebaseWithSequenceEditor(
       root,
       `${olderHash}^`,
-      `sed -i '1{h;d};2{G}'`
+      `sed -i '1{h;d};2{G}'`,
     );
   } catch (e) {
     if (stashed) {
@@ -234,12 +234,11 @@ export async function reorderCommit(
         await gitThrow(["stash", "apply"], root);
       } catch (applyErr) {
         gitThrow(["stash", "drop"], root).catch(() => undefined);
-        // biome-ignore lint/style/useErrorCause: cause passed via GitError options
         throw new GitError(
           "reorder rebase failed and stash apply conflicted — stash preserved as 'reorder-rebase-stash'",
           "",
           1,
-          { cause: applyErr }
+          { cause: applyErr },
         );
       }
       await gitThrow(["stash", "drop"], root).catch(() => undefined);
@@ -251,12 +250,11 @@ export async function reorderCommit(
       await gitThrow(["stash", "apply"], root);
       await gitThrow(["stash", "drop"], root);
     } catch (applyErr) {
-      // biome-ignore lint/style/useErrorCause: cause passed via GitError options
       throw new GitError(
         "reorder rebase succeeded but stash apply conflicted — stash preserved as 'reorder-rebase-stash'",
         "",
         1,
-        { cause: applyErr }
+        { cause: applyErr },
       );
     }
   }

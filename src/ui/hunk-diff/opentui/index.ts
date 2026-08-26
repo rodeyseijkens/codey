@@ -1,9 +1,9 @@
-// biome-ignore lint/performance/noBarrelFile: public entry point for the vendored diff renderer
 export {
   type FileDiffMetadata,
   parseDiffFromFile,
   parsePatchFiles,
 } from "@pierre/diffs";
+
 export { HunkDiffBody } from "./hunk-diff-body";
 export {
   countHunkDiffStats,
