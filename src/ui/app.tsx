@@ -1,4 +1,5 @@
 import { useKeyboard } from "@opentui/react";
+
 import { keyEventToChord } from "../keymap/chords";
 import { handleKeyEvent, restart } from "../state/dispatch";
 import { getStore, useAppState } from "../state/store";

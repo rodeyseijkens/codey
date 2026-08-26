@@ -1,5 +1,6 @@
-import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
+
 import { buildFileTree, type TreeNode, visibleTreeNodes } from "../lib/tree";
 import {
   clearCommitView,
@@ -30,6 +31,7 @@ import {
   type CommitFile,
   type FileDiff,
   fileDiffKey,
+  SIDEBAR_VIEWS,
 } from "../types";
 import { useColors } from "./color-context";
 import { statusColor, statusIcon } from "./colors";
@@ -78,7 +80,7 @@ function truncateFolder(folder: string, max: number): string {
 
 function truncateFilePath(
   name: string,
-  max: number
+  max: number,
 ): { file: string; folder: string | null } {
   const [file, folder] = splitPath(name);
   if (!folder) {
@@ -101,10 +103,10 @@ function truncateFilePath(
   };
 }
 
-const DIR_CHROME = 7;
+const ROW_CHROME = 7;
 
 function dirNameMax(width: number, depth: number): number {
-  return width - DIR_CHROME - depth;
+  return width - ROW_CHROME - depth;
 }
 
 function FileRow(props: {
@@ -132,7 +134,7 @@ function FileRow(props: {
   const { ui: C, icons } = useColors();
   const nameMax = Math.max(
     0,
-    width - (1 + depth) - 1 - 2 - (commentCount > 0 ? 4 : 0) - 2 - 2
+    width - (1 + depth) - 1 - 2 - (commentCount > 0 ? 4 : 0) - 2 - 2,
   );
   const nameChunks = truncateFilePath(name, nameMax);
   const letter =
@@ -140,12 +142,12 @@ function FileRow(props: {
       ? STATUS_UNTRACKED
       : statusIcon(file.status);
 
-  const handleClick = (e: MouseEvent) => {
+  function handleClick(e: MouseEvent) {
     if (e.button === 0) {
       focusSidebar();
       selectFile(scope, index);
     }
-  };
+  }
 
   return (
     <box
@@ -202,13 +204,13 @@ function DirRow(props: {
   const { ui: C, icons } = useColors();
   const chevron = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;
 
-  const handleClick = (e: MouseEvent) => {
+  function handleClick(e: MouseEvent) {
     if (e.button === 0) {
       focusSidebar();
       selectDir(scope, node.path);
       toggleTreeFolder(scope, node.path);
     }
-  };
+  }
 
   return (
     <box
@@ -342,6 +344,37 @@ function TreeBody(props: {
   );
 }
 
+function sectionBody(
+  collapsed: boolean,
+  state: ReturnType<typeof useAppState>,
+  cs: Changeset,
+  sel: ReturnType<typeof useAppState>["selection"],
+  width: number,
+): ReactNode {
+  if (collapsed) {
+    return null;
+  }
+  if (state.sidebarView === SIDEBAR_VIEWS.tree) {
+    return (
+      <TreeBody
+        collapsedTree={state.collapsedTree}
+        cs={cs}
+        focused={state.focus === "sidebar"}
+        sel={sel}
+        width={width}
+      />
+    );
+  }
+  return (
+    <ListBody
+      cs={cs}
+      focused={state.focus === "sidebar"}
+      sel={sel}
+      width={width}
+    />
+  );
+}
+
 function Section(props: { cs: Changeset; width: number }) {
   const { cs, width } = props;
   const state = useAppState();
@@ -351,36 +384,14 @@ function Section(props: { cs: Changeset; width: number }) {
   const selected = sel?.kind === "section" && sel.scope === cs.id;
   const chevron = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;
 
-  const handleHeaderClick = (e: MouseEvent) => {
+  function handleHeaderClick(e: MouseEvent) {
     if (e.button === 0) {
       focusSidebar();
       selectSection(cs.id);
       toggleCollapse(cs.id);
     }
-  };
-  let body: ReactNode;
-  if (collapsed) {
-    body = null;
-  } else if (state.sidebarView === "tree") {
-    body = (
-      <TreeBody
-        collapsedTree={state.collapsedTree}
-        cs={cs}
-        focused={state.focus === "sidebar"}
-        sel={sel}
-        width={width}
-      />
-    );
-  } else {
-    body = (
-      <ListBody
-        cs={cs}
-        focused={state.focus === "sidebar"}
-        sel={sel}
-        width={width}
-      />
-    );
   }
+  const body = sectionBody(collapsed, state, cs, sel, width);
   return (
     <box style={{ flexDirection: "column" }}>
       <box
@@ -449,7 +460,7 @@ function CommitHeaderRow(props: {
       >
         {truncatePath(
           commit?.message ?? "",
-          width - 4 - (hasPushIcon ? 2 : 0) - iconWidth
+          width - 4 - (hasPushIcon ? 2 : 0) - iconWidth,
         )}
       </text>
       {hovered && commit ? (
@@ -489,7 +500,7 @@ function CommitFileRow(props: {
 }) {
   const { file, id, onMouseDown, path, selected, width } = props;
   const { icons, ui: C } = useColors();
-  const nameMax = Math.max(0, width - 7);
+  const nameMax = Math.max(0, width - ROW_CHROME);
   const nameChunks = truncateFilePath(path, nameMax);
   return (
     <box
@@ -504,7 +515,7 @@ function CommitFileRow(props: {
       }}
     >
       <text style={{ fg: icons[fileColor(path)], width: 3 }}>
-        {"\u2009"}
+        \u2009
         {fileIcon(path)}
       </text>
       <box
@@ -559,6 +570,23 @@ function CommitLoadMoreRow(props: {
   );
 }
 
+const SPINNER_INTERVAL = 100;
+
+function scrollToCursor(
+  cursorRowIndex: number,
+  viewportHeight: number,
+  scrollTop: number,
+): number {
+  const bottom = scrollTop + viewportHeight - 1;
+  if (cursorRowIndex < scrollTop) {
+    return cursorRowIndex;
+  }
+  if (cursorRowIndex > bottom) {
+    return cursorRowIndex - viewportHeight + 1;
+  }
+  return scrollTop;
+}
+
 function CommitLog(props: { width: number }) {
   const state = useAppState();
   const { icons, ui: C } = useColors();
@@ -586,7 +614,7 @@ function CommitLog(props: { width: number }) {
     }
     const timer = setInterval(
       () => setSpinnerFrame((frame) => (frame + 1) % SPINNER_FRAMES.length),
-      100
+      SPINNER_INTERVAL,
     );
     return () => clearInterval(timer);
   }, [hasBusy, hasCommitLoading]);
@@ -599,7 +627,7 @@ function CommitLog(props: { width: number }) {
 
   const rows = store.commitRows();
   const cursorRowIndex = rows.findIndex(
-    (row) => commitRowKey(row) === commitCursor
+    (row) => commitRowKey(row) === commitCursor,
   );
 
   useEffect(() => {
@@ -612,50 +640,41 @@ function CommitLog(props: { width: number }) {
     }
     const viewportHeight = scroll.viewport.height;
     const top = scroll.scrollTop;
-    const bottom = top + viewportHeight - 1;
-    let next = top;
-    if (cursorRowIndex < top) {
-      next = cursorRowIndex;
-    } else if (cursorRowIndex > bottom) {
-      next = cursorRowIndex - viewportHeight + 1;
-    }
-    if (next !== top) {
-      scroll.scrollTop = Math.max(0, next);
+    const scrollTarget = scrollToCursor(cursorRowIndex, viewportHeight, top);
+    if (scrollTarget !== top) {
+      scroll.scrollTop = Math.max(0, scrollTarget);
     }
   }, [cursorRowIndex, commitCursor]);
 
   const byHash = new Map(commitEntries.map((c) => [c.hash, c]));
 
   const handleHeaderMouseDown = (
-    row: Extract<CommitRow, { kind: "header" }>
+    row: Extract<CommitRow, { kind: "header" }>,
   ) => {
     focusCommits();
     store.set({ commitCursor: commitRowKey(row) });
     toggleCommitExpand(row.hash);
   };
 
-  const handleFileMouseDown = (row: Extract<CommitRow, { kind: "file" }>) => {
+  function handleFileMouseDown(row: Extract<CommitRow, { kind: "file" }>) {
     focusCommits();
     store.set({ commitCursor: commitRowKey(row) });
     clearCommitView();
     selectCommitFile(row.hash, row.path);
-  };
+  }
 
-  const handleLoadMoreMouseDown = () => {
+  function handleLoadMoreMouseDown() {
     focusCommits();
     store.set({ commitCursor: "commit-load-more" });
     loadMoreCommits(true);
-  };
+  }
 
-  let headerStatus: ReactNode;
-  if (hasCommitLoading || hasBusy) {
-    headerStatus = (
+  const headerStatus: ReactNode =
+    hasCommitLoading || hasBusy ? (
       <text style={{ fg: hasCommitLoading ? C.dim : icons.yellow }}>
         {SPINNER_FRAMES[spinnerFrame]}
       </text>
-    );
-  } else {
-    headerStatus = (
+    ) : (
       <>
         {hasAhead ? (
           <text style={{ fg: C.green }}>
@@ -670,57 +689,54 @@ function CommitLog(props: { width: number }) {
         ) : null}
       </>
     );
-  }
 
-  let body: ReactNode;
-  if (commitEntries.length === 0 && !commitLoading) {
-    body = (
+  const body: ReactNode =
+    commitEntries.length === 0 && !commitLoading ? (
       <box style={{ height: 1, paddingLeft: 3 }}>
         <text style={{ fg: C.faint }}>no commits</text>
       </box>
+    ) : (
+      rows.map((row) => {
+        const selected = commitCursor === commitRowKey(row);
+        const key = commitRowKey(row);
+        if (row.kind === "header") {
+          return (
+            <CommitHeaderRow
+              commit={byHash.get(row.hash)}
+              expanded={Boolean(state.collapsed[row.hash])}
+              id={key}
+              key={key}
+              onMouseDown={() => handleHeaderMouseDown(row)}
+              selected={selected}
+              width={props.width}
+            />
+          );
+        }
+        if (row.kind === "file") {
+          const commit = byHash.get(row.hash);
+          return (
+            <CommitFileRow
+              file={commit?.files[row.fileIndex]}
+              id={key}
+              key={key}
+              onMouseDown={() => handleFileMouseDown(row)}
+              path={row.path}
+              selected={selected}
+              width={props.width}
+            />
+          );
+        }
+        return (
+          <CommitLoadMoreRow
+            id={key}
+            key={key}
+            loading={commitLoading}
+            onMouseDown={handleLoadMoreMouseDown}
+            selected={selected}
+          />
+        );
+      })
     );
-  } else {
-    body = rows.map((row) => {
-      const selected = commitCursor === commitRowKey(row);
-      const key = commitRowKey(row);
-      if (row.kind === "header") {
-        return (
-          <CommitHeaderRow
-            commit={byHash.get(row.hash)}
-            expanded={Boolean(state.collapsed[row.hash])}
-            id={key}
-            key={key}
-            onMouseDown={() => handleHeaderMouseDown(row)}
-            selected={selected}
-            width={props.width}
-          />
-        );
-      }
-      if (row.kind === "file") {
-        const commit = byHash.get(row.hash);
-        return (
-          <CommitFileRow
-            file={commit?.files[row.fileIndex]}
-            id={key}
-            key={key}
-            onMouseDown={() => handleFileMouseDown(row)}
-            path={row.path}
-            selected={selected}
-            width={props.width}
-          />
-        );
-      }
-      return (
-        <CommitLoadMoreRow
-          id={key}
-          key={key}
-          loading={commitLoading}
-          onMouseDown={handleLoadMoreMouseDown}
-          selected={selected}
-        />
-      );
-    });
-  }
 
   return (
     <box

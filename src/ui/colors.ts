@@ -1,4 +1,5 @@
 import type { ThemeMode } from "@opentui/core";
+
 import { blendHex } from "./hunk-diff/ui/lib/color";
 import { type AppTheme, resolveTheme } from "./hunk-diff/ui/themes";
 import {
@@ -21,7 +22,7 @@ export type IconColorKey =
   | "red"
   | "yellow";
 
-export interface IconColors {
+export type IconColors = {
   aqua: string;
   beige: string;
   blue: string;
@@ -31,9 +32,9 @@ export interface IconColors {
   purple: string;
   red: string;
   yellow: string;
-}
+};
 
-export interface UiColors {
+export type UiColors = {
   accent: string;
   bg: string;
   border: string;
@@ -52,12 +53,18 @@ export interface UiColors {
   successBg: string;
   warnBg: string;
   yellow: string;
-}
+};
 
-export interface ThemeColors {
+export type ThemeColors = {
   icons: IconColors;
   ui: UiColors;
-}
+};
+
+const ERROR_BG_RATIO = 0.28;
+const FAINT_RATIO = 0.55;
+const PANEL_TINT_RATIO = 0.22;
+const SELECTION_RATIO = 0.32;
+const WARN_BG_RATIO = 0.3;
 
 /** Blend `front` into `back` at `ratio` (0-1), returning a hex color. */
 function tint(front: string, back: string, ratio: number): string {
@@ -83,24 +90,25 @@ function iconsFor(theme: AppTheme): IconColors {
 /** Chrome colors derived from the unified hunk theme for non-codey themes. */
 function uiColorsFor(theme: AppTheme): UiColors {
   const { panel, background } = theme;
+  const dark = theme.appearance === "dark";
   return {
     accent: theme.accent,
     bg: background,
     border: theme.border,
     commentFg: theme.badgeNeutral,
     dim: theme.muted,
-    errorBg: tint(theme.removedSignColor, panel, 0.28),
-    faint: tint(theme.muted, background, 0.55),
+    errorBg: tint(theme.removedSignColor, panel, ERROR_BG_RATIO),
+    faint: tint(theme.muted, background, FAINT_RATIO),
     fg: theme.text,
     green: theme.addedSignColor,
-    greenBg: tint(theme.addedSignColor, panel, 0.22),
+    greenBg: tint(theme.addedSignColor, panel, PANEL_TINT_RATIO),
     panel,
-    purple: theme.appearance === "dark" ? "#bc8cff" : "#8250df",
+    purple: dark ? "#bc8cff" : "#8250df",
     red: theme.removedSignColor,
-    redBg: tint(theme.removedSignColor, panel, 0.22),
-    selection: tint(theme.accent, panel, 0.32),
-    successBg: tint(theme.addedSignColor, panel, 0.22),
-    warnBg: tint(theme.fileModified, panel, 0.3),
+    redBg: tint(theme.removedSignColor, panel, PANEL_TINT_RATIO),
+    selection: tint(theme.accent, panel, SELECTION_RATIO),
+    successBg: tint(theme.addedSignColor, panel, PANEL_TINT_RATIO),
+    warnBg: tint(theme.fileModified, panel, WARN_BG_RATIO),
     yellow: theme.fileModified,
   };
 }
@@ -115,7 +123,7 @@ export const DEFAULT_THEME_ID = "github-dark";
  */
 export function getThemeColors(
   themeId: string,
-  themeMode?: ThemeMode
+  themeMode?: ThemeMode,
 ): ThemeColors {
   const theme = resolveTheme(themeId, themeMode ?? null);
   return theme.chrome ?? { icons: iconsFor(theme), ui: uiColorsFor(theme) };

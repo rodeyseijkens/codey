@@ -1,5 +1,6 @@
-import type { TextareaRenderable } from "@opentui/core";
 import { type RefObject, useEffect, useRef } from "react";
+import type { TextareaRenderable } from "@opentui/core";
+
 import { useAppState } from "../state/store";
 
 /**
@@ -8,7 +9,7 @@ import { useAppState } from "../state/store";
  * draft's prefilled value is preserved until the user asks to clear it.
  */
 export function useDraftClear(
-  textareaRef: RefObject<TextareaRenderable | null>
+  textareaRef: RefObject<TextareaRenderable | null>,
 ): void {
   const { draftClearTick } = useAppState();
   const prevTick = useRef(draftClearTick);

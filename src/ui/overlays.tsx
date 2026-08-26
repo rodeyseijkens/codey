@@ -1,11 +1,12 @@
+import type { ReactNode } from "react";
+import { useRef } from "react";
 import {
   RGBA,
   type ScrollBoxRenderable,
   type TextareaRenderable,
 } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
-import type { ReactNode } from "react";
-import { useRef } from "react";
+
 import {
   COMMAND_DESCRIPTIONS,
   COMMAND_SECTIONS,
@@ -78,6 +79,9 @@ function OverlayFrame(props: {
   );
 }
 
+const SHORT_HASH_LEN = 7;
+const SCROLL_STEP = 10;
+
 function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): void {
   if (!scroll) {
     return;
@@ -87,9 +91,9 @@ function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): void {
   } else if (name === "k" || name === "up") {
     scroll.scrollTop = Math.max(0, scroll.scrollTop - 1);
   } else if (name === "pagedown") {
-    scroll.scrollTop += 10;
+    scroll.scrollTop += SCROLL_STEP;
   } else if (name === "pageup") {
-    scroll.scrollTop = Math.max(0, scroll.scrollTop - 10);
+    scroll.scrollTop = Math.max(0, scroll.scrollTop - SCROLL_STEP);
   }
 }
 
@@ -279,7 +283,7 @@ function CommitInputOverlay() {
 
 function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
   const { ui: C } = useColors();
-  const shortHash = props.overlay.hash.slice(0, 7);
+  const shortHash = props.overlay.hash.slice(0, SHORT_HASH_LEN);
   const store = getStore();
   return (
     <OverlayFrame
@@ -301,7 +305,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>m</text>
           <text style={{ fg: C.fg }}>Mixed</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} keep working tree</text>
+          <text style={{ fg: C.dim }}>\u2003 keep working tree</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -312,7 +316,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>s</text>
           <text style={{ fg: C.fg }}>Soft</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} keep staged + working</text>
+          <text style={{ fg: C.dim }}>\u2003 keep staged + working</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -323,7 +327,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>h</text>
           <text style={{ fg: C.fg }}>Hard</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} discard all changes</text>
+          <text style={{ fg: C.dim }}>\u2003 discard all changes</text>
         </box>
       </box>
     </OverlayFrame>
@@ -332,7 +336,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
 
 function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
   const { ui: C } = useColors();
-  const shortHash = props.overlay.hash.slice(0, 7);
+  const shortHash = props.overlay.hash.slice(0, SHORT_HASH_LEN);
   const store = getStore();
   return (
     <OverlayFrame
@@ -354,7 +358,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>s</text>
           <text style={{ fg: C.fg }}>Squash</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} combine into parent</text>
+          <text style={{ fg: C.dim }}>\u2003 combine into parent</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -365,7 +369,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>f</text>
           <text style={{ fg: C.fg }}>Fixup</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} combine, discard message</text>
+          <text style={{ fg: C.dim }}>\u2003 combine, discard message</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -376,7 +380,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>d</text>
           <text style={{ fg: C.fg }}>Drop</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} remove this commit</text>
+          <text style={{ fg: C.dim }}>\u2003 remove this commit</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -387,7 +391,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>a</text>
           <text style={{ fg: C.fg }}>Amend</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} add staged changes</text>
+          <text style={{ fg: C.dim }}>\u2003 add staged changes</text>
         </box>
         <box
           onMouseDown={() => {
@@ -399,7 +403,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>r</text>
           <text style={{ fg: C.fg }}>Reset</text>
-          <text style={{ fg: C.dim }}>{"\u2003"} mixed/soft/hard reset</text>
+          <text style={{ fg: C.dim }}>\u2003 mixed/soft/hard reset</text>
         </box>
       </box>
     </OverlayFrame>

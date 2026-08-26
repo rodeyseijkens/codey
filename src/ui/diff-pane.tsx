@@ -1,7 +1,8 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyEvent, ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { getFiletypeFromFileName } from "@pierre/diffs";
-import { useEffect, useMemo, useRef, useState } from "react";
+
 import { keyEventToChord } from "../keymap/chords";
 import type { CommandId } from "../keymap/commands";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
@@ -13,6 +14,7 @@ import {
   updateCommentDraft,
 } from "../state/comment-actions";
 import { getStore, useAppState } from "../state/store";
+import { LAYOUT_MODES } from "../types";
 import { useColors } from "./color-context";
 import {
   buildCanonicalDiffRows,
@@ -21,7 +23,6 @@ import {
   HunkDiffBody,
   type HunkDiffNote,
 } from "./hunk-diff/opentui";
-
 import { toInternalDiffFile } from "./hunk-diff/opentui/model";
 import { buildLineHighlightPaintIndex } from "./hunk-diff/ui/diff/lineHighlightPaint";
 import type { ValidatedLineHighlight } from "./hunk-diff/ui/highlights/validate";
@@ -29,16 +30,21 @@ import { useKeymap } from "./keymap-context";
 
 function resolveViewMode(
   layoutMode: string,
-  termWidth: number
+  termWidth: number,
 ): "split" | "stack" {
-  if (layoutMode === "split") {
-    return "split";
+  if (layoutMode === LAYOUT_MODES.split) {
+    return LAYOUT_MODES.split;
   }
-  if (layoutMode === "stack") {
-    return "stack";
+  if (layoutMode === LAYOUT_MODES.stack) {
+    return LAYOUT_MODES.stack;
   }
-  return termWidth >= 160 ? "split" : "stack";
+  return termWidth >= SPLIT_VIEW_MIN_WIDTH
+    ? LAYOUT_MODES.split
+    : LAYOUT_MODES.stack;
 }
+
+/** Minimum terminal width below which split layout falls back to stacked. */
+const SPLIT_VIEW_MIN_WIDTH = 160;
 
 /** Minimum lines of context kept above/below the cursor when scrolling. */
 const SCROLLOFF = 5;
@@ -51,7 +57,7 @@ function jumpToChange(
   store: ReturnType<typeof getStore>,
   rows: readonly CanonicalDiffRow[],
   cmd: CommandId,
-  cursorRow: number
+  cursorRow: number,
 ): void {
   if (cmd === "next-hunk") {
     jumpToNextChange(store, rows, cursorRow);
@@ -63,7 +69,7 @@ function jumpToChange(
 function jumpToNextChange(
   store: ReturnType<typeof getStore>,
   rows: readonly CanonicalDiffRow[],
-  cursorRow: number
+  cursorRow: number,
 ): void {
   let i = cursorRow + 1;
   if (isChange(rows[cursorRow])) {
@@ -83,7 +89,7 @@ function jumpToNextChange(
 function jumpToPrevChange(
   store: ReturnType<typeof getStore>,
   rows: readonly CanonicalDiffRow[],
-  cursorRow: number
+  cursorRow: number,
 ): void {
   let i = cursorRow - 1;
   if (isChange(rows[cursorRow])) {
@@ -108,7 +114,7 @@ function jumpToPrevChange(
 function commentMarksForRange(
   rows: readonly CanonicalDiffRow[],
   startRow: number,
-  endRow: number
+  endRow: number,
 ): ValidatedLineHighlight[] {
   const marks: ValidatedLineHighlight[] = [];
   const start = Math.max(0, startRow);
@@ -175,7 +181,7 @@ function resolveDiffPaneKey(key: string): CommandId | undefined {
 
 function applyPageScroll(
   scrollRef: ScrollBoxRenderable | null,
-  direction: -1 | 1
+  direction: -1 | 1,
 ) {
   if (!scrollRef) {
     return;
@@ -189,8 +195,8 @@ function applyPageScroll(
     0,
     Math.min(
       scrollRef.scrollHeight - viewportHeight,
-      scrollRef.scrollTop + delta
-    )
+      scrollRef.scrollTop + delta,
+    ),
   );
 }
 
@@ -199,7 +205,7 @@ function applyHalfPageScroll(
   store: ReturnType<typeof getStore>,
   rowCount: number,
   cursorRow: number,
-  direction: -1 | 1
+  direction: -1 | 1,
 ) {
   const viewportHeight = scrollRef?.viewport.height ?? 0;
   if (scrollRef && viewportHeight > 0) {
@@ -208,8 +214,8 @@ function applyHalfPageScroll(
       0,
       Math.min(
         scrollRef.scrollHeight - viewportHeight,
-        scrollRef.scrollTop + delta
-      )
+        scrollRef.scrollTop + delta,
+      ),
     );
   }
   store.set({
@@ -217,8 +223,8 @@ function applyHalfPageScroll(
       0,
       Math.min(
         rowCount - 1,
-        cursorRow + Math.floor(viewportHeight / 2) * direction
-      )
+        cursorRow + Math.floor(viewportHeight / 2) * direction,
+      ),
     ),
   });
 }
@@ -228,7 +234,7 @@ export function handleDiffPaneKey(
   store: ReturnType<typeof getStore>,
   keymap: ResolvedKeymap,
   rows: readonly CanonicalDiffRow[],
-  scrollRef: ScrollBoxRenderable | null = null
+  scrollRef: ScrollBoxRenderable | null = null,
 ): void {
   const s = store.getState();
   if (
@@ -249,10 +255,7 @@ export function handleDiffPaneKey(
     return;
   }
 
-  let effectiveCmd = cmd;
-  if (!effectiveCmd) {
-    effectiveCmd = resolveDiffPaneKey(chord.key);
-  }
+  const effectiveCmd = cmd ?? resolveDiffPaneKey(chord.key);
   if (!effectiveCmd) {
     return;
   }
@@ -287,6 +290,24 @@ export function handleDiffPaneKey(
   }
 }
 
+function diffSearchCounter(
+  diffSearch: NonNullable<ReturnType<typeof useAppState>["diffSearch"]>,
+  C: ReturnType<typeof useColors>["ui"],
+) {
+  const { index, matches, query } = diffSearch;
+  if (matches.length > 0) {
+    return (
+      <text style={{ fg: C.accent, marginLeft: 1 }}>
+        {`${index + 1}/${matches.length}`}
+      </text>
+    );
+  }
+  if (query.length > 0) {
+    return <text style={{ fg: C.red, marginLeft: 1 }}>0/0</text>;
+  }
+  return null;
+}
+
 export function DiffPane() {
   const state = useAppState();
   const keymap = useKeymap();
@@ -297,7 +318,7 @@ export function DiffPane() {
   const [cursorOffset, setCursorOffset] = useState(0);
   const [forceScrollToTop, setForceScrollToTop] = useState(false);
   const [pendingFirstChange, setPendingFirstChange] = useState<number | null>(
-    null
+    null,
   );
   const prevFilePathRef = useRef<string | undefined>(undefined);
 
@@ -312,16 +333,16 @@ export function DiffPane() {
             language: getFiletypeFromFileName(file.path),
           }))
         : [],
-    [file?.diff, file?.path]
+    [file?.diff, file?.path],
   );
   const [hunkFile] = hunkFiles;
   const internalFile = useMemo(
     () => (hunkFile ? toInternalDiffFile(hunkFile) : undefined),
-    [hunkFile]
+    [hunkFile],
   );
   const rows = useMemo(
     () => (hunkFile ? buildCanonicalDiffRows(hunkFile) : []),
-    [hunkFile]
+    [hunkFile],
   );
 
   const comments = useMemo(() => {
@@ -329,11 +350,11 @@ export function DiffPane() {
       return [];
     }
     return state.comments.filter(
-      (c) => c.scope === sel.scope && c.path === sel.file.path
+      (c) => c.scope === sel.scope && c.path === sel.file.path,
     );
   }, [state.comments, sel]);
 
-  const notes = useMemo<HunkDiffNote[]>(() => {
+  const notes = useMemo(() => {
     const draft = state.commentDraft;
     const list: HunkDiffNote[] = comments.map((comment) => {
       const editing = draft?.mode === "edit" && draft.commentId === comment.id;
@@ -369,15 +390,17 @@ export function DiffPane() {
       return;
     }
     const marks = comments.flatMap((c) =>
-      commentMarksForRange(rows, c.startRow, c.endRow)
+      commentMarksForRange(rows, c.startRow, c.endRow),
     );
     return buildLineHighlightPaintIndex({ file: internalFile, marks });
   }, [internalFile, comments, rows]);
 
+  const MIN_CONTENT_WIDTH = 10;
+
   const viewMode = resolveViewMode(state.layoutMode, dims.width);
   const contentWidth = Math.max(
-    10,
-    dims.width - (state.sidebarVisible ? state.sidebarWidth + 2 : 0)
+    MIN_CONTENT_WIDTH,
+    dims.width - (state.sidebarVisible ? state.sidebarWidth + 2 : 0),
   );
 
   useKeyboard((e) => {
@@ -388,7 +411,7 @@ export function DiffPane() {
     if (file?.path !== prevFilePathRef.current) {
       prevFilePathRef.current = file?.path;
       const firstChange = rows.findIndex(
-        (row) => row.kind === "add" || row.kind === "del"
+        (row) => row.kind === "add" || row.kind === "del",
       );
       if (firstChange >= 0) {
         setPendingFirstChange(firstChange);
@@ -425,7 +448,7 @@ export function DiffPane() {
     } else if (cursorOffset + SCROLLOFF > bottom) {
       scroll.scrollTop = Math.max(
         0,
-        cursorOffset - viewportHeight + 1 + SCROLLOFF
+        cursorOffset - viewportHeight + 1 + SCROLLOFF,
       );
     }
   }, [cursorOffset, forceScrollToTop, state.focus]);
@@ -592,20 +615,7 @@ export function DiffPane() {
             <text style={{ fg: C.fg, flexGrow: 1, overflow: "hidden" }}>
               {`\uf422 ${state.diffSearch.query}${state.diffSearch.open ? "\u258c" : ""}`}
             </text>
-            {(() => {
-              const { index, matches, query } = state.diffSearch;
-              if (matches.length > 0) {
-                return (
-                  <text style={{ fg: C.accent, marginLeft: 1 }}>
-                    {`${index + 1}/${matches.length}`}
-                  </text>
-                );
-              }
-              if (query.length > 0) {
-                return <text style={{ fg: C.red, marginLeft: 1 }}>0/0</text>;
-              }
-              return null;
-            })()}
+            {diffSearchCounter(state.diffSearch, C)}
           </box>
         </box>
       ) : null}

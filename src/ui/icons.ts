@@ -1,9 +1,9 @@
 import type { IconColorKey } from "./colors";
 
-interface IconDef {
+type IconDef = {
   color: IconColorKey;
   glyph: string;
-}
+};
 
 const FILE_ICONS: Record<string, IconDef> = {
   aac: { color: "red", glyph: "\u{e638}" },
@@ -323,14 +323,14 @@ const FOLDER_ICONS: Record<string, IconDef> = {
   vue: { color: "green", glyph: "\u{ea83}" },
 };
 
-const DEFAULT_FILE: IconDef = { color: "gray", glyph: "\u{f15b}" };
-const DEFAULT_FOLDER: IconDef = { color: "blue", glyph: "\u{ea83}" };
+const DEFAULT_FILE = { color: "gray", glyph: "\u{f15b}" } as const;
+const DEFAULT_FOLDER = { color: "blue", glyph: "\u{ea83}" } as const;
 
 function lookup(
   path: string,
   byName: Record<string, IconDef>,
   byExt: Record<string, IconDef>,
-  fallback: IconDef
+  fallback: IconDef,
 ): IconDef {
   const basename = path.split("/").pop()?.toLowerCase() ?? "";
   const byNameHit = byName[basename];
@@ -376,7 +376,7 @@ export const SPINNER_FRAMES = [
   "⠧",
   "⠇",
   "⠏",
-];
+] as const;
 
 export const STATUS_ADDED = "\u{f457}";
 export const STATUS_MODIFIED = "\u{f459}";
