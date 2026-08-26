@@ -62,13 +62,13 @@ async function main() {
   await writeFile(
     `${root}bin/codey-herdr`,
     launcher("dist/herdr/cli.js"),
-    "utf8"
+    "utf8",
   );
   await chmod(`${root}bin/codey.cjs`, 0o755);
   await chmod(`${root}bin/codey`, 0o755);
   await chmod(`${root}bin/codey-herdr`, 0o755);
-  console.log(
-    "built dist/main.js, dist/herdr/cli.js + bin/codey, bin/codey.cjs, bin/codey-herdr"
+  console.info(
+    "built dist/main.js, dist/herdr/cli.js + bin/codey, bin/codey.cjs, bin/codey-herdr",
   );
 }
 
