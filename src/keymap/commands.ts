@@ -64,7 +64,9 @@ export const ALL_COMMANDS: readonly CommandId[] = [
   "sidebar-shrink",
   "sidebar-grow",
   "visual-select",
+  "wrap-text",
   "add-comment",
+  "cancel",
   "edit-comment",
   "delete-comment",
   "next-comment",
@@ -133,7 +135,7 @@ export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
   "unstage-file": "Unstage selected file (git restore --staged)",
   "visual-select": "Start line/range selection for comments",
   "wrap-text": "Toggle diff line wrapping",
-};
+} as const;
 
 export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "add-comment": "c",
@@ -179,7 +181,7 @@ export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
   "unstage-file": "u",
   "visual-select": "v",
   "wrap-text": "w",
-};
+} as const;
 
 export const COMMAND_SECTIONS: ReadonlyArray<{
   commands: readonly CommandId[];
@@ -244,4 +246,4 @@ export const COMMAND_SECTIONS: ReadonlyArray<{
     commands: ["quit", "help", "cancel"],
     title: "Global",
   },
-];
+] as const;

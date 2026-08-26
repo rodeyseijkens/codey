@@ -1,4 +1,5 @@
 import { parsePatchFiles } from "@pierre/diffs";
+
 import { normalizePatch } from "../ui/hunk-diff/core/patch/normalize";
 import { buildCanonicalDiffRows, type CanonicalDiffRow } from "./rows";
 

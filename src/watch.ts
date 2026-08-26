@@ -1,13 +1,14 @@
 import chokidar from "chokidar";
+
 import { git } from "./vcs/git";
 
-export interface WatcherOptions {
+export type WatcherOptions = {
   debounceMs?: number;
   gitDir: string;
   onChange: () => void;
   pollMs?: number;
   root: string;
-}
+};
 
 async function repoSnapshot(root: string): Promise<string> {
   const status = await git(["status", "--porcelain"], root);
@@ -17,7 +18,7 @@ async function repoSnapshot(root: string): Promise<string> {
 function startPolling(
   root: string,
   trigger: () => void,
-  pollMs: number
+  pollMs: number,
 ): () => void {
   let last: string | null = null;
   let busy = false;
@@ -50,7 +51,7 @@ export function startWatcher(opts: WatcherOptions): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let stopPoll: (() => void) | null = null;
 
-  const trigger = () => {
+  function trigger(): void {
     if (timer) {
       clearTimeout(timer);
     }
@@ -58,7 +59,7 @@ export function startWatcher(opts: WatcherOptions): () => void {
       timer = null;
       onChange();
     }, debounceMs);
-  };
+  }
 
   let watcher: ReturnType<typeof chokidar.watch> | null = null;
   try {

@@ -21,7 +21,7 @@ export const DEFAULT_IGNORE_FILES = [
   "**/flake.lock",
   "**/.terraform.lock.hcl",
   "**/gradle.lockfile",
-];
+] as const;
 
 const LEADING_SLASHES = /^\/+/;
 const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/;
@@ -31,7 +31,7 @@ export type IgnoreMatcher = (path: string) => boolean;
 /** Keep ignored files in the list but drop their diff content. */
 export function markIgnoredFiles(
   files: FileDiff[],
-  patterns: readonly string[]
+  patterns: readonly string[],
 ): void {
   const ignore = compileIgnorePatterns(patterns);
   for (const file of files) {
@@ -43,7 +43,7 @@ export function markIgnoredFiles(
 }
 
 export function compileIgnorePatterns(
-  patterns: readonly string[]
+  patterns: readonly string[],
 ): IgnoreMatcher {
   const regexps: RegExp[] = [];
   for (const raw of patterns) {
