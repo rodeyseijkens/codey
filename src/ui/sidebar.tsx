@@ -69,6 +69,38 @@ function splitPath(displayPath: string): [string, string] {
   return [displayPath.slice(idx + 1), displayPath.slice(0, idx)];
 }
 
+function truncateFolder(folder: string, max: number): string {
+  if (max <= 1) {
+    return "…";
+  }
+  return `…${folder.slice(-(max - 1))}`;
+}
+
+function truncateFilePath(
+  name: string,
+  max: number
+): { file: string; folder: string | null } {
+  const [file, folder] = splitPath(name);
+  if (!folder) {
+    return { file: truncatePath(file, max), folder: null };
+  }
+  if (file.length + 1 + folder.length <= max) {
+    return { file, folder };
+  }
+  if (file.length >= max) {
+    return { file: truncatePath(file, max), folder: null };
+  }
+  const folderMax = max - file.length - 1;
+  if (folderMax <= 0) {
+    return { file, folder: null };
+  }
+  return {
+    file,
+    folder:
+      folder.length <= folderMax ? folder : truncateFolder(folder, folderMax),
+  };
+}
+
 const DIR_CHROME = 7;
 
 function dirNameMax(width: number, depth: number): number {
@@ -84,10 +116,25 @@ function FileRow(props: {
   name: string;
   scope: Changeset["id"];
   selected: boolean;
+  width: number;
 }) {
-  const { commentCount, depth, file, focused, index, name, scope, selected } =
-    props;
+  const {
+    commentCount,
+    depth,
+    file,
+    focused,
+    index,
+    name,
+    scope,
+    selected,
+    width,
+  } = props;
   const { ui: C, icons } = useColors();
+  const nameMax = Math.max(
+    0,
+    width - (1 + depth) - 1 - 2 - (commentCount > 0 ? 4 : 0) - 2 - 2
+  );
+  const nameChunks = truncateFilePath(name, nameMax);
   const letter =
     file.status === "added" && file.notice === "untracked"
       ? STATUS_UNTRACKED
@@ -121,14 +168,9 @@ function FileRow(props: {
           flexGrow: 1,
         }}
       >
-        <text style={{ fg: selected ? C.fg : C.dim }}>
-          {splitPath(name)[0]}
-        </text>
-        {splitPath(name)[1] ? (
-          <text style={{ fg: C.faint, overflow: "hidden" }}>
-            {" "}
-            {splitPath(name)[1]}
-          </text>
+        <text style={{ fg: selected ? C.fg : C.dim }}>{nameChunks.file}</text>
+        {nameChunks.folder ? (
+          <text style={{ fg: C.faint }}> {nameChunks.folder}</text>
         ) : null}
       </box>
       {commentCount > 0 ? (
@@ -202,8 +244,9 @@ function ListBody(props: {
   cs: Changeset;
   focused: boolean;
   sel: ReturnType<typeof useAppState>["selection"];
+  width: number;
 }) {
-  const { cs, focused, sel } = props;
+  const { cs, focused, sel, width } = props;
   const { ui: C } = useColors();
   if (cs.files.length === 0) {
     return (
@@ -227,6 +270,7 @@ function ListBody(props: {
           selected={
             sel?.kind === "file" && sel.scope === cs.id && sel.index === index
           }
+          width={width}
         />
       ))}
     </>
@@ -290,6 +334,7 @@ function TreeBody(props: {
             selected={
               sel?.kind === "file" && sel.scope === cs.id && sel.index === index
             }
+            width={width}
           />
         );
       })}
@@ -327,7 +372,14 @@ function Section(props: { cs: Changeset; width: number }) {
       />
     );
   } else {
-    body = <ListBody cs={cs} focused={state.focus === "sidebar"} sel={sel} />;
+    body = (
+      <ListBody
+        cs={cs}
+        focused={state.focus === "sidebar"}
+        sel={sel}
+        width={width}
+      />
+    );
   }
   return (
     <box style={{ flexDirection: "column" }}>
@@ -433,9 +485,12 @@ function CommitFileRow(props: {
   onMouseDown: (e: MouseEvent) => void;
   path: string;
   selected: boolean;
+  width: number;
 }) {
-  const { file, id, onMouseDown, path, selected } = props;
+  const { file, id, onMouseDown, path, selected, width } = props;
   const { icons, ui: C } = useColors();
+  const nameMax = Math.max(0, width - 7);
+  const nameChunks = truncateFilePath(path, nameMax);
   return (
     <box
       id={id}
@@ -458,12 +513,9 @@ function CommitFileRow(props: {
           flexGrow: 1,
         }}
       >
-        <text style={{ fg: C.fg }}>{splitPath(path)[0]}</text>
-        {splitPath(path)[1] ? (
-          <text style={{ fg: C.faint, overflow: "hidden" }}>
-            {" "}
-            {splitPath(path)[1]}
-          </text>
+        <text style={{ fg: C.fg }}>{nameChunks.file}</text>
+        {nameChunks.folder ? (
+          <text style={{ fg: C.faint }}> {nameChunks.folder}</text>
         ) : null}
       </box>
       {file ? (
@@ -654,6 +706,7 @@ function CommitLog(props: { width: number }) {
             onMouseDown={() => handleFileMouseDown(row)}
             path={row.path}
             selected={selected}
+            width={props.width}
           />
         );
       }
