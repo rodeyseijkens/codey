@@ -5,16 +5,16 @@ import {
 } from "./chords";
 import { ALL_COMMANDS, type CommandId, DEFAULT_KEYBINDINGS } from "./commands";
 
-export interface KeymapValidationError {
+export type KeymapValidationError = {
   command: string;
   message: string;
-}
+};
 
-export interface ResolvedKeymap {
+export type ResolvedKeymap = {
   byChord: Map<string, CommandId>;
   byCommand: Map<CommandId, string>;
   chords: Map<string, KeyChord>;
-}
+};
 
 export type ResolveResult =
   | { ok: true; keymap: ResolvedKeymap }
@@ -22,8 +22,12 @@ export type ResolveResult =
 
 const COMMAND_SET = new Set<string>(ALL_COMMANDS);
 
+function isCommandId(key: string): key is CommandId {
+  return COMMAND_SET.has(key);
+}
+
 export function resolveKeymap(
-  overrides: Record<string, string> = {}
+  overrides: Record<string, string> = {},
 ): ResolveResult {
   const errors: KeymapValidationError[] = [];
 
@@ -48,6 +52,9 @@ export function resolveKeymap(
   const chords = new Map<string, KeyChord>();
 
   for (const [command, raw] of Object.entries(merged)) {
+    if (!isCommandId(command)) {
+      continue;
+    }
     const parsed = parseChordCaseSensitive(raw);
     if (!parsed.ok) {
       errors.push({
@@ -65,8 +72,8 @@ export function resolveKeymap(
       });
       continue;
     }
-    byChord.set(serial, command as CommandId);
-    byCommand.set(command as CommandId, serial);
+    byChord.set(serial, command);
+    byCommand.set(command, serial);
     chords.set(serial, parsed.chord);
   }
 
@@ -78,7 +85,7 @@ export function resolveKeymap(
 
 export function lookupCommand(
   keymap: ResolvedKeymap,
-  chord: KeyChord
+  chord: KeyChord,
 ): CommandId | undefined {
   return keymap.byChord.get(serializeChord(chord));
 }

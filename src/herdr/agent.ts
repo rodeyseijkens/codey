@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
 import type { Comment } from "../types";
 import { git } from "../vcs/git";
 import {
@@ -12,14 +13,16 @@ import {
   stateDir,
 } from "./env";
 
-interface HerdrAgent {
+const NULL_SEP = "\u0000";
+
+type HerdrAgent = {
   agent_status?: string;
   cwd?: string;
   pane_id: string;
   workspace_id?: string;
-}
+};
 
-export interface TurnBaseline {
+export type TurnBaseline = {
   additions: number;
   capturedAt: number;
   deletions: number;
@@ -27,7 +30,7 @@ export interface TurnBaseline {
   hash: string;
   head: string;
   root: string;
-}
+};
 
 export async function getAgentPicker(): Promise<string | null> {
   if (!isHerdrPlugin()) {
@@ -44,7 +47,7 @@ export async function getAgentPicker(): Promise<string | null> {
   const agents = parseAgentList(res.stdout);
   const mine = process.env.HERDR_PANE_ID;
   const candidates = agents.filter(
-    (a) => a.workspace_id === workspace && a.pane_id !== mine
+    (a) => a.workspace_id === workspace && a.pane_id !== mine,
   );
   const pinned = process.env.HERDR_AGENT_PANE;
   const chosen = candidates.find((a) => a.pane_id === pinned) ?? candidates[0];
@@ -67,7 +70,7 @@ export async function sendToAgent(comments: Comment[]): Promise<void> {
     });
     if (!res.ok) {
       throw new HerdrError(
-        `agent API ${api} returned ${res.status}: ${await res.text()}`
+        `agent API ${api} returned ${res.status}: ${await res.text()}`,
       );
     }
     return;
@@ -80,7 +83,7 @@ export async function sendToAgent(comments: Comment[]): Promise<void> {
   const write = await runHerdr(["pane", "send-text", target, body]);
   if (write.exitCode !== 0) {
     throw new HerdrError(
-      `send comments to agent ${target} failed: ${write.stderr.trim()}`
+      `send comments to agent ${target} failed: ${write.stderr.trim()}`,
     );
   }
   await runHerdr(["agent", "focus", target]);
@@ -106,14 +109,14 @@ export async function captureTurnBaseline(): Promise<void> {
   const untracked = untrackedRes.stdout;
   const stagedStats = countLines(stagedRes.stdout);
   const unstagedStats = countLines(unstagedRes.stdout);
-  const files = statusRes.stdout.split("\u0000").filter((p) => p.length > 0);
+  const files = statusRes.stdout.split(NULL_SEP).filter((p) => p.length > 0);
   const baseline: TurnBaseline = {
     additions: stagedStats.additions + unstagedStats.additions,
     capturedAt: Date.now(),
     deletions: stagedStats.deletions + unstagedStats.deletions,
     files: files.length,
     hash: sha256(
-      [head, stagedRes.stdout, unstagedRes.stdout, untracked].join("\u0000")
+      [head, stagedRes.stdout, unstagedRes.stdout, untracked].join(NULL_SEP),
     ),
     head,
     root,
@@ -122,20 +125,27 @@ export async function captureTurnBaseline(): Promise<void> {
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, "turn-baseline.json"),
-    JSON.stringify(baseline, null, 2)
+    JSON.stringify(baseline, null, 2),
   );
 }
 
 function parseAgentList(stdout: string): HerdrAgent[] {
   try {
-    const parsed = JSON.parse(stdout) as {
-      result?: {
-        agents?: Array<
-          HerdrAgent & { pane_id?: unknown; workspace_id?: unknown }
-        >;
-      };
-    };
-    const agents = parsed.result?.agents;
+    const parsed = JSON.parse(stdout);
+    if (typeof parsed !== "object" || parsed === null) {
+      return [];
+    }
+    const result =
+      "result" in parsed
+        ? (parsed as Record<string, unknown>).result
+        : undefined;
+    if (typeof result !== "object" || result === null) {
+      return [];
+    }
+    const agents =
+      "agents" in result
+        ? (result as Record<string, unknown>).agents
+        : undefined;
     if (!Array.isArray(agents)) {
       return [];
     }
@@ -151,12 +161,15 @@ function parseAgentList(stdout: string): HerdrAgent[] {
                 typeof a.workspace_id === "string" ? a.workspace_id : undefined,
             },
           ]
-        : []
+        : [],
     );
   } catch {
     return [];
   }
 }
+
+const BRACKETED_PASTE_START = "\u001b[200~";
+const BRACKETED_PASTE_END = "\u001b[201~";
 
 function formatComments(comments: Comment[]): string {
   const lines: string[] = [];
@@ -165,14 +178,14 @@ function formatComments(comments: Comment[]): string {
       [
         `${comment.path}:${comment.startRow}-${comment.endRow}`,
         comment.text,
-      ].join("\n")
+      ].join("\n"),
     );
   }
-  const body = lines.join("\n\n").replaceAll("\u001b[201~", "");
-  return `\u001b[200~${body}\u001b[201~`;
+  const body = lines.join("\n\n").replaceAll(BRACKETED_PASTE_END, "");
+  return `${BRACKETED_PASTE_START}${body}${BRACKETED_PASTE_END}`;
 }
 
-function serializeComment(comment: Comment): Record<string, string | number> {
+function serializeComment(comment: Comment) {
   return {
     endRow: comment.endRow,
     path: comment.path,
@@ -181,7 +194,7 @@ function serializeComment(comment: Comment): Record<string, string | number> {
   };
 }
 
-function countLines(text: string): { additions: number; deletions: number } {
+function countLines(text: string) {
   let additions = 0;
   let deletions = 0;
   for (const line of text.split("\n")) {

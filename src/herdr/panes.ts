@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { parse } from "smol-toml";
+
 import {
   currentWorkspaceId,
   HerdrError,
@@ -10,15 +11,15 @@ import {
 } from "./env";
 import { PLUGIN_ID } from "./manifest";
 
-export interface OpenPaneOptions {
+export type OpenPaneOptions = {
   direction?: "right" | "down";
   placement?: "overlay" | "split" | "tab" | "zoomed";
-}
+};
 
-interface HerdrPaneInfo {
+type HerdrPaneInfo = {
   paneId: string;
   workspaceId?: string;
-}
+};
 
 export async function openPane(opts: OpenPaneOptions = {}): Promise<void> {
   if (!isHerdrPlugin()) {
@@ -71,10 +72,10 @@ export async function closePanes(): Promise<void> {
       const res = await runHerdr(["pane", "close", paneId]);
       if (res.exitCode !== 0 && !res.stderr.includes("pane_not_found")) {
         throw new HerdrError(
-          `close codey pane ${paneId} failed: ${res.stderr.trim()}`
+          `close codey pane ${paneId} failed: ${res.stderr.trim()}`,
         );
       }
-    })
+    }),
   );
 }
 
@@ -110,7 +111,7 @@ export async function findPluginPanes(): Promise<string[]> {
     inWorkspace.map(async (pane) => ({
       paneId: pane.paneId,
       runsCodey: await paneRunsCodey(pane.paneId),
-    }))
+    })),
   );
   return results.filter((r) => r.runsCodey).map((r) => r.paneId);
 }
@@ -121,24 +122,39 @@ async function listPanes(): Promise<HerdrPaneInfo[]> {
     return [];
   }
   try {
-    const parsed = JSON.parse(res.stdout) as {
-      result?: { panes?: Array<{ pane_id?: unknown; workspace_id?: unknown }> };
-    };
-    const panes = parsed.result?.panes;
+    const parsed = JSON.parse(res.stdout);
+    if (typeof parsed !== "object" || parsed === null) {
+      return [];
+    }
+    const result =
+      "result" in parsed
+        ? (parsed as Record<string, unknown>).result
+        : undefined;
+    if (typeof result !== "object" || result === null) {
+      return [];
+    }
+    const panes =
+      "panes" in result ? (result as Record<string, unknown>).panes : undefined;
     if (!Array.isArray(panes)) {
       return [];
     }
-    return panes.flatMap((p) =>
-      typeof p.pane_id === "string"
+    return panes.flatMap((p: unknown) => {
+      if (typeof p !== "object" || p === null) {
+        return [];
+      }
+      const record = p as Record<string, unknown>;
+      const paneId = record.pane_id;
+      const workspaceId = record.workspace_id;
+      return typeof paneId === "string"
         ? [
             {
-              paneId: p.pane_id,
+              paneId,
               workspaceId:
-                typeof p.workspace_id === "string" ? p.workspace_id : undefined,
+                typeof workspaceId === "string" ? workspaceId : undefined,
             },
           ]
-        : []
-    );
+        : [];
+    });
   } catch {
     return [];
   }
@@ -160,18 +176,37 @@ async function paneRunsCodey(paneId: string): Promise<boolean> {
     return false;
   }
   try {
-    const parsed = JSON.parse(res.stdout) as {
-      result?: {
-        process_info?: { foreground_processes?: Array<{ argv0?: unknown }> };
-      };
-    };
-    const processes = parsed.result?.process_info?.foreground_processes;
+    const parsed = JSON.parse(res.stdout);
+    if (typeof parsed !== "object" || parsed === null) {
+      return false;
+    }
+    const result =
+      "result" in parsed
+        ? (parsed as Record<string, unknown>).result
+        : undefined;
+    if (typeof result !== "object" || result === null) {
+      return false;
+    }
+    const processInfo =
+      "process_info" in result
+        ? (result as Record<string, unknown>).process_info
+        : undefined;
+    if (typeof processInfo !== "object" || processInfo === null) {
+      return false;
+    }
+    const processes =
+      "foreground_processes" in processInfo
+        ? (processInfo as Record<string, unknown>).foreground_processes
+        : undefined;
     if (!Array.isArray(processes)) {
       return false;
     }
-    return processes.some((p) => {
+    return processes.some((p: unknown) => {
+      if (typeof p !== "object" || p === null) {
+        return false;
+      }
       const base =
-        String(p.argv0 ?? "")
+        String("argv0" in p ? ((p as Record<string, unknown>).argv0 ?? "") : "")
           .split("/")
           .pop() ?? "";
       return base === "codey" || base === "codey-herdr";
@@ -190,15 +225,22 @@ async function isAutoOpenEnabled(): Promise<boolean> {
       "herdr",
       "plugins",
       "config",
-      PLUGIN_ID
+      PLUGIN_ID,
     );
   const file = Bun.file(join(configDir, "config.toml"));
   if (!(await file.exists())) {
     return true;
   }
   try {
-    const raw = parse(await file.text()) as { auto_open?: unknown };
-    return raw.auto_open !== false;
+    const raw = parse(await file.text());
+    if (typeof raw !== "object" || raw === null) {
+      return true;
+    }
+    const autoOpen =
+      "auto_open" in raw
+        ? (raw as Record<string, unknown>).auto_open
+        : undefined;
+    return autoOpen !== false;
   } catch {
     return true;
   }

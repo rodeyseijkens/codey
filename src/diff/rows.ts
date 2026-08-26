@@ -1,4 +1,5 @@
 import type { FileDiffMetadata, Hunk } from "@pierre/diffs";
+
 import { formatHunkHeader } from "../ui/hunk-diff/core/hunkHeader";
 import type {
   ReviewGapAddress,
@@ -10,13 +11,13 @@ import {
   reviewTrailingGap,
 } from "../ui/hunk-diff/core/review/expansion";
 
-export interface CanonicalDiffRow {
+export type CanonicalDiffRow = {
   hunkIndex: number;
   kind: "add" | "del" | "context" | "header" | "gap";
   newLine?: number;
   oldLine?: number;
   text: string;
-}
+};
 
 function normalizeDiffLine(line: string | undefined): string {
   if (!line) {
@@ -28,11 +29,23 @@ function normalizeDiffLine(line: string | undefined): string {
   return line;
 }
 
+function hunkToReviewGapHunk(hunk: Hunk): ReviewGapHunk {
+  return {
+    additionCount: hunk.additionCount,
+    additionLineIndex: hunk.additionLineIndex,
+    additionStart: hunk.additionStart,
+    collapsedBefore: hunk.collapsedBefore,
+    deletionCount: hunk.deletionCount,
+    deletionLineIndex: hunk.deletionLineIndex,
+    deletionStart: hunk.deletionStart,
+  };
+}
+
 function toGapSource(metadata: FileDiffMetadata): ReviewGapSource {
   return {
     additionLines: metadata.additionLines,
     deletionLines: metadata.deletionLines,
-    hunks: metadata.hunks as unknown as readonly ReviewGapHunk[],
+    hunks: metadata.hunks.map(hunkToReviewGapHunk),
     isPartial: metadata.isPartial,
   };
 }
@@ -41,12 +54,12 @@ function appendHunkRows(
   rows: CanonicalDiffRow[],
   metadata: FileDiffMetadata,
   hunkIndex: number,
-  hunk: Hunk
+  hunk: Hunk,
 ): void {
   const gapSource = toGapSource(metadata);
   const leadingGap: ReviewGapAddress | undefined = reviewLeadingGap(
     gapSource,
-    hunkIndex
+    hunkIndex,
   );
   if (leadingGap) {
     rows.push({
@@ -74,7 +87,7 @@ function appendHunkRows(
           newLine: newLine + offset,
           oldLine: oldLine + offset,
           text: normalizeDiffLine(
-            metadata.deletionLines[deletionLineIndex + offset]
+            metadata.deletionLines[deletionLineIndex + offset],
           ),
         });
       }
@@ -91,7 +104,7 @@ function appendHunkRows(
         kind: "del",
         oldLine: oldLine + offset,
         text: normalizeDiffLine(
-          metadata.deletionLines[deletionLineIndex + offset]
+          metadata.deletionLines[deletionLineIndex + offset],
         ),
       });
     }
@@ -101,7 +114,7 @@ function appendHunkRows(
         kind: "add",
         newLine: newLine + offset,
         text: normalizeDiffLine(
-          metadata.additionLines[additionLineIndex + offset]
+          metadata.additionLines[additionLineIndex + offset],
         ),
       });
     }
@@ -113,14 +126,14 @@ function appendHunkRows(
 }
 
 export function buildCanonicalDiffRows(
-  metadata: FileDiffMetadata
+  metadata: FileDiffMetadata,
 ): CanonicalDiffRow[] {
   const rows: CanonicalDiffRow[] = [];
   const gapSource = toGapSource(metadata);
 
-  metadata.hunks.forEach((hunk, hunkIndex) => {
+  for (const [hunkIndex, hunk] of metadata.hunks.entries()) {
     appendHunkRows(rows, metadata, hunkIndex, hunk);
-  });
+  }
 
   const trailingGap = reviewTrailingGap(gapSource);
   if (trailingGap) {
@@ -135,21 +148,21 @@ export function buildCanonicalDiffRows(
 }
 
 export function canonicalHunkOffsets(
-  rows: readonly CanonicalDiffRow[]
+  rows: readonly CanonicalDiffRow[],
 ): number[] {
   const offsets: number[] = [];
   let lastHunk = -1;
-  rows.forEach((row, index) => {
+  for (const [index, row] of rows.entries()) {
     if (
       row.hunkIndex === lastHunk ||
       row.kind === "header" ||
       row.kind === "gap"
     ) {
-      return;
+      continue;
     }
     offsets.push(index);
     lastHunk = row.hunkIndex;
-  });
+  }
   return offsets;
 }
 

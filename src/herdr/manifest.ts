@@ -1,15 +1,15 @@
 import { parse } from "smol-toml";
 import { z } from "zod";
 
-export const PLUGIN_ID = "codey";
-export const PLUGIN_NAME = "codey";
-export const PLUGIN_VERSION = "0.1.0";
+export const PLUGIN_ID = "codey" as const;
+export const PLUGIN_NAME = "codey" as const;
+export const PLUGIN_VERSION = "0.1.0" as const;
 
-export interface PluginMetadata {
+export type PluginMetadata = {
   id: string;
   name: string;
   version: string;
-}
+};
 
 export const PLUGIN_METADATA: PluginMetadata = {
   id: PLUGIN_ID,
@@ -60,7 +60,7 @@ export type ManifestLoadResult =
   | { ok: false; error: string; path: string };
 
 export async function loadManifest(
-  path = MANIFEST_PATH
+  path = MANIFEST_PATH,
 ): Promise<ManifestLoadResult> {
   const file = Bun.file(path);
   if (!(await file.exists())) {
@@ -104,7 +104,7 @@ export async function loadManifest(
   return { manifest, ok: true, path };
 }
 
-function firstDuplicate(labels: string[]): string | null {
+function firstDuplicate(labels: string[]) {
   const seen = new Set<string>();
   for (const label of labels) {
     if (seen.has(label)) {

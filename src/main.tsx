@@ -1,6 +1,7 @@
 import { type CliRenderer, createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
 import { Command } from "commander";
+
 import { loadConfig } from "./config";
 import { captureTurnBaseline, isHerdrPlugin } from "./herdr";
 import { resolveKeymap } from "./keymap/index";
@@ -8,27 +9,29 @@ import { buildRuntime, type Runtime } from "./runtime";
 import { refresh } from "./state/actions";
 import { setQuitHandler, setRestartHandler } from "./state/dispatch";
 import { AppStore, getStore, setStore } from "./state/store";
-import type { DiffMode, LoaderMode } from "./types";
+import type { LoaderMode } from "./types";
+import { parseDiffMode, parseSidebarView } from "./types";
 import { App } from "./ui/app";
 import { startWatcher } from "./watch";
 
 const VERSION = "0.1.0";
+const EXIT_DELAY_MS = 50;
 
-interface CliFlags {
+type CliFlags = {
   mode?: string;
   tabWidth?: string;
   theme?: string;
   view?: string;
   watch?: boolean;
-}
-interface RunOptions {
+};
+type RunOptions = {
   a?: string;
   b?: string;
   flags: CliFlags;
   mode: LoaderMode;
   patchInput?: string;
   rev?: string;
-}
+};
 
 let renderer: CliRenderer | null = null;
 let stopWatcher: (() => void) | null = null;
@@ -40,7 +43,7 @@ async function readAllStdin(): Promise<string> {
   }
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer);
+    chunks.push(Buffer.from(chunk));
   }
   return Buffer.concat(chunks).toString("utf8");
 }
@@ -69,11 +72,9 @@ async function startSession(opts: RunOptions): Promise<void> {
     gutterSign: config.gutterSign,
     ignoreFiles: config.ignoreFiles,
     keymap: keymapRes.keymap,
-    layoutMode: opts.flags.mode ? (opts.flags.mode as DiffMode) : config.mode,
+    layoutMode: parseDiffMode(opts.flags.mode) ?? config.mode,
     lineNumbers: config.lineNumbers,
-    sidebarView: opts.flags.view
-      ? (opts.flags.view as "tree" | "list")
-      : config.view,
+    sidebarView: parseSidebarView(opts.flags.view) ?? config.view,
     sidebarWidth: config.sidebarWidth,
     tabWidth: opts.flags.tabWidth
       ? Number.parseInt(opts.flags.tabWidth, 10)
@@ -160,7 +161,7 @@ async function boot(opts: RunOptions): Promise<void> {
       stopWatcher();
     }
     void renderer?.destroy();
-    setTimeout(() => process.exit(0), 50);
+    setTimeout(() => process.exit(0), EXIT_DELAY_MS);
   });
 
   const root = createRoot(renderer);
@@ -181,7 +182,7 @@ const program = new Command();
 program
   .name("codey")
   .description(
-    "review-first git TUI: staged + changes viewer with transient comments"
+    "review-first git TUI: staged + changes viewer with transient comments",
   )
   .version(VERSION);
 
@@ -197,7 +198,7 @@ function addCommonFlags(cmd: Command): Command {
 addCommonFlags(
   program
     .command("diff", { isDefault: true })
-    .description("review staged + unstaged changes (default)")
+    .description("review staged + unstaged changes (default)"),
 )
   .argument("[a]", "first ref or path (with [b], switches to two-file diff)")
   .argument("[b]", "second ref or path")
@@ -206,11 +207,13 @@ addCommonFlags(
       const opts: RunOptions =
         a && b ? { a, b, flags, mode: "twoFile" } : { flags, mode: "diff" };
       await boot(opts);
-    }
+    },
   );
 
 addCommonFlags(
-  program.command("show").description("show the diff of a revision (read-only)")
+  program
+    .command("show")
+    .description("show the diff of a revision (read-only)"),
 )
   .argument("<rev>", "revision to show (e.g. HEAD, HEAD~2, a commit sha)")
   .action(async (rev: string, flags: CliFlags) => {
@@ -218,7 +221,7 @@ addCommonFlags(
   });
 
 addCommonFlags(
-  program.command("patch").description("render a patch from a file or stdin")
+  program.command("patch").description("render a patch from a file or stdin"),
 )
   .argument("[input]", "patch file path, or '-' for stdin")
   .action(async (input: string | undefined, flags: CliFlags) => {
@@ -234,7 +237,7 @@ addCommonFlags(
 addCommonFlags(
   program
     .command("pager")
-    .description("act as a diff pager (reads diff from stdin)")
+    .description("act as a diff pager (reads diff from stdin)"),
 ).action(async (flags: CliFlags) => {
   const patchInput = await readAllStdin();
   await boot({ flags, mode: "pager", patchInput });
