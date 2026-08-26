@@ -1,15 +1,14 @@
-import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  gitShow,
-  gitStaged,
-  gitUnstaged,
-  stdinPatch,
-  twoFile,
-} from "../src/loaders/index";
+
+import { gitShow } from "../src/loaders/gitShow";
+import { gitStaged } from "../src/loaders/gitStaged";
+import { gitUnstaged } from "../src/loaders/gitUnstaged";
+import { stdinPatch } from "../src/loaders/stdinPatch";
+import { twoFile } from "../src/loaders/twoFile";
 import { gitThrow } from "../src/vcs/git";
+import { afterAll, describe, expect, test } from "bun:test";
 
 const dirs: string[] = [];
 
@@ -29,7 +28,7 @@ async function commitAll(dir: string, message: string): Promise<void> {
 
 afterAll(async () => {
   await Promise.all(
-    dirs.map((dir) => rm(dir, { force: true, recursive: true }))
+    dirs.map((dir) => rm(dir, { force: true, recursive: true })),
   );
 });
 
@@ -87,7 +86,7 @@ describe("gitStaged", () => {
 
     const cs = await gitStaged(dir);
     expect(
-      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b)),
     ).toEqual(["a.txt", "package-lock.json", "pnpm-lock.yaml"]);
     expect(cs.stats.files).toBe(3);
     const lock = cs.files.find((f) => f.path === "package-lock.json");
@@ -106,7 +105,7 @@ describe("gitStaged", () => {
 
     const cs = await gitStaged(dir, []);
     expect(
-      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b)),
     ).toEqual(["a.txt", "package-lock.json"]);
     const lock = cs.files.find((f) => f.path === "package-lock.json");
     expect(lock?.ignored).toBeFalsy();
@@ -166,7 +165,7 @@ describe("gitUnstaged", () => {
     expect(lock?.ignored).toBe(true);
     expect(lock?.diff).toBe("");
     expect(
-      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b)),
     ).toEqual(["bun.lockb", "new.txt"]);
     const overridden = await gitUnstaged(dir, []);
     const shown = overridden.files.find((f) => f.path === "bun.lockb");
@@ -219,7 +218,7 @@ describe("gitShow", () => {
     expect(lock?.ignored).toBe(true);
     expect(lock?.diff).toBe("");
     expect(
-      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b)),
     ).toEqual(["a.txt", "package-lock.json"]);
 
     const overridden = await gitShow("HEAD", dir, []);
@@ -264,7 +263,7 @@ describe("twoFile", () => {
     const dir = await initRepo();
     await writeFile(join(dir, "a.txt"), "one\n");
     expect(
-      twoFile(join(dir, "a.txt"), join(dir, "nope.txt"), dir)
+      twoFile(join(dir, "a.txt"), join(dir, "nope.txt"), dir),
     ).rejects.toThrow("no such file");
   });
 });
@@ -284,7 +283,7 @@ describe("stdinPatch", () => {
     expect(cs.label).toBe("patch");
     expect(cs.files).toHaveLength(2);
     expect(
-      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b))
+      cs.files.map((f) => f.path).sort((a, b) => a.localeCompare(b)),
     ).toEqual(["x.txt", "y.txt"]);
     expect(cs.files.map((f) => f.status)).toEqual(["modified", "modified"]);
     expect(cs.files[0]?.diff).toContain("+x2");

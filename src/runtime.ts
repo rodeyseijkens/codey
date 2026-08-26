@@ -1,10 +1,8 @@
-import {
-  gitShow,
-  gitStaged,
-  gitUnstaged,
-  stdinPatch,
-  twoFile,
-} from "./loaders/index";
+import { gitShow } from "./loaders/gitShow";
+import { gitStaged } from "./loaders/gitStaged";
+import { gitUnstaged } from "./loaders/gitUnstaged";
+import { stdinPatch } from "./loaders/stdinPatch";
+import { twoFile } from "./loaders/twoFile";
 import type { Changeset, LoaderMode } from "./types";
 import {
   currentBranch,
@@ -14,30 +12,30 @@ import {
   isRepo,
 } from "./vcs/git";
 
-export interface LoadResult {
+export type LoadResult = {
   branch: string | null;
   changesets: Changeset[];
   conflictNotice: string | null;
-}
+};
 
 export type LoadFn = () => Promise<LoadResult>;
 
-export interface RuntimeOptions {
+export type RuntimeOptions = {
   a?: string;
   b?: string;
   ignoreFiles?: readonly string[];
   mode: LoaderMode;
   patchInput?: string;
   rev?: string;
-}
+};
 
-export interface Runtime {
+export type Runtime = {
   gitDir: string | null;
   load: LoadFn;
   mode: LoaderMode;
   repoRoot: string | null;
   stagingEnabled: boolean;
-}
+};
 
 export async function buildRuntime(opts: RuntimeOptions): Promise<Runtime> {
   if (opts.mode === "patch" || opts.mode === "pager") {

@@ -1,4 +1,7 @@
-import { gitShow, gitStaged, gitUnstaged, twoFile } from "../src/loaders/index";
+import { gitShow } from "../src/loaders/gitShow";
+import { gitStaged } from "../src/loaders/gitStaged";
+import { gitUnstaged } from "../src/loaders/gitUnstaged";
+import { twoFile } from "../src/loaders/twoFile";
 import {
   buildCanonicalDiffRows,
   createHunkDiffFilesFromPatch,
@@ -9,7 +12,7 @@ async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {
   const start = performance.now();
   const result = await fn();
   const ms = (performance.now() - start).toFixed(1);
-  console.log(`${label.padEnd(36)} ${ms.padStart(8)} ms`);
+  console.info(`${label.padEnd(36)} ${ms.padStart(8)} ms`);
   return result;
 }
 
@@ -23,7 +26,7 @@ async function runOnce(root: string, hasHeadCommit: boolean): Promise<void> {
         const files = createHunkDiffFilesFromPatch(f.diff, f.path);
         rows += files.reduce(
           (total, file) => total + buildCanonicalDiffRows(file).length,
-          0
+          0,
         );
       }
     }
@@ -49,7 +52,7 @@ async function main(): Promise<void> {
       stdout: "ignore",
     }).exited) === 0;
 
-  console.log(`benchmarking loaders in ${root}\n`);
+  console.info(`benchmarking loaders in ${root}\n`);
   await runOnce(root, hasHeadCommit);
   await runOnce(root, hasHeadCommit);
   await runOnce(root, hasHeadCommit);
