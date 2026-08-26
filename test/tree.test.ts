@@ -1,4 +1,3 @@
-import { describe, expect, test } from "bun:test";
 import {
   buildFileTree,
   isFileHidden,
@@ -6,6 +5,7 @@ import {
   visibleTreeNodes,
 } from "../src/lib/tree";
 import type { FileDiff } from "../src/types";
+import { describe, expect, test } from "bun:test";
 
 function file(path: string, additions = 1, deletions = 0): FileDiff {
   return {
@@ -119,11 +119,11 @@ describe("isFileHidden", () => {
       [treeKey("staged", "src/components")]: true,
     };
     expect(
-      isFileHidden("staged", "src/components/Button.tsx", collapsedTree)
+      isFileHidden("staged", "src/components/Button.tsx", collapsedTree),
     ).toBe(true);
     expect(isFileHidden("staged", "src/other.ts", collapsedTree)).toBe(false);
     expect(
-      isFileHidden("changes", "src/components/Button.tsx", collapsedTree)
+      isFileHidden("changes", "src/components/Button.tsx", collapsedTree),
     ).toBe(false);
   });
 });

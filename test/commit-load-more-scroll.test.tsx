@@ -1,15 +1,16 @@
-import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { act } from "react";
+import { testRender } from "@opentui/react/test-utils";
+
 import { resolveKeymap } from "../src/keymap/index";
 import { loadMoreCommits } from "../src/state/actions";
 import { AppStore, setStore } from "../src/state/store";
 import type { CommitEntry, FileStatus } from "../src/types";
 import { Sidebar } from "../src/ui/sidebar";
 import { gitThrow } from "../src/vcs/git";
+import { afterAll, describe, expect, test } from "bun:test";
 
 const CURSOR_KEY_RE = /^commit:/;
 
@@ -45,7 +46,7 @@ async function makeCommits(dir: string, n: number, i = 0): Promise<void> {
 
 afterAll(async () => {
   await Promise.all(
-    dirs.map((dir) => rm(dir, { force: true, recursive: true }))
+    dirs.map((dir) => rm(dir, { force: true, recursive: true })),
   );
 });
 
@@ -68,18 +69,28 @@ function entry(hash: string, files: [string, FileStatus][]): CommitEntry {
   };
 }
 
-function findScrollboxAncestor(node: { parent: unknown } | null): unknown {
+type ScrollboxShape = {
+  scrollHeight: number;
+  scrollTop: number;
+  viewport: { height: number };
+};
+
+function findScrollboxAncestor(
+  node: { parent: unknown } | null,
+): ScrollboxShape | null {
   let cur: { parent: unknown } | null = node;
   while (cur) {
     const maybe = cur as unknown as {
       scrollTop: number;
+      scrollHeight: number;
       viewport?: { height: number };
     };
     if (
       typeof maybe.scrollTop === "number" &&
+      typeof maybe.scrollHeight === "number" &&
       maybe.viewport?.height !== undefined
     ) {
-      return maybe;
+      return maybe as ScrollboxShape;
     }
     cur = cur.parent as { parent: unknown } | null;
   }
@@ -103,7 +114,7 @@ describe("commit load more keeps scroll position", () => {
       entry(h, [
         ["a.txt", "modified"],
         ["b.txt", "added"],
-      ])
+      ]),
     );
     const collapsed: Record<string, boolean> = {};
     for (const h of mockHashes) {
@@ -142,11 +153,10 @@ describe("commit load more keeps scroll position", () => {
       const { root } = setup.renderer;
       const loadMore = root.findDescendantById("commit-load-more");
       expect(loadMore).toBeDefined();
-      const sb = findScrollboxAncestor(loadMore ?? null) as unknown as {
-        scrollTop: number;
-        scrollHeight: number;
-        viewport: { height: number };
-      };
+      const sb = findScrollboxAncestor(loadMore ?? null);
+      if (!sb) {
+        throw new Error("expected scrollbox ancestor");
+      }
       const { scrollHeight, viewport } = sb;
       expect(scrollHeight).toBeGreaterThan(viewport.height);
 

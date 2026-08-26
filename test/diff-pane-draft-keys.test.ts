@@ -1,8 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { KeyEvent } from "@opentui/core";
+
 import { resolveKeymap } from "../src/keymap/index";
 import { AppStore, setStore } from "../src/state/store";
 import { handleDiffPaneKey } from "../src/ui/diff-pane";
 import type { CanonicalDiffRow } from "../src/ui/hunk-diff/opentui";
+import { describe, expect, test } from "bun:test";
 
 const keymapRes = resolveKeymap({});
 if (!keymapRes.ok) {
@@ -14,6 +16,26 @@ const rows: CanonicalDiffRow[] = [
   { hunkIndex: 0, kind: "context", newLine: 1, oldLine: 1, text: "a" },
   { hunkIndex: 0, kind: "add", newLine: 2, text: "b" },
 ];
+
+function keyEvent(
+  name: string,
+  ctrl = false,
+  meta = false,
+  shift = false,
+): KeyEvent {
+  return new KeyEvent({
+    ctrl,
+    eventType: "press",
+    meta,
+    name,
+    number: false,
+    option: false,
+    raw: name,
+    sequence: name,
+    shift,
+    source: "raw",
+  });
+}
 
 describe("handleDiffPaneKey during a comment draft", () => {
   test("j/k do not move the cursor while composing", () => {
@@ -33,22 +55,10 @@ describe("handleDiffPaneKey during a comment draft", () => {
     });
     setStore(store);
 
-    handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "j", shift: false } as never,
-      store,
-      keymapRes.keymap,
-      rows,
-      null
-    );
+    handleDiffPaneKey(keyEvent("j"), store, keymapRes.keymap, rows, null);
     expect(store.getState().cursorRow).toBe(1);
 
-    handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "k", shift: false } as never,
-      store,
-      keymapRes.keymap,
-      rows,
-      null
-    );
+    handleDiffPaneKey(keyEvent("k"), store, keymapRes.keymap, rows, null);
     expect(store.getState().cursorRow).toBe(1);
   });
 });

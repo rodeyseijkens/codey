@@ -1,15 +1,28 @@
-import { describe, expect, test } from "bun:test";
+import { KeyEvent } from "@opentui/core";
+
 import { resolveKeymap } from "../src/keymap/index";
 import { handleKeyEvent, setQuitHandler } from "../src/state/dispatch";
 import { AppStore, setStore } from "../src/state/store";
+import { describe, expect, test } from "bun:test";
 
 const keymapRes = resolveKeymap({});
 if (!keymapRes.ok) {
   throw new Error("expected default keymap");
 }
 
-function ctrlC() {
-  return { ctrl: true, meta: false, name: "c", shift: false } as never;
+function ctrlC(): KeyEvent {
+  return new KeyEvent({
+    ctrl: true,
+    eventType: "press",
+    meta: false,
+    name: "c",
+    number: false,
+    option: false,
+    raw: "\x03",
+    sequence: "\x03",
+    shift: false,
+    source: "raw",
+  });
 }
 
 describe("handleKeyEvent ctrl+c", () => {

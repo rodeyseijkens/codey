@@ -1,6 +1,8 @@
-import { describe, expect, test } from "bun:test";
 import { getThemeColors } from "../src/ui/colors";
 import { resolveTheme } from "../src/ui/hunk-diff/ui/themes";
+import { describe, expect, test } from "bun:test";
+
+const HEX_COLOR_LENGTH = 7;
 
 describe("unified theme system", () => {
   test("github-dark keeps codey's original chrome palette", () => {
@@ -32,7 +34,7 @@ describe("unified theme system", () => {
   test("non-codey bundled themes still resolve with derived chrome", () => {
     const { ui } = getThemeColors("ayu-dark");
     expect(ui.bg).toBe(resolveTheme("ayu-dark", null).background);
-    expect(ui.bg.length).toBe(7);
+    expect(ui.bg.length).toBe(HEX_COLOR_LENGTH);
   });
 
   test("unknown theme ids fall back to the default theme", () => {

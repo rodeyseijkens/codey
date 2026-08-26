@@ -1,4 +1,3 @@
-import { describe, expect, test } from "bun:test";
 import {
   buildCanonicalDiffRows,
   type CanonicalDiffRow,
@@ -6,6 +5,7 @@ import {
   canonicalRowLabel,
   createHunkDiffFilesFromPatch,
 } from "../src/ui/hunk-diff/opentui";
+import { describe, expect, test } from "bun:test";
 
 function rowAt(rows: CanonicalDiffRow[], index: number): CanonicalDiffRow {
   const row = rows[index];

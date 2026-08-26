@@ -1,8 +1,8 @@
-import { describe, expect, test } from "bun:test";
 import {
   compileIgnorePatterns,
   DEFAULT_IGNORE_FILES,
 } from "../src/loaders/ignore";
+import { describe, expect, test } from "bun:test";
 
 describe("compileIgnorePatterns", () => {
   test("matches lock files in the default list at any depth", () => {

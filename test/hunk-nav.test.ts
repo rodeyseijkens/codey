@@ -1,8 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { KeyEvent } from "@opentui/core";
+
 import { resolveKeymap } from "../src/keymap/index";
 import { AppStore, setStore } from "../src/state/store";
 import { handleDiffPaneKey } from "../src/ui/diff-pane";
 import type { CanonicalDiffRow } from "../src/ui/hunk-diff/opentui";
+import { describe, expect, test } from "bun:test";
 
 const keymapRes = resolveKeymap({});
 if (!keymapRes.ok) {
@@ -19,6 +21,26 @@ const rows: CanonicalDiffRow[] = [
   { hunkIndex: 1, kind: "add", newLine: 6, text: "e" },
 ];
 
+function keyEvent(
+  name: string,
+  ctrl = false,
+  meta = false,
+  shift = false,
+): KeyEvent {
+  return new KeyEvent({
+    ctrl,
+    eventType: "press",
+    meta,
+    name,
+    number: false,
+    option: false,
+    raw: name,
+    sequence: name,
+    shift,
+    source: "raw",
+  });
+}
+
 describe("hunk navigation", () => {
   test("next-hunk jumps to next change block from header", () => {
     const store = new AppStore({
@@ -28,13 +50,7 @@ describe("hunk navigation", () => {
     });
     setStore(store);
 
-    handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "]", shift: false } as never,
-      store,
-      keymapRes.keymap,
-      rows,
-      null
-    );
+    handleDiffPaneKey(keyEvent("]"), store, keymapRes.keymap, rows, null);
     expect(store.getState().cursorRow).toBe(2);
   });
 
@@ -47,11 +63,11 @@ describe("hunk navigation", () => {
     setStore(store);
 
     handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "[", shift: false } as never,
+      keyEvent("[", false, false, false),
       store,
       keymapRes.keymap,
       rows,
-      null
+      null,
     );
     expect(store.getState().cursorRow).toBe(2);
   });
@@ -64,13 +80,7 @@ describe("hunk navigation", () => {
     });
     setStore(store);
 
-    handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "]", shift: false } as never,
-      store,
-      keymapRes.keymap,
-      rows,
-      null
-    );
+    handleDiffPaneKey(keyEvent("]"), store, keymapRes.keymap, rows, null);
     expect(store.getState().cursorRow).toBe(6);
   });
 
@@ -83,11 +93,11 @@ describe("hunk navigation", () => {
     setStore(store);
 
     handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "[", shift: false } as never,
+      keyEvent("[", false, false, false),
       store,
       keymapRes.keymap,
       rows,
-      null
+      null,
     );
     expect(store.getState().cursorRow).toBe(2);
   });
@@ -100,13 +110,7 @@ describe("hunk navigation", () => {
     });
     setStore(store);
 
-    handleDiffPaneKey(
-      { ctrl: false, meta: false, name: "]", shift: false } as never,
-      store,
-      keymapRes.keymap,
-      rows,
-      null
-    );
+    handleDiffPaneKey(keyEvent("]"), store, keymapRes.keymap, rows, null);
     expect(store.getState().cursorRow).toBe(6);
   });
 });

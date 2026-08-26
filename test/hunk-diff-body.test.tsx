@@ -1,7 +1,7 @@
-import { describe, expect, test } from "bun:test";
-import { testRender } from "@opentui/react/test-utils";
 import type { ReactNode } from "react";
 import { act } from "react";
+import { testRender } from "@opentui/react/test-utils";
+
 import {
   createHunkDiffFilesFromPatch,
   HunkDiffBody,
@@ -9,6 +9,7 @@ import {
 } from "../src/ui/hunk-diff/opentui";
 import { toInternalDiffFile } from "../src/ui/hunk-diff/opentui/model";
 import { buildLineHighlightPaintIndex } from "../src/ui/hunk-diff/ui/diff/lineHighlightPaint";
+import { describe, expect, test } from "bun:test";
 
 const DIFF = `diff --git a/foo.ts b/foo.ts
 index 123..456 100644
@@ -49,7 +50,7 @@ async function captureFrame(node: ReactNode, width = 120, height = 24) {
 describe("HunkDiffBody extension", () => {
   test("renders a diff with a cursor row", async () => {
     const frame = await captureFrame(
-      <HunkDiffBody cursorRow={2} file={file} layout="stack" width={80} />
+      <HunkDiffBody cursorRow={2} file={file} layout="stack" width={80} />,
     );
     expect(frame).toContain("line2 new");
     expect(frame).toContain("line2 old");
@@ -65,7 +66,7 @@ describe("HunkDiffBody extension", () => {
         onCursorOffsetResolved={trackResolved(resolved)}
         width={80}
       />,
-      { height: 24, width: 80 }
+      { height: 24, width: 80 },
     );
     try {
       await act(async () => {
@@ -89,7 +90,7 @@ describe("HunkDiffBody extension", () => {
         onCursorOffsetResolved={trackResolved(resolved)}
         width={80}
       />,
-      { height: 24, width: 80 }
+      { height: 24, width: 80 },
     );
     try {
       await act(async () => {
@@ -120,7 +121,7 @@ describe("HunkDiffBody extension", () => {
         layout="stack"
         lineHighlights={lineHighlights}
         width={80}
-      />
+      />,
     );
     expect(frame).toContain("line2 new");
   });
@@ -130,13 +131,13 @@ describe("HunkDiffBody extension", () => {
       { anchorRow: 3, id: "n1", text: "should this be here?" },
     ];
     const frame = await captureFrame(
-      <HunkDiffBody file={file} layout="stack" notes={notes} width={80} />
+      <HunkDiffBody file={file} layout="stack" notes={notes} width={80} />,
     );
     expect(frame).toContain("Your note");
     expect(frame).toContain("foo.ts");
     expect(frame).toContain("should this be here?");
     expect(frame.indexOf("should this be here?")).toBeGreaterThan(
-      frame.indexOf("line2 new")
+      frame.indexOf("line2 new"),
     );
   });
 
@@ -154,7 +155,7 @@ describe("HunkDiffBody extension", () => {
         onCursorOffsetResolved={trackResolved(resolved)}
         width={80}
       />,
-      { height: 24, width: 80 }
+      { height: 24, width: 80 },
     );
     try {
       await act(async () => {
@@ -180,7 +181,7 @@ describe("HunkDiffBody extension", () => {
       },
     ];
     const frame = await captureFrame(
-      <HunkDiffBody file={file} layout="stack" notes={notes} width={80} />
+      <HunkDiffBody file={file} layout="stack" notes={notes} width={80} />,
     );
     expect(frame).toContain("Draft note");
     expect(frame).toContain("draft text");

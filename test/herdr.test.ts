@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import {
   captureTurnBaseline,
   getAgentPicker,
@@ -10,6 +10,7 @@ import {
 } from "../src/herdr";
 import { loadManifest, MANIFEST_PATH } from "../src/herdr/manifest";
 import type { Comment } from "../src/types";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 const HERDR_KEYS = [
   "HERDR_PANE_ID",
@@ -220,7 +221,7 @@ command = ["true"]
 [[actions]]
 id = "toggle"
 command = ["false"]
-`
+`,
     );
     const result = await loadManifest(path);
     expect(result.ok).toBe(false);

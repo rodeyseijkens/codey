@@ -1,7 +1,7 @@
-import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import { resolveKeymap } from "../src/keymap/index";
 import {
   commitSelectNext,
@@ -26,6 +26,7 @@ import {
 } from "../src/state/store";
 import type { CommitEntry, FileDiff, FileStatus } from "../src/types";
 import { gitThrow } from "../src/vcs/git";
+import { afterAll, describe, expect, test } from "bun:test";
 
 const keymapRes = resolveKeymap({});
 if (!keymapRes.ok) {
@@ -60,7 +61,7 @@ async function makeCommits(dir: string, n: number, i = 0): Promise<void> {
 
 afterAll(async () => {
   await Promise.all(
-    dirs.map((dir) => rm(dir, { force: true, recursive: true }))
+    dirs.map((dir) => rm(dir, { force: true, recursive: true })),
   );
 });
 
@@ -394,19 +395,29 @@ describe("commit pane with a real repo", () => {
       commitCursor: commitRowKey({ hash: top.hash, index: 0, kind: "header" }),
     });
 
-    const fileKey = (path: string) => `commit-file:${top.hash}:${path}`;
+    function fileKey(path: string, hash: string): string {
+      return `commit-file:${hash}:${path}`;
+    }
     await commitSelectNextFile();
-    expect(store.getState().commitCursor).toBe(fileKey(firstFile.path));
+    expect(store.getState().commitCursor).toBe(
+      fileKey(firstFile.path, top.hash),
+    );
     expect(store.getState().commitView?.hash).toBe(top.hash);
     expect(store.getState().commitView?.file.diff).toContain("+updated");
     expect(store.getState().focus).toBe("commits");
 
     dispatchCommand("next-file");
-    expect(store.getState().commitCursor).toBe(fileKey(secondFile.path));
+    expect(store.getState().commitCursor).toBe(
+      fileKey(secondFile.path, top.hash),
+    );
     dispatchCommand("next-file");
-    expect(store.getState().commitCursor).toBe(fileKey(secondFile.path));
+    expect(store.getState().commitCursor).toBe(
+      fileKey(secondFile.path, top.hash),
+    );
     dispatchCommand("prev-file");
-    expect(store.getState().commitCursor).toBe(fileKey(firstFile.path));
+    expect(store.getState().commitCursor).toBe(
+      fileKey(firstFile.path, top.hash),
+    );
   });
 
   test("f/F stay put when the commit list has no file rows", () => {
@@ -528,14 +539,14 @@ describe("commit draft", () => {
         ],
         focus: "commits",
       },
-      dir
+      dir,
     );
     dispatchCommand("add-comment");
     await submitCommitDraft("feat: test commit");
     expect(store.getState().commitDraft).toBeNull();
     expect(store.getState().overlay).toBeNull();
     expect((await gitThrow(["log", "-1", "--format=%s"], dir)).trim()).toBe(
-      "feat: test commit"
+      "feat: test commit",
     );
   });
 
@@ -554,7 +565,7 @@ describe("commit draft", () => {
         ],
         focus: "commits",
       },
-      dir
+      dir,
     );
     dispatchCommand("add-comment");
     await submitCommitDraft("feat: all in");
@@ -566,7 +577,7 @@ describe("commit draft", () => {
     await confirmCommitAll();
     expect(store.getState().overlay).toBeNull();
     expect((await gitThrow(["log", "-1", "--format=%s"], dir)).trim()).toBe(
-      "feat: all in"
+      "feat: all in",
     );
   });
 
