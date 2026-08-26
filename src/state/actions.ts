@@ -1079,7 +1079,12 @@ export async function commitMove(dir: 1 | -1): Promise<void> {
   if (!repoRoot) {
     return;
   }
-  const row = store.commitCursorRow();
+  const rowsBefore = store.commitRows();
+  const cur = store.getState().commitCursor;
+  const cursorRowIdx = cur
+    ? rowsBefore.findIndex((r) => commitRowKey(r) === cur)
+    : -1;
+  const row = cursorRowIdx >= 0 ? rowsBefore[cursorRowIdx] : null;
   if (!row || row.kind === "load-more") {
     return;
   }
@@ -1096,6 +1101,7 @@ export async function commitMove(dir: 1 | -1): Promise<void> {
   if (!olderHash) {
     return;
   }
+  const targetRowIdx = cursorRowIdx + dir;
   store.set({ commitLoading: true });
   try {
     await reorderCommit(repoRoot, olderHash);
@@ -1103,6 +1109,16 @@ export async function commitMove(dir: 1 | -1): Promise<void> {
     store.showToast("success", `moved ${hash.slice(0, 7)} ${label}`);
     store.set({ commitLoading: false });
     await refresh();
+    const rowsAfter = store.commitRows();
+    const next =
+      rowsAfter[Math.min(Math.max(targetRowIdx, 0), rowsAfter.length - 1)] ??
+      null;
+    if (next) {
+      store.set({ commitCursor: commitRowKey(next) });
+      if (next.kind === "file") {
+        await selectCommitFile(next.hash, next.path);
+      }
+    }
   } catch (err) {
     store.set({ commitLoading: false });
     store.showToast(
