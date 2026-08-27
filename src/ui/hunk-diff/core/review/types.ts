@@ -11,3 +11,9 @@ export interface ReviewLineAddressV1 {
   side: ReviewSide;
   line: number;
 }
+
+export function reviewExpansionSide(
+  changeKind: ReviewFileChangeKind,
+): ReviewSide {
+  return changeKind === "deleted" ? "old" : "new";
+}

@@ -6,7 +6,7 @@ import { getFiletypeFromFileName } from "@pierre/diffs";
 import { keyEventToChord } from "../keymap/chords";
 import type { CommandId } from "../keymap/commands";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
-import { focusDiff } from "../state/actions";
+import { focusDiff } from "../state/actions/navigation";
 import {
   cancelCommentDraft,
   deleteComment,

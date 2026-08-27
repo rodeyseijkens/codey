@@ -5,13 +5,13 @@ import {
   renderDiffWithHighlighter,
   type FileDiffMetadata,
 } from "@pierre/diffs";
-import { formatHunkHeader } from "../../core/hunkHeader";
+import { formatHunkHeader } from "../../../../diff/hunk-header";
 import {
   reviewLeadingGap,
   reviewTrailingGap,
   type ReviewGapAddress,
   type ReviewGapPosition,
-} from "../../core/review/expansion";
+} from "../../../../diff/gap";
 import { DEFAULT_TAB_WIDTH } from "../../core/tabWidth";
 import type { DiffFile, DiffLineMoveKind } from "../../core/types";
 import { blendHex, hexColorDistance } from "../lib/color";

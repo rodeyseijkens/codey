@@ -16,7 +16,7 @@ import {
   confirmGitEdit,
   confirmGitReset,
   submitCommitDraft,
-} from "../state/actions";
+} from "../state/actions/commits";
 import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { EM_SPACE } from "./icons";

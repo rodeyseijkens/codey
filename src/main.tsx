@@ -6,7 +6,7 @@ import { loadConfig } from "./config";
 import { captureTurnBaseline, isHerdrPlugin } from "./herdr";
 import { resolveKeymap } from "./keymap/index";
 import { buildRuntime, type Runtime } from "./runtime";
-import { refresh } from "./state/actions";
+import { refresh } from "./state/actions/core";
 import { setQuitHandler, setRestartHandler } from "./state/dispatch";
 import { AppStore, getStore, setStore } from "./state/store";
 import type { LoaderMode } from "./types";

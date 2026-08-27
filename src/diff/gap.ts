@@ -1,34 +1,39 @@
-import type { ReviewHunkSpan } from "./geometry";
-import type {
-  ReviewFileChangeKind,
-  ReviewLineRange,
-  ReviewSide,
-} from "./types";
+export type ReviewHunkSpan = {
+  additionCount: number;
+  additionStart: number;
+  deletionCount: number;
+  deletionStart: number;
+};
+
+export type ReviewLineRange = readonly [number, number];
 
 export type ReviewGapPosition = "before" | "trailing";
 
 export interface ReviewGapHunk extends ReviewHunkSpan {
-  collapsedBefore: number;
   additionLineIndex: number;
+  collapsedBefore: number;
   deletionLineIndex: number;
 }
 
-export interface ReviewGapSource {
-  hunks: readonly ReviewGapHunk[];
+export type ReviewGapSource = {
   additionLines: readonly string[];
   deletionLines: readonly string[];
+  hunks: readonly ReviewGapHunk[];
   isPartial: boolean;
-}
+};
 
-export interface ReviewGapAddress {
-  position: ReviewGapPosition;
+export type ReviewGapAddress = {
   hunkIndex: number;
-  oldRange: ReviewLineRange;
-  newRange: ReviewLineRange;
   lineCount: number;
-}
+  newRange: ReviewLineRange;
+  oldRange: ReviewLineRange;
+  position: ReviewGapPosition;
+};
 
-export function reviewGapId(position: ReviewGapPosition, hunkIndex: number) {
+export function reviewGapId(
+  position: ReviewGapPosition,
+  hunkIndex: number,
+): string {
   return `${position}:${hunkIndex}`;
 }
 
@@ -38,7 +43,7 @@ export function reviewLeadingGap(
 ): ReviewGapAddress | undefined {
   const hunk = source.hunks[hunkIndex];
   if (!hunk || hunk.collapsedBefore <= 0) {
-    return undefined;
+    return;
   }
 
   const oldEnd = hunk.deletionStart - (hunk.deletionCount > 0 ? 1 : 0);
@@ -46,15 +51,15 @@ export function reviewLeadingGap(
   const oldStart = oldEnd - hunk.collapsedBefore + 1;
   const newStart = newEnd - hunk.collapsedBefore + 1;
   if (oldStart <= 0 || newStart <= 0) {
-    return undefined;
+    return;
   }
 
   return {
-    position: "before",
     hunkIndex,
-    oldRange: [oldStart, oldEnd],
-    newRange: [newStart, newEnd],
     lineCount: hunk.collapsedBefore,
+    newRange: [newStart, newEnd],
+    oldRange: [oldStart, oldEnd],
+    position: "before",
   };
 }
 
@@ -64,7 +69,7 @@ export function reviewTrailingGap(
   const hunkIndex = source.hunks.length - 1;
   const hunk = source.hunks[hunkIndex];
   if (!hunk || source.isPartial) {
-    return undefined;
+    return;
   }
 
   const oldCount =
@@ -72,22 +77,16 @@ export function reviewTrailingGap(
   const newCount =
     source.additionLines.length - (hunk.additionLineIndex + hunk.additionCount);
   if (oldCount !== newCount || oldCount <= 0) {
-    return undefined;
+    return;
   }
 
   const oldStart = hunk.deletionStart + hunk.deletionCount;
   const newStart = hunk.additionStart + hunk.additionCount;
   return {
-    position: "trailing",
     hunkIndex,
-    oldRange: [oldStart, oldStart + oldCount - 1],
-    newRange: [newStart, newStart + newCount - 1],
     lineCount: oldCount,
+    newRange: [newStart, newStart + newCount - 1],
+    oldRange: [oldStart, oldStart + oldCount - 1],
+    position: "trailing",
   };
-}
-
-export function reviewExpansionSide(
-  changeKind: ReviewFileChangeKind,
-): ReviewSide {
-  return changeKind === "deleted" ? "old" : "new";
 }

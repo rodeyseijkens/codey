@@ -1,249 +1,258 @@
-export type CommandId =
-  | "quit"
-  | "help"
-  | "select-prev"
-  | "select-next"
-  | "prev-hunk"
-  | "next-hunk"
-  | "prev-file"
-  | "next-file"
-  | "focus-toggle"
-  | "focus-prev"
-  | "focus-sidebar"
-  | "focus-diff"
-  | "focus-commits"
-  | "git-pull"
-  | "git-push"
-  | "toggle-sidebar"
-  | "collapse-section"
-  | "sidebar-shrink"
-  | "sidebar-grow"
-  | "visual-select"
-  | "add-comment"
-  | "edit-comment"
-  | "delete-comment"
-  | "next-comment"
-  | "prev-comment"
-  | "send-comments"
-  | "copy"
-  | "stage-file"
-  | "stage-all"
-  | "unstage-file"
-  | "unstage-all"
-  | "refresh"
-  | "toggle-layout"
-  | "toggle-view"
-  | "page-up"
-  | "page-down"
-  | "page-cursor-half-up"
-  | "page-cursor-half-down"
-  | "cancel"
-  | "wrap-text"
-  | "git-edit"
-  | "commit-move-up"
-  | "commit-move-down";
+export type CommandSection = "changes" | "diff" | "commits" | "global";
 
-export const ALL_COMMANDS: readonly CommandId[] = [
-  "quit",
-  "help",
-  "select-prev",
-  "select-next",
-  "prev-hunk",
-  "next-hunk",
-  "prev-file",
-  "next-file",
-  "focus-toggle",
-  "focus-prev",
-  "focus-sidebar",
-  "focus-diff",
-  "focus-commits",
-  "git-pull",
-  "git-push",
-  "toggle-sidebar",
-  "collapse-section",
-  "sidebar-shrink",
-  "sidebar-grow",
-  "visual-select",
-  "wrap-text",
-  "add-comment",
-  "cancel",
-  "edit-comment",
-  "delete-comment",
-  "next-comment",
-  "prev-comment",
-  "send-comments",
-  "copy",
-  "stage-file",
-  "stage-all",
-  "unstage-file",
-  "unstage-all",
-  "refresh",
-  "toggle-layout",
-  "toggle-view",
-  "page-up",
-  "page-down",
-  "page-cursor-half-up",
-  "page-cursor-half-down",
-  "git-edit",
-  "commit-move-up",
-  "commit-move-down",
-] as const;
+export type CommandDef = {
+  defaultKey: string;
+  description: string;
+  section: CommandSection;
+};
 
-export const COMMAND_DESCRIPTIONS: Record<CommandId, string> = {
-  "add-comment":
-    "Add a transient comment on the selected line/range; in the commit log, open a commit input",
-  cancel: "Cancel overlay or pending confirmation",
-  "collapse-section": "Collapse/expand the selected row (section or folder)",
-  "commit-move-down": "Move selected commit down in history (rebase)",
-  "commit-move-up": "Move selected commit up in history (rebase)",
-  copy: "Copy selection/diff to clipboard",
-  "delete-comment": "Delete the comment on the current line",
-  "edit-comment": "Edit the comment on the current line",
-  "focus-commits": "Focus the commit log",
-  "focus-diff": "Focus the diff pane",
-  "focus-prev": "Cycle focus to the previous pane",
-  "focus-sidebar": "Focus the changes pane",
-  "focus-toggle": "Cycle focus: changes → diff → commits",
-  "git-edit": "Edit selected commit (squash/fixup/drop/amend); r for reset",
-  "git-pull": "Pull from the remote (commit pane)",
-  "git-push": "Push to the remote (commit pane)",
-
-  help: "Show help overlay",
-  "next-comment": "Jump to next comment",
-  "next-file": "Jump to next file",
-  "next-hunk": "Jump to next hunk",
-  "page-cursor-half-down": "Move cursor and page half page down",
-  "page-cursor-half-up": "Move cursor and page half page up",
-  "page-down": "Move page down",
-  "page-up": "Move page up",
-  "prev-comment": "Jump to previous comment",
-  "prev-file": "Jump to previous file",
-  "prev-hunk": "Jump to previous hunk",
-  quit: "Quit codey",
-  refresh: "Reload changesets from git",
-  "select-next": "Move selection down",
-  "select-prev": "Move selection up",
-  "send-comments": "Send pending comments (standalone: copy to clipboard)",
-  "sidebar-grow": "Make the sidebar wider",
-  "sidebar-shrink": "Make the sidebar narrower",
-  "stage-all": "Stage all changed files",
-  "stage-file": "Stage selected file (git add)",
-  "toggle-layout": "Cycle layout mode split / stack / auto",
-  "toggle-sidebar": "Show/hide the sidebar",
-  "toggle-view": "Toggle sidebar view tree / list",
-  "unstage-all": "Unstage all staged files",
-  "unstage-file": "Unstage selected file (git restore --staged)",
-  "visual-select": "Start line/range selection for comments",
-  "wrap-text": "Toggle diff line wrapping",
-} as const;
-
-export const DEFAULT_KEYBINDINGS: Record<CommandId, string> = {
-  "add-comment": "c",
-  cancel: "escape",
-  "collapse-section": "space",
-  "commit-move-down": "alt+j",
-  "commit-move-up": "alt+k",
-  copy: "y",
-  "delete-comment": "d",
-  "edit-comment": "e",
-  "focus-commits": "2",
-  "focus-diff": "0",
-  "focus-prev": "shift+tab",
-  "focus-sidebar": "1",
-  "focus-toggle": "tab",
-  "git-edit": "g",
-  "git-pull": "p",
-  "git-push": "P",
-  help: "?",
-  "next-comment": "n",
-  "next-file": "f",
-  "next-hunk": "]",
-  "page-cursor-half-down": "ctrl+d",
-  "page-cursor-half-up": "ctrl+u",
-  "page-down": "ctrl+f",
-  "page-up": "ctrl+b",
-  "prev-comment": "N",
-  "prev-file": "F",
-  "prev-hunk": "[",
-  quit: "q",
-  refresh: "r",
-  "select-next": "j",
-  "select-prev": "k",
-  "send-comments": "s",
-  "sidebar-grow": ">",
-  "sidebar-shrink": "<",
-  "stage-all": "A",
-  "stage-file": "a",
-  "toggle-layout": "m",
-  "toggle-sidebar": "b",
-  "toggle-view": "t",
-  "unstage-all": "U",
-  "unstage-file": "u",
-  "visual-select": "v",
-  "wrap-text": "w",
-} as const;
-
-export const COMMAND_SECTIONS: ReadonlyArray<{
-  commands: readonly CommandId[];
-  title: string;
-}> = [
-  {
-    commands: [
-      "select-prev",
-      "select-next",
-      "next-file",
-      "prev-file",
-      "collapse-section",
-      "toggle-sidebar",
-      "toggle-view",
-      "sidebar-shrink",
-      "sidebar-grow",
-      "stage-file",
-      "stage-all",
-      "unstage-file",
-      "unstage-all",
-      "refresh",
-      "toggle-layout",
-      "wrap-text",
-    ],
-    title: "Changes",
+export const COMMAND_DEFS = {
+  "add-comment": {
+    defaultKey: "c",
+    description:
+      "Add a transient comment on the selected line/range; in the commit log, open a commit input",
+    section: "diff",
   },
-  {
-    commands: [
-      "prev-hunk",
-      "next-hunk",
-      "page-up",
-      "page-down",
-      "page-cursor-half-up",
-      "page-cursor-half-down",
-      "visual-select",
-      "add-comment",
-      "edit-comment",
-      "delete-comment",
-      "next-comment",
-      "prev-comment",
-      "send-comments",
-      "copy",
-    ],
-    title: "Diff",
+  cancel: {
+    defaultKey: "escape",
+    description: "Cancel overlay or pending confirmation",
+    section: "global",
   },
-  {
-    commands: [
-      "focus-toggle",
-      "focus-prev",
-      "focus-sidebar",
-      "focus-diff",
-      "focus-commits",
-      "git-pull",
-      "git-push",
-      "git-edit",
-      "commit-move-up",
-      "commit-move-down",
-    ],
-    title: "Commits",
+  "collapse-section": {
+    defaultKey: "space",
+    description: "Collapse/expand the selected row (section or folder)",
+    section: "changes",
   },
-  {
-    commands: ["quit", "help", "cancel"],
-    title: "Global",
+  "commit-move-down": {
+    defaultKey: "alt+j",
+    description: "Move selected commit down in history (rebase)",
+    section: "commits",
   },
-] as const;
+  "commit-move-up": {
+    defaultKey: "alt+k",
+    description: "Move selected commit up in history (rebase)",
+    section: "commits",
+  },
+  copy: {
+    defaultKey: "y",
+    description: "Copy selection/diff to clipboard",
+    section: "diff",
+  },
+  "delete-comment": {
+    defaultKey: "d",
+    description: "Delete the comment on the current line",
+    section: "diff",
+  },
+  "edit-comment": {
+    defaultKey: "e",
+    description: "Edit the comment on the current line",
+    section: "diff",
+  },
+  "focus-commits": {
+    defaultKey: "2",
+    description: "Focus the commit log",
+    section: "commits",
+  },
+  "focus-diff": {
+    defaultKey: "0",
+    description: "Focus the diff pane",
+    section: "commits",
+  },
+  "focus-prev": {
+    defaultKey: "shift+tab",
+    description: "Cycle focus to the previous pane",
+    section: "commits",
+  },
+  "focus-sidebar": {
+    defaultKey: "1",
+    description: "Focus the changes pane",
+    section: "commits",
+  },
+  "focus-toggle": {
+    defaultKey: "tab",
+    description: "Cycle focus: changes → diff → commits",
+    section: "commits",
+  },
+  "git-edit": {
+    defaultKey: "g",
+    description: "Edit selected commit (squash/fixup/drop/amend); r for reset",
+    section: "commits",
+  },
+  "git-pull": {
+    defaultKey: "p",
+    description: "Pull from the remote (commit pane)",
+    section: "commits",
+  },
+  "git-push": {
+    defaultKey: "P",
+    description: "Push to the remote (commit pane)",
+    section: "commits",
+  },
+  help: {
+    defaultKey: "?",
+    description: "Show help overlay",
+    section: "global",
+  },
+  "next-comment": {
+    defaultKey: "n",
+    description: "Jump to next comment",
+    section: "diff",
+  },
+  "next-file": {
+    defaultKey: "f",
+    description: "Jump to next file",
+    section: "changes",
+  },
+  "next-hunk": {
+    defaultKey: "]",
+    description: "Jump to next hunk",
+    section: "diff",
+  },
+  "page-cursor-half-down": {
+    defaultKey: "ctrl+d",
+    description: "Move cursor and page half page down",
+    section: "diff",
+  },
+  "page-cursor-half-up": {
+    defaultKey: "ctrl+u",
+    description: "Move cursor and page half page up",
+    section: "diff",
+  },
+  "page-down": {
+    defaultKey: "ctrl+f",
+    description: "Move page down",
+    section: "diff",
+  },
+  "page-up": {
+    defaultKey: "ctrl+b",
+    description: "Move page up",
+    section: "diff",
+  },
+  "prev-comment": {
+    defaultKey: "N",
+    description: "Jump to previous comment",
+    section: "diff",
+  },
+  "prev-file": {
+    defaultKey: "F",
+    description: "Jump to previous file",
+    section: "changes",
+  },
+  "prev-hunk": {
+    defaultKey: "[",
+    description: "Jump to previous hunk",
+    section: "diff",
+  },
+  quit: { defaultKey: "q", description: "Quit codey", section: "global" },
+  refresh: {
+    defaultKey: "r",
+    description: "Reload changesets from git",
+    section: "changes",
+  },
+  "select-next": {
+    defaultKey: "j",
+    description: "Move selection down",
+    section: "changes",
+  },
+  "select-prev": {
+    defaultKey: "k",
+    description: "Move selection up",
+    section: "changes",
+  },
+  "send-comments": {
+    defaultKey: "s",
+    description: "Send pending comments (standalone: copy to clipboard)",
+    section: "diff",
+  },
+  "sidebar-grow": {
+    defaultKey: ">",
+    description: "Make the sidebar wider",
+    section: "changes",
+  },
+  "sidebar-shrink": {
+    defaultKey: "<",
+    description: "Make the sidebar narrower",
+    section: "changes",
+  },
+  "stage-all": {
+    defaultKey: "A",
+    description: "Stage all changed files",
+    section: "changes",
+  },
+  "stage-file": {
+    defaultKey: "a",
+    description: "Stage selected file (git add)",
+    section: "changes",
+  },
+  "toggle-layout": {
+    defaultKey: "m",
+    description: "Cycle layout mode split / stack / auto",
+    section: "changes",
+  },
+  "toggle-sidebar": {
+    defaultKey: "b",
+    description: "Show/hide the sidebar",
+    section: "changes",
+  },
+  "toggle-view": {
+    defaultKey: "t",
+    description: "Toggle sidebar view tree / list",
+    section: "changes",
+  },
+  "unstage-all": {
+    defaultKey: "U",
+    description: "Unstage all staged files",
+    section: "changes",
+  },
+  "unstage-file": {
+    defaultKey: "u",
+    description: "Unstage selected file (git restore --staged)",
+    section: "changes",
+  },
+  "visual-select": {
+    defaultKey: "v",
+    description: "Start line/range selection for comments",
+    section: "diff",
+  },
+  "wrap-text": {
+    defaultKey: "w",
+    description: "Toggle diff line wrapping",
+    section: "changes",
+  },
+} as const satisfies Record<string, CommandDef>;
+
+export type CommandId = keyof typeof COMMAND_DEFS;
+
+export const ALL_COMMANDS = Object.keys(COMMAND_DEFS) as CommandId[];
+
+export const COMMAND_DESCRIPTIONS = Object.fromEntries(
+  Object.entries(COMMAND_DEFS).map(([key, def]) => [key, def.description]),
+) as Record<CommandId, string>;
+
+export const DEFAULT_KEYBINDINGS = Object.fromEntries(
+  Object.entries(COMMAND_DEFS).map(([key, def]) => [key, def.defaultKey]),
+) as Record<CommandId, string>;
+
+const SECTION_TITLES = {
+  changes: "Changes",
+  commits: "Commits",
+  diff: "Diff",
+  global: "Global",
+};
+
+const sectionEntries = Object.entries(COMMAND_DEFS) as [
+  CommandId,
+  CommandDef,
+][];
+
+const grouped = Object.groupBy(
+  sectionEntries,
+  ([, def]) => def.section,
+) as Record<CommandSection, [CommandId, CommandDef][]>;
+
+export const COMMAND_SECTIONS = (
+  ["changes", "diff", "commits", "global"] as CommandSection[]
+).map((section) => ({
+  commands: (grouped[section] ?? []).map(([id]) => id),
+  title: SECTION_TITLES[section],
+}));

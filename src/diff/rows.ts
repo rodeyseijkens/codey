@@ -1,15 +1,13 @@
 import type { FileDiffMetadata, Hunk } from "@pierre/diffs";
 
-import { formatHunkHeader } from "../ui/hunk-diff/core/hunkHeader";
-import type {
-  ReviewGapAddress,
-  ReviewGapHunk,
-  ReviewGapSource,
-} from "../ui/hunk-diff/core/review/expansion";
 import {
+  type ReviewGapAddress,
+  type ReviewGapHunk,
+  type ReviewGapSource,
   reviewLeadingGap,
   reviewTrailingGap,
-} from "../ui/hunk-diff/core/review/expansion";
+} from "./gap";
+import { formatHunkHeader } from "./hunk-header";
 
 export type CanonicalDiffRow = {
   hunkIndex: number;

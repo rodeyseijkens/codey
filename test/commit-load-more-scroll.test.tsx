@@ -5,7 +5,7 @@ import { act } from "react";
 import { testRender } from "@opentui/react/test-utils";
 
 import { resolveKeymap } from "../src/keymap/index";
-import { loadMoreCommits } from "../src/state/actions";
+import { loadMoreCommits } from "../src/state/actions/commits";
 import { AppStore, setStore } from "../src/state/store";
 import type { CommitEntry, FileStatus } from "../src/types";
 import { Sidebar } from "../src/ui/sidebar";

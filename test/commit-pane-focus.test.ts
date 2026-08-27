@@ -9,14 +9,16 @@ import {
   commitSelectPrev,
   commitToggleCursorRow,
   confirmCommitAll,
+  loadCommits,
+  submitCommitDraft,
+} from "../src/state/actions/commits";
+import { refresh } from "../src/state/actions/core";
+import {
   focusCommits,
   focusPrev,
-  loadCommits,
-  refresh,
-  submitCommitDraft,
   toggleFocus,
   toggleSidebar,
-} from "../src/state/actions";
+} from "../src/state/actions/navigation";
 import { dispatchCommand } from "../src/state/dispatch";
 import {
   type AppState,

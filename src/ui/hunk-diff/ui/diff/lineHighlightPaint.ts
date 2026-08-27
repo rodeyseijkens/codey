@@ -13,11 +13,13 @@
  */
 import {
   reviewExpansionSide,
+} from "../../core/review/types";
+import { normalizedReviewSourceLines } from "../../core/review/geometry";
+import {
   reviewLeadingGap,
   reviewTrailingGap,
   type ReviewGapAddress,
-} from "../../core/review/expansion";
-import { normalizedReviewSourceLines } from "../../core/review/geometry";
+} from "../../../../diff/gap";
 import { DEFAULT_TAB_WIDTH } from "../../core/tabWidth";
 import type { DiffFile, ExtensionLineHighlightTone } from "../../core/types";
 import { sanitizeTerminalLine } from "../../lib/terminalText";

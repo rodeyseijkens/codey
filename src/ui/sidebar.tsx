@@ -6,18 +6,20 @@ import {
   clearCommitView,
   commitRevert,
   copyCommitHash,
-  focusCommits,
-  focusSidebar,
   loadCommits,
   loadMoreCommits,
   selectCommitFile,
+  toggleCommitExpand,
+} from "../state/actions/commits";
+import {
+  focusCommits,
+  focusSidebar,
   selectDir,
   selectFile,
   selectSection,
   toggleCollapse,
-  toggleCommitExpand,
   toggleTreeFolder,
-} from "../state/actions";
+} from "../state/actions/navigation";
 import {
   type CommitRow,
   commitRowKey,

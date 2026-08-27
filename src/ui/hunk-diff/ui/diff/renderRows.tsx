@@ -8,7 +8,7 @@ import {
   resolveStackCellGeometry,
 } from "./codeColumns";
 import { reviewEmptyDiffReason, type ReviewEmptyDiffReason } from "../../core/review/document";
-import { reviewGapId } from "../../core/review/expansion";
+import { reviewGapId } from "../../../../diff/gap";
 import type { DiffRow, RenderSpan, SplitLineCell, StackLineCell } from "./pierre";
 import {
   applyLineHighlightsToSpans,

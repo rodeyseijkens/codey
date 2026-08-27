@@ -1,11 +1,5 @@
+export type { ReviewHunkSpan } from "../../../../diff/gap";
 export type ReviewSide = "old" | "new";
-
-export interface ReviewHunkSpan {
-  additionStart: number;
-  additionCount: number;
-  deletionStart: number;
-  deletionCount: number;
-}
 
 export interface ReviewHunkContentBlock {
   type: "context" | "change";
