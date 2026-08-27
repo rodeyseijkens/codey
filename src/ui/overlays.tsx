@@ -19,6 +19,7 @@ import {
 } from "../state/actions";
 import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
+import { EM_SPACE } from "./icons";
 import { useKeymap } from "./keymap-context";
 import { useDraftClear } from "./use-draft-clear";
 
@@ -305,7 +306,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>m</text>
           <text style={{ fg: C.fg }}>Mixed</text>
-          <text style={{ fg: C.dim }}>\u2003 keep working tree</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} keep working tree</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -316,7 +317,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>s</text>
           <text style={{ fg: C.fg }}>Soft</text>
-          <text style={{ fg: C.dim }}>\u2003 keep staged + working</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} keep staged + working</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -327,7 +328,7 @@ function GitResetOverlay(props: { overlay: OverlayKind<"reset-commits"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>h</text>
           <text style={{ fg: C.fg }}>Hard</text>
-          <text style={{ fg: C.dim }}>\u2003 discard all changes</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} discard all changes</text>
         </box>
       </box>
     </OverlayFrame>
@@ -358,7 +359,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>s</text>
           <text style={{ fg: C.fg }}>Squash</text>
-          <text style={{ fg: C.dim }}>\u2003 combine into parent</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} combine into parent</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -369,7 +370,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>f</text>
           <text style={{ fg: C.fg }}>Fixup</text>
-          <text style={{ fg: C.dim }}>\u2003 combine, discard message</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} combine, discard message</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -380,7 +381,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>d</text>
           <text style={{ fg: C.fg }}>Drop</text>
-          <text style={{ fg: C.dim }}>\u2003 remove this commit</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} remove this commit</text>
         </box>
         <box
           onMouseDown={async () => {
@@ -391,7 +392,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>a</text>
           <text style={{ fg: C.fg }}>Amend</text>
-          <text style={{ fg: C.dim }}>\u2003 add staged changes</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} add staged changes</text>
         </box>
         <box
           onMouseDown={() => {
@@ -403,7 +404,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         >
           <text style={{ fg: C.yellow, width: 3 }}>r</text>
           <text style={{ fg: C.fg }}>Reset</text>
-          <text style={{ fg: C.dim }}>\u2003 mixed/soft/hard reset</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} mixed/soft/hard reset</text>
         </box>
       </box>
     </OverlayFrame>

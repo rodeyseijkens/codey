@@ -48,6 +48,7 @@ import {
   GIT_UNDO_ICON,
   SPINNER_FRAMES,
   STATUS_UNTRACKED,
+  THIN_SPACE,
 } from "./icons";
 
 function truncatePath(path: string, max: number): string {
@@ -515,7 +516,7 @@ function CommitFileRow(props: {
       }}
     >
       <text style={{ fg: icons[fileColor(path)], width: 3 }}>
-        \u2009
+        {THIN_SPACE}
         {fileIcon(path)}
       </text>
       <box

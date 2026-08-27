@@ -365,6 +365,9 @@ export const GIT_PULL_ICON = "\u{f433}";
 export const GIT_UNDO_ICON = "\u{f4a8}";
 export const GIT_COPY_ICON = "\u{f4bb}";
 
+export const THIN_SPACE = "\u2009";
+export const EM_SPACE = "\u2003";
+
 export const SPINNER_FRAMES = [
   "⠋",
   "⠙",
