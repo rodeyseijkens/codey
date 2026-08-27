@@ -1,308 +1,35 @@
 import type { KeyEvent } from "@opentui/core";
 
-import { type KeyChord, keyEventToChord } from "../keymap/chords";
-import type { CommandId } from "../keymap/commands";
+import { keyEventToChord } from "../keymap/chords";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
+import { clearCommitDraft } from "./actions/drafts";
 import {
-  commitMove,
-  commitSelectNext,
-  commitSelectNextFile,
-  commitSelectPrev,
-  commitSelectPrevFile,
-  commitToggleCursorRow,
-  confirmCommitAll,
-  confirmGitEdit,
-  confirmGitReset,
-} from "./actions/commits";
-import { refresh, SIDEBAR_RESIZE_STEP } from "./actions/core";
-import {
-  cancelCommitDraft,
-  clearCommitDraft,
-  closeOverlay,
-  openCommitDraft,
-} from "./actions/drafts";
-import {
-  copySelection,
-  cycleLayout,
-  focusCommits,
-  focusDiff,
-  focusPrev,
-  focusSidebar,
-  resizeSidebar,
-  selectNext,
-  selectPrev,
-  sendComments,
-  toggleFocus,
-  toggleSelectedRow,
-  toggleSidebar,
-  toggleSidebarView,
-} from "./actions/navigation";
-import { confirmForcePush, gitPull, gitPush } from "./actions/remote";
-import {
-  cancelPendingStage,
-  confirmDiscard,
-  confirmDiscardAll,
-  confirmPendingStage,
-  stageAll,
-  stageSelected,
-  unstageAll,
-  unstageSelected,
-} from "./actions/staging";
-import {
-  cancelCommentDraft,
-  clearCommentDraft,
-  deleteCommentAtCursor,
-  jumpToComment,
-  openAddCommentDraft,
-  openEditCommentDraft,
-  visualSelect,
-} from "./comment-actions";
-import { resolveOverlayKey } from "./overlay-controller";
-import {
-  acceptDiffSearch,
-  closeDiffSearch,
-  diffSearchNext,
-  diffSearchPrev,
-  openDiffSearch,
-  setDiffSearchQuery,
-} from "./search-actions";
-import { type AppState, type AppStore, getStore } from "./store";
+  dispatchCommand,
+  quit,
+  restart,
+  setQuitHandler,
+  setRestartHandler,
+} from "./command-registry";
+import { clearCommentDraft } from "./comment-actions";
+import { handleDiffSearchMode } from "./modes/diff-search-mode";
+import { handleDraftMode } from "./modes/draft-mode";
+import { handleNormalMode } from "./modes/normal-mode";
+import { handleOverlayMode } from "./modes/overlay-mode";
+import { handleStageMode } from "./modes/stage-mode";
+import { openDiffSearch } from "./search-actions";
+import { getStore } from "./store";
 
-let quitHandler: (() => void) | null = null;
-let restartHandler: (() => void) | null = null;
+export { dispatchCommand, quit, restart, setQuitHandler, setRestartHandler };
 
-export function setQuitHandler(fn: () => void): void {
-  quitHandler = fn;
-}
-
-export function setRestartHandler(fn: () => void): void {
-  restartHandler = fn;
-}
-
-export function restart(): void {
-  restartHandler?.();
-}
-
-export function quit(): void {
-  if (quitHandler) {
-    quitHandler();
-  } else {
-    process.exit(0);
-  }
-}
-
-const STAGE_COMMANDS: ReadonlySet<CommandId> = new Set([
-  "stage-file",
-  "stage-all",
-  "unstage-file",
-  "unstage-all",
-]);
-
-/** True when the diff pane is showing a commit-file diff (not a working-tree file). */
-function commitFileShown(state: AppState): boolean {
-  return state.commitView !== null && state.selection === null;
-}
-
-type CommandHandler = {
-  guard?: (state: AppState) => boolean;
-  run: (store: AppStore, state: AppState) => void;
-};
-
-function buildRegistry(): Map<CommandId, CommandHandler> {
-  const r = new Map<CommandId, CommandHandler>();
-
-  r.set("quit", { run: () => quit() });
-  r.set("help", {
-    run: (store) =>
-      store.set({ commentDraft: null, overlay: { kind: "help" } }),
-  });
-  r.set("cancel", {
-    run: (store, state) => {
-      if (state.pendingStage) {
-        cancelPendingStage();
-        return;
-      }
-      if (state.overlay) {
-        closeOverlay();
-        return;
-      }
-      if (state.anchorRow !== null) {
-        store.set({ anchorRow: null });
-      }
-      if (state.commitView) {
-        store.set({ commitView: null });
-      }
-    },
-  });
-  r.set("select-prev", {
-    run: (_, state) => {
-      if (state.focus === "sidebar") {
-        selectPrev();
-      } else if (state.focus === "commits") {
-        void commitSelectPrev();
-      }
-    },
-  });
-  r.set("select-next", {
-    run: (_, state) => {
-      if (state.focus === "sidebar") {
-        selectNext();
-      } else if (state.focus === "commits") {
-        void commitSelectNext();
-      }
-    },
-  });
-  r.set("prev-file", {
-    run: (_, state) => {
-      if (state.focus === "diff") {
-        selectPrev();
-      } else if (state.focus === "commits") {
-        void commitSelectPrevFile();
-      }
-    },
-  });
-  r.set("next-file", {
-    run: (_, state) => {
-      if (state.focus === "diff") {
-        selectNext();
-      } else if (state.focus === "commits") {
-        void commitSelectNextFile();
-      }
-    },
-  });
-  r.set("focus-toggle", { run: () => toggleFocus() });
-  r.set("focus-prev", { run: () => focusPrev() });
-  r.set("focus-sidebar", { run: () => focusSidebar() });
-  r.set("focus-diff", { run: () => focusDiff() });
-  r.set("focus-commits", { run: () => focusCommits() });
-  r.set("git-pull", {
-    guard: (state) => state.focus === "commits" && state.remoteBusy === null,
-    run: () => gitPull(),
-  });
-  r.set("git-push", {
-    guard: (state) => state.focus === "commits" && state.remoteBusy === null,
-    run: () => gitPush(),
-  });
-  r.set("git-edit", {
-    guard: (state) => state.focus === "commits",
-    run: (store) => {
-      const cursorRow = store.commitCursorRow();
-      if (
-        cursorRow &&
-        (cursorRow.kind === "header" || cursorRow.kind === "file")
-      ) {
-        store.set({
-          overlay: { hash: cursorRow.hash, kind: "edit-commit" },
-        });
-      }
-    },
-  });
-  r.set("commit-move-up", {
-    guard: (state) => state.focus === "commits",
-    run: () => void commitMove(-1),
-  });
-  r.set("commit-move-down", {
-    guard: (state) => state.focus === "commits",
-    run: () => void commitMove(1),
-  });
-  r.set("toggle-sidebar", { run: () => toggleSidebar() });
-  r.set("collapse-section", {
-    run: (_, state) => {
-      if (state.focus === "sidebar") {
-        toggleSelectedRow();
-      } else if (state.focus === "commits") {
-        void commitToggleCursorRow();
-      }
-    },
-  });
-  r.set("sidebar-shrink", { run: () => resizeSidebar(-SIDEBAR_RESIZE_STEP) });
-  r.set("sidebar-grow", { run: () => resizeSidebar(SIDEBAR_RESIZE_STEP) });
-  r.set("visual-select", {
-    guard: (state) => !commitFileShown(state),
-    run: () => visualSelect(),
-  });
-  r.set("add-comment", {
-    run: (_, state) => {
-      if (state.focus === "commits") {
-        openCommitDraft();
-        return;
-      }
-      if (commitFileShown(state)) {
-        return;
-      }
-      openAddCommentDraft();
-    },
-  });
-  r.set("edit-comment", {
-    guard: (state) => !commitFileShown(state),
-    run: () => openEditCommentDraft(),
-  });
-  r.set("delete-comment", {
-    guard: (state) => !commitFileShown(state),
-    run: () => deleteCommentAtCursor(),
-  });
-  r.set("next-comment", {
-    guard: (state) => !commitFileShown(state),
-    run: () => jumpToComment(1),
-  });
-  r.set("prev-comment", {
-    guard: (state) => !commitFileShown(state),
-    run: () => jumpToComment(-1),
-  });
-  r.set("send-comments", { run: () => void sendComments() });
-  r.set("copy", { run: () => void copySelection() });
-  r.set("stage-file", {
-    guard: (state) => !commitFileShown(state),
-    run: () => void stageSelected(),
-  });
-  r.set("stage-all", {
-    guard: (state) => !commitFileShown(state),
-    run: () => void stageAll(),
-  });
-  r.set("unstage-file", {
-    guard: (state) => !commitFileShown(state),
-    run: () => void unstageSelected(),
-  });
-  r.set("unstage-all", {
-    guard: (state) => !commitFileShown(state),
-    run: () => void unstageAll(),
-  });
-  r.set("refresh", { run: () => void refresh() });
-  r.set("toggle-layout", { run: () => cycleLayout() });
-  r.set("toggle-view", { run: () => toggleSidebarView() });
-  r.set("wrap-text", {
-    run: (store, state) => store.set({ wrapLines: !state.wrapLines }),
-  });
-  // prev-hunk and next-hunk are handled in the diff pane directly, not here.
-
-  return r;
-}
-
-const COMMAND_REGISTRY = buildRegistry();
-
-export function dispatchCommand(cmd: CommandId): void {
-  const store = getStore();
-  const handler = COMMAND_REGISTRY.get(cmd);
-  if (!handler) {
-    return;
-  }
-  const state = store.getState();
-  if (handler.guard && !handler.guard(state)) {
-    return;
-  }
-  handler.run(store, state);
-}
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: its allowed for now
 export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
-  const store = getStore();
-  const state = store.getState();
-  const chord: KeyChord | null = keyEventToChord(e);
+  const state = getStore().getState();
+  const chord = keyEventToChord(e);
   if (!chord) {
     return;
   }
-  const cmd = lookupCommand(keymap, chord);
+  const cmd = lookupCommand(keymap, chord) ?? null;
 
+  // Ctrl+C: global escape hatch — clear drafts or quit
   if (chord.ctrl && !chord.alt && !chord.shift && chord.key === "c") {
     if (state.commitDraft !== null) {
       clearCommitDraft();
@@ -314,6 +41,7 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
     return;
   }
 
+  // / key: open diff search when focused on diff and no overlay/draft
   if (
     state.focus === "diff" &&
     !state.overlay &&
@@ -326,125 +54,22 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
     return;
   }
 
-  const { diffSearch } = state;
-  if (diffSearch && state.focus === "diff") {
-    if (diffSearch.open) {
-      const { name } = e;
-      switch (name) {
-        case "escape":
-          closeDiffSearch();
-          break;
-        case "enter":
-        case "return":
-          void acceptDiffSearch();
-          break;
-        case "backspace":
-          setDiffSearchQuery(diffSearch.query.slice(0, -1));
-          break;
-        case "space":
-          setDiffSearchQuery(`${diffSearch.query} `);
-          break;
-        default:
-          if (!(e.ctrl || e.meta) && name.length === 1) {
-            setDiffSearchQuery(diffSearch.query + name);
-          }
-          break;
-      }
-      return;
-    }
-    if (chord.key === "escape") {
-      closeDiffSearch();
-      return;
-    }
-    if (chord.key === "n") {
-      if (chord.shift) {
-        diffSearchPrev();
-      } else {
-        diffSearchNext();
-      }
-      return;
-    }
+  // Route to per-mode handler
+  if (state.diffSearch && state.focus === "diff") {
+    handleDiffSearchMode(e, chord, cmd);
+    return;
   }
-
   if (state.overlay) {
-    const action = resolveOverlayKey(chord.key, cmd ?? null, state.overlay);
-
-    if (action) {
-      const { overlay } = state;
-      switch (action.kind) {
-        case "dismiss":
-          closeOverlay();
-          break;
-        case "confirm-force-push":
-          confirmForcePush();
-          break;
-        case "confirm-discard":
-          void confirmDiscard();
-          break;
-        case "confirm-discard-all":
-          void confirmDiscardAll();
-          break;
-        case "confirm-commit-all":
-          void confirmCommitAll();
-          break;
-        case "git-reset":
-          if (overlay.kind === "reset-commits") {
-            void confirmGitReset(action.mode, overlay.hash);
-          }
-          break;
-        case "git-edit":
-          if (overlay.kind === "edit-commit") {
-            void confirmGitEdit(action.action, overlay.hash);
-          }
-          break;
-        case "switch-to-reset":
-          if (overlay.kind === "edit-commit") {
-            store.set({
-              overlay: { hash: overlay.hash, kind: "reset-commits" },
-            });
-          }
-          break;
-        default:
-          break;
-      }
-    }
+    handleOverlayMode(e, chord, cmd);
     return;
   }
-
-  if (state.commitDraft !== null) {
-    if (cmd === "cancel" || chord.key === "escape") {
-      cancelCommitDraft();
-    }
+  if (state.commitDraft !== null || state.commentDraft) {
+    handleDraftMode(e, chord, cmd);
     return;
   }
-
-  if (state.commentDraft) {
-    if (cmd === "cancel" || chord.key === "escape") {
-      cancelCommentDraft();
-    }
-    return;
-  }
-
   if (state.pendingStage) {
-    if (cmd === "cancel") {
-      cancelPendingStage();
-      return;
-    }
-    if (cmd && STAGE_COMMANDS.has(cmd)) {
-      void confirmPendingStage();
-      return;
-    }
-    cancelPendingStage();
-  }
-
-  if (cmd) {
-    dispatchCommand(cmd);
+    handleStageMode(cmd);
     return;
   }
-
-  if (chord.key === "up") {
-    dispatchCommand("select-prev");
-  } else if (chord.key === "down") {
-    dispatchCommand("select-next");
-  }
+  handleNormalMode(cmd, chord);
 }
