@@ -4,10 +4,6 @@ import { type KeyChord, keyEventToChord } from "../keymap/chords";
 import type { CommandId } from "../keymap/commands";
 import { lookupCommand, type ResolvedKeymap } from "../keymap/index";
 import {
-  cancelCommitDraft,
-  cancelPendingStage,
-  clearCommitDraft,
-  closeOverlay,
   commitMove,
   commitSelectNext,
   commitSelectNextFile,
@@ -15,36 +11,43 @@ import {
   commitSelectPrevFile,
   commitToggleCursorRow,
   confirmCommitAll,
-  confirmDiscard,
-  confirmDiscardAll,
-  confirmForcePush,
   confirmGitEdit,
   confirmGitReset,
-  confirmPendingStage,
+} from "./actions/commits";
+import { refresh, SIDEBAR_RESIZE_STEP } from "./actions/core";
+import {
+  cancelCommitDraft,
+  clearCommitDraft,
+  closeOverlay,
+  openCommitDraft,
+} from "./actions/drafts";
+import {
   copySelection,
   cycleLayout,
   focusCommits,
   focusDiff,
   focusPrev,
   focusSidebar,
-  gitPull,
-  gitPush,
-  openCommitDraft,
-  refresh,
   resizeSidebar,
-  SIDEBAR_RESIZE_STEP,
   selectNext,
   selectPrev,
   sendComments,
-  stageAll,
-  stageSelected,
   toggleFocus,
   toggleSelectedRow,
   toggleSidebar,
   toggleSidebarView,
+} from "./actions/navigation";
+import { confirmForcePush, gitPull, gitPush } from "./actions/remote";
+import {
+  cancelPendingStage,
+  confirmDiscard,
+  confirmDiscardAll,
+  confirmPendingStage,
+  stageAll,
+  stageSelected,
   unstageAll,
   unstageSelected,
-} from "./actions";
+} from "./actions/staging";
 import {
   cancelCommentDraft,
   clearCommentDraft,
@@ -54,6 +57,7 @@ import {
   openEditCommentDraft,
   visualSelect,
 } from "./comment-actions";
+import { resolveOverlayKey } from "./overlay-controller";
 import {
   acceptDiffSearch,
   closeDiffSearch,
@@ -363,66 +367,46 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
   }
 
   if (state.overlay) {
-    const confirmKey =
-      chord.key === "y" || chord.key === "return" || chord.key === "enter";
-    const cancelKey = cmd === "cancel" || chord.key === "escape";
+    const action = resolveOverlayKey(chord.key, cmd ?? null, state.overlay);
 
-    switch (true) {
-      case cancelKey:
-        closeOverlay();
-        break;
-      case state.overlay.kind === "confirm-force-push" && confirmKey:
-        confirmForcePush();
-        break;
-      case state.overlay.kind === "confirm-discard" && confirmKey:
-        void confirmDiscard();
-        break;
-      case state.overlay.kind === "confirm-discard-all" && confirmKey:
-        void confirmDiscardAll();
-        break;
-      case state.overlay.kind === "confirm-commit-all" && confirmKey:
-        void confirmCommitAll();
-        break;
-      case state.overlay.kind === "reset-commits":
-        switch (chord.key) {
-          case "m":
-            void confirmGitReset("mixed", state.overlay.hash);
-            break;
-          case "s":
-            void confirmGitReset("soft", state.overlay.hash);
-            break;
-          case "h":
-            void confirmGitReset("hard", state.overlay.hash);
-            break;
-          default:
-            break;
-        }
-        break;
-      case state.overlay.kind === "edit-commit":
-        switch (chord.key) {
-          case "s":
-            void confirmGitEdit("squash", state.overlay.hash);
-            break;
-          case "f":
-            void confirmGitEdit("fixup", state.overlay.hash);
-            break;
-          case "d":
-            void confirmGitEdit("drop", state.overlay.hash);
-            break;
-          case "a":
-            void confirmGitEdit("amend", state.overlay.hash);
-            break;
-          case "r":
+    if (action) {
+      const { overlay } = state;
+      switch (action.kind) {
+        case "dismiss":
+          closeOverlay();
+          break;
+        case "confirm-force-push":
+          confirmForcePush();
+          break;
+        case "confirm-discard":
+          void confirmDiscard();
+          break;
+        case "confirm-discard-all":
+          void confirmDiscardAll();
+          break;
+        case "confirm-commit-all":
+          void confirmCommitAll();
+          break;
+        case "git-reset":
+          if (overlay.kind === "reset-commits") {
+            void confirmGitReset(action.mode, overlay.hash);
+          }
+          break;
+        case "git-edit":
+          if (overlay.kind === "edit-commit") {
+            void confirmGitEdit(action.action, overlay.hash);
+          }
+          break;
+        case "switch-to-reset":
+          if (overlay.kind === "edit-commit") {
             store.set({
-              overlay: { hash: state.overlay.hash, kind: "reset-commits" },
+              overlay: { hash: overlay.hash, kind: "reset-commits" },
             });
-            break;
-          default:
-            break;
-        }
-        break;
-      default:
-        break;
+          }
+          break;
+        default:
+          break;
+      }
     }
     return;
   }

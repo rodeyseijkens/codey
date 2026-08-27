@@ -12,6 +12,7 @@ import {
   sha256,
   stateDir,
 } from "./env";
+import { asArray, asRecord, asString, parseJson } from "./parse";
 
 const NULL_SEP = "\u0000";
 
@@ -130,42 +131,26 @@ export async function captureTurnBaseline(): Promise<void> {
 }
 
 function parseAgentList(stdout: string): HerdrAgent[] {
-  try {
-    const parsed = JSON.parse(stdout);
-    if (typeof parsed !== "object" || parsed === null) {
-      return [];
-    }
-    const result =
-      "result" in parsed
-        ? (parsed as Record<string, unknown>).result
-        : undefined;
-    if (typeof result !== "object" || result === null) {
-      return [];
-    }
-    const agents =
-      "agents" in result
-        ? (result as Record<string, unknown>).agents
-        : undefined;
-    if (!Array.isArray(agents)) {
-      return [];
-    }
-    return agents.flatMap((a) =>
-      typeof a.pane_id === "string"
-        ? [
-            {
-              agent_status:
-                typeof a.agent_status === "string" ? a.agent_status : undefined,
-              cwd: typeof a.cwd === "string" ? a.cwd : undefined,
-              pane_id: a.pane_id,
-              workspace_id:
-                typeof a.workspace_id === "string" ? a.workspace_id : undefined,
-            },
-          ]
-        : [],
-    );
-  } catch {
+  const parsed = asRecord(parseJson(stdout));
+  const result = asRecord(parsed?.result);
+  const agents = asArray(result?.agents);
+  if (!agents) {
     return [];
   }
+  return agents.flatMap((a: unknown) => {
+    const record = asRecord(a);
+    if (!record || typeof record.pane_id !== "string") {
+      return [];
+    }
+    return [
+      {
+        agent_status: asString(record.agent_status) ?? undefined,
+        cwd: asString(record.cwd) ?? undefined,
+        pane_id: record.pane_id,
+        workspace_id: asString(record.workspace_id) ?? undefined,
+      },
+    ];
+  });
 }
 
 const BRACKETED_PASTE_START = "\u001b[200~";

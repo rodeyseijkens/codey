@@ -10,6 +10,7 @@ import {
   runHerdr,
 } from "./env";
 import { PLUGIN_ID } from "./manifest";
+import { asArray, asRecord, asString, parseJson } from "./parse";
 
 export type OpenPaneOptions = {
   direction?: "right" | "down";
@@ -121,43 +122,24 @@ async function listPanes(): Promise<HerdrPaneInfo[]> {
   if (res.exitCode !== 0) {
     return [];
   }
-  try {
-    const parsed = JSON.parse(res.stdout);
-    if (typeof parsed !== "object" || parsed === null) {
-      return [];
-    }
-    const result =
-      "result" in parsed
-        ? (parsed as Record<string, unknown>).result
-        : undefined;
-    if (typeof result !== "object" || result === null) {
-      return [];
-    }
-    const panes =
-      "panes" in result ? (result as Record<string, unknown>).panes : undefined;
-    if (!Array.isArray(panes)) {
-      return [];
-    }
-    return panes.flatMap((p: unknown) => {
-      if (typeof p !== "object" || p === null) {
-        return [];
-      }
-      const record = p as Record<string, unknown>;
-      const paneId = record.pane_id;
-      const workspaceId = record.workspace_id;
-      return typeof paneId === "string"
-        ? [
-            {
-              paneId,
-              workspaceId:
-                typeof workspaceId === "string" ? workspaceId : undefined,
-            },
-          ]
-        : [];
-    });
-  } catch {
+  const parsed = asRecord(parseJson(res.stdout));
+  const result = asRecord(parsed?.result);
+  const panes = asArray(result?.panes);
+  if (!panes) {
     return [];
   }
+  return panes.flatMap((p: unknown) => {
+    const record = asRecord(p);
+    if (!record || typeof record.pane_id !== "string") {
+      return [];
+    }
+    return [
+      {
+        paneId: record.pane_id,
+        workspaceId: asString(record.workspace_id) ?? undefined,
+      },
+    ];
+  });
 }
 
 async function firstPaneInWorkspace(): Promise<string | null> {
@@ -175,45 +157,24 @@ async function paneRunsCodey(paneId: string): Promise<boolean> {
   if (res.exitCode !== 0) {
     return false;
   }
-  try {
-    const parsed = JSON.parse(res.stdout);
-    if (typeof parsed !== "object" || parsed === null) {
-      return false;
-    }
-    const result =
-      "result" in parsed
-        ? (parsed as Record<string, unknown>).result
-        : undefined;
-    if (typeof result !== "object" || result === null) {
-      return false;
-    }
-    const processInfo =
-      "process_info" in result
-        ? (result as Record<string, unknown>).process_info
-        : undefined;
-    if (typeof processInfo !== "object" || processInfo === null) {
-      return false;
-    }
-    const processes =
-      "foreground_processes" in processInfo
-        ? (processInfo as Record<string, unknown>).foreground_processes
-        : undefined;
-    if (!Array.isArray(processes)) {
-      return false;
-    }
-    return processes.some((p: unknown) => {
-      if (typeof p !== "object" || p === null) {
-        return false;
-      }
-      const base =
-        String("argv0" in p ? ((p as Record<string, unknown>).argv0 ?? "") : "")
-          .split("/")
-          .pop() ?? "";
-      return base === "codey" || base === "codey-herdr";
-    });
-  } catch {
+  const parsed = asRecord(parseJson(res.stdout));
+  const result = asRecord(parsed?.result);
+  const processInfo = asRecord(result?.process_info);
+  const processes = asArray(processInfo?.foreground_processes);
+  if (!processes) {
     return false;
   }
+  return processes.some((p: unknown) => {
+    const record = asRecord(p);
+    if (!record) {
+      return false;
+    }
+    const base =
+      String(record.argv0 ?? "")
+        .split("/")
+        .pop() ?? "";
+    return base === "codey" || base === "codey-herdr";
+  });
 }
 
 async function isAutoOpenEnabled(): Promise<boolean> {

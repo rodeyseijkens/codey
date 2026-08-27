@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 import { getRepoRoot } from "../vcs/git";
+import { asRecord, asString, parseJson } from "./parse";
 
 export class HerdrError extends Error {
   constructor(message: string) {
@@ -46,31 +47,10 @@ export function currentWorkspaceId(): string | undefined {
   if (fromEnv) {
     return fromEnv;
   }
-  try {
-    const raw = JSON.parse(process.env.HERDR_PLUGIN_EVENT_JSON ?? "");
-    if (typeof raw !== "object" || raw === null) {
-      return;
-    }
-    const data =
-      "data" in raw ? (raw as Record<string, unknown>).data : undefined;
-    if (typeof data !== "object" || data === null) {
-      return;
-    }
-    const workspace =
-      "workspace" in data
-        ? (data as Record<string, unknown>).workspace
-        : undefined;
-    if (typeof workspace !== "object" || workspace === null) {
-      return;
-    }
-    const workspaceId =
-      "workspace_id" in workspace
-        ? (workspace as Record<string, unknown>).workspace_id
-        : undefined;
-    return typeof workspaceId === "string" ? workspaceId : undefined;
-  } catch {
-    // event JSON missing or malformed — fall back to no workspace id
-  }
+  const event = asRecord(parseJson(process.env.HERDR_PLUGIN_EVENT_JSON));
+  const data = asRecord(event?.data);
+  const workspace = asRecord(data?.workspace);
+  return asString(workspace?.workspace_id) ?? undefined;
 }
 
 export type HerdrContext = {
@@ -78,26 +58,8 @@ export type HerdrContext = {
 };
 
 export function parseContext(): HerdrContext {
-  const raw = process.env.HERDR_PLUGIN_CONTEXT_JSON;
-  if (!raw) {
-    return {};
-  }
-  try {
-    const ctx = JSON.parse(raw);
-    if (typeof ctx !== "object" || ctx === null) {
-      return {};
-    }
-    const focusedPaneId =
-      "focused_pane_id" in ctx
-        ? (ctx as Record<string, unknown>).focused_pane_id
-        : undefined;
-    return {
-      focusedPaneId:
-        typeof focusedPaneId === "string" ? focusedPaneId : undefined,
-    };
-  } catch {
-    return {};
-  }
+  const ctx = asRecord(parseJson(process.env.HERDR_PLUGIN_CONTEXT_JSON));
+  return { focusedPaneId: asString(ctx?.focused_pane_id) ?? undefined };
 }
 
 export function stateDir(): string {
@@ -133,57 +95,33 @@ function repoCandidates(): string[] {
 }
 
 function collectContextCandidates(candidates: string[]): void {
-  try {
-    const ctx = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "");
-    if (typeof ctx !== "object" || ctx === null) {
-      return;
-    }
-    const record = ctx as Record<string, unknown>;
-    const worktree = record.worktree
-      ? (record.worktree as Record<string, unknown>)
-      : undefined;
-    candidates.push(
-      ...toStrings([
-        worktree?.repo_root,
-        worktree?.checkout_path,
-        record.focused_pane_cwd,
-      ]),
-    );
-  } catch {
-    // ignore malformed context JSON
-  }
+  const ctx = asRecord(parseJson(process.env.HERDR_PLUGIN_CONTEXT_JSON));
+  const worktree = asRecord(ctx?.worktree);
+  candidates.push(
+    ...toStrings([
+      worktree?.repo_root,
+      worktree?.checkout_path,
+      ctx?.focused_pane_cwd,
+    ]),
+  );
 }
 
 function collectEventCandidates(candidates: string[]): void {
-  try {
-    const event = JSON.parse(process.env.HERDR_PLUGIN_EVENT_JSON ?? "");
-    if (typeof event !== "object" || event === null) {
-      return;
-    }
-    const eventRecord = event as Record<string, unknown>;
-    const data = "data" in eventRecord ? eventRecord.data : undefined;
-    if (typeof data !== "object" || data === null) {
-      return;
-    }
-    const dataRecord = data as Record<string, unknown>;
-    const checkoutPaths: unknown[] = [];
-    if (dataRecord.worktree) {
-      checkoutPaths.push(
-        (dataRecord.worktree as Record<string, unknown>).checkout_path,
-      );
-    }
-    if (dataRecord.workspace) {
-      const workspaceRecord = dataRecord.workspace as Record<string, unknown>;
-      if (workspaceRecord.worktree) {
-        checkoutPaths.push(
-          (workspaceRecord.worktree as Record<string, unknown>).checkout_path,
-        );
-      }
-    }
-    candidates.push(...toStrings(checkoutPaths));
-  } catch {
-    // ignore malformed event JSON
+  const event = asRecord(parseJson(process.env.HERDR_PLUGIN_EVENT_JSON));
+  const data = asRecord(event?.data);
+  const checkoutPaths: unknown[] = [];
+  const worktree = asRecord(data?.worktree);
+  if (worktree) {
+    checkoutPaths.push(worktree.checkout_path);
   }
+  const workspace = asRecord(data?.workspace);
+  if (workspace) {
+    const ww = asRecord(workspace.worktree);
+    if (ww) {
+      checkoutPaths.push(ww.checkout_path);
+    }
+  }
+  candidates.push(...toStrings(checkoutPaths));
 }
 
 function toStrings(values: unknown[]): string[] {
