@@ -3,7 +3,7 @@ import { patchLooksBinary } from "../core/binary";
 import { normalizeDiffMetadataPaths, normalizeDiffPath } from "../core/diffPaths";
 import { countDiffStats } from "../core/diffFile";
 import { splitPatchIntoFileChunks, findPatchChunk } from "../core/patch/chunks";
-import { normalizePatch } from "../core/patch/normalize";
+import { normalizePatch } from "../../../diff/patch/normalize";
 import type { DiffFile } from "../core/types";
 import type { HunkDiffFile, HunkDiffFileInput } from "./types";
 

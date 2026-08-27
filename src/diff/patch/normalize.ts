@@ -1,4 +1,4 @@
-import { normalizeGitPatch, type NormalizedGitPatch } from "./gitFormat";
+import { type NormalizedGitPatch, normalizeGitPatch } from "./gitFormat";
 import { stripGitLogMetadata } from "./gitLog";
 
 function stripTerminalControl(text: string) {
@@ -11,6 +11,8 @@ function stripTerminalControl(text: string) {
 
 export function normalizePatch(patchText: string): NormalizedGitPatch {
   return normalizeGitPatch(
-    stripGitLogMetadata(stripTerminalControl(patchText.replaceAll("\r\n", "\n"))),
+    stripGitLogMetadata(
+      stripTerminalControl(patchText.replaceAll("\r\n", "\n")),
+    ),
   );
 }

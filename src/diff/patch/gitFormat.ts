@@ -15,29 +15,29 @@
  */
 type GitHeaderRewriteMode = "add" | "prepend-prefix" | "strip";
 
-export interface NormalizedGitPatchFilePaths {
+export type NormalizedGitPatchFilePaths = {
   path: string;
   previousPath?: string;
-}
+};
 
-export interface NormalizedGitPatch {
-  text: string;
+export type NormalizedGitPatch = {
   filePaths: Array<NormalizedGitPatchFilePaths | undefined>;
-}
+  text: string;
+};
 
 const gitQuotedUtf8Decoder = new TextDecoder("utf-8", { fatal: true });
 const gitQuotedUtf8Encoder = new TextEncoder();
 const gitUnsafeDecodedHeaderCharacter = /[\x00-\x1f\x7f-\x9f]/;
 const gitSimpleEscapeBytes: Readonly<Record<string, number>> = {
+  '"': 0x22,
+  "\\": 0x5c,
   a: 0x07,
   b: 0x08,
-  t: 0x09,
-  n: 0x0a,
-  v: 0x0b,
   f: 0x0c,
+  n: 0x0a,
   r: 0x0d,
-  "\\": 0x5c,
-  '"': 0x22,
+  t: 0x09,
+  v: 0x0b,
 };
 
 /** Decode Git's octal-escaped UTF-8 pathname bytes without exposing escaped controls to parsing. */
@@ -77,7 +77,9 @@ function decodeGitQuotedUtf8Path(path: string) {
     // tabs/newlines or replacement characters to a pathname header.
     if (escapedBytes.every((byte) => byte >= 0x80 && byte <= 0xff)) {
       try {
-        const decodedBytes = gitQuotedUtf8Decoder.decode(Uint8Array.from(escapedBytes));
+        const decodedBytes = gitQuotedUtf8Decoder.decode(
+          Uint8Array.from(escapedBytes),
+        );
         if (!gitUnsafeDecodedHeaderCharacter.test(decodedBytes)) {
           decodedPath += decodedBytes;
           continue;
@@ -140,7 +142,7 @@ function decodeGitQuotedPath(path: string) {
 /** Normalize Git patch syntax and retain exact decoded paths separately from parser-safe text. */
 export function normalizeGitPatch(patchText: string): NormalizedGitPatch {
   if (!patchText.includes("diff --git ")) {
-    return { text: patchText, filePaths: [] };
+    return { filePaths: [], text: patchText };
   }
 
   const lines = patchText.split("\n");
@@ -174,14 +176,14 @@ export function normalizeGitPatch(patchText: string): NormalizedGitPatch {
   }
 
   flushBlock();
-  return { text: normalizedLines.join("\n"), filePaths };
+  return { filePaths, text: normalizedLines.join("\n") };
 }
 
 /** Rewrite one `diff --git` block, keeping file-header rewrites out of hunk bodies. */
 function rewriteGitPatchBlock(blockLines: string[]) {
   const firstLine = blockLines[0];
   if (!firstLine?.startsWith("diff --git ")) {
-    return { lines: blockLines, filePaths: undefined };
+    return { filePaths: undefined, lines: blockLines };
   }
 
   const result = rewriteGitDiffHeader(firstLine, blockLines);
@@ -191,14 +193,18 @@ function rewriteGitPatchBlock(blockLines: string[]) {
 
   for (const line of blockLines.slice(1)) {
     if (blockRewriteMode && line.startsWith("--- ")) {
-      rewrittenLines.push(rewriteUnifiedFileLine(line, "--- ", "a/", blockRewriteMode));
+      rewrittenLines.push(
+        rewriteUnifiedFileLine(line, "--- ", "a/", blockRewriteMode),
+      );
       continue;
     }
 
     if (blockRewriteMode && line.startsWith("+++ ")) {
       const rewriteMode = blockRewriteMode;
       blockRewriteMode = null;
-      rewrittenLines.push(rewriteUnifiedFileLine(line, "+++ ", "b/", rewriteMode));
+      rewrittenLines.push(
+        rewriteUnifiedFileLine(line, "+++ ", "b/", rewriteMode),
+      );
       continue;
     }
 
@@ -206,8 +212,8 @@ function rewriteGitPatchBlock(blockLines: string[]) {
   }
 
   return {
-    lines: rewrittenLines,
     filePaths: resolveDecodedGitFilePaths(result.decodedPair, blockLines),
+    lines: rewrittenLines,
   };
 }
 
@@ -238,9 +244,9 @@ function rewriteGitDiffHeader(
     // Pierre's git header parser does not currently handle the quoted `"a/..." "b/..."`
     // form, so decode quoted UTF-8 paths and canonicalize them even when prefixes exist.
     return {
+      decodedPair,
       line: `diff --git ${pair.oldPath} ${pair.newPath}`,
       rewriteMode: pair.rewriteMode,
-      decodedPair,
     };
   }
 
@@ -250,7 +256,11 @@ function rewriteGitDiffHeader(
     const half = tokens.length / 2;
     const firstHalf = tokens.slice(0, half).join(" ");
     const secondHalf = tokens.slice(half).join(" ");
-    const knownPair = canonicalizeKnownGitPathPair(firstHalf, secondHalf, blockLines);
+    const knownPair = canonicalizeKnownGitPathPair(
+      firstHalf,
+      secondHalf,
+      blockLines,
+    );
 
     if (knownPair?.changed) {
       return {
@@ -295,7 +305,7 @@ function splitGitMnemonicPrefix(path: string) {
     return null;
   }
 
-  return { prefix, path: rest.join("/") };
+  return { path: rest.join("/"), prefix };
 }
 
 /** Remove Git's outer quotes and decode valid C-style pathname bytes for comparisons. */
@@ -306,11 +316,18 @@ function stripGitPathQuotes(path: string) {
     : (decodeGitQuotedPath(quotedPath) ?? decodeGitQuotedUtf8Path(quotedPath));
 }
 
-const gitMetadataPathMarkers = ["rename from ", "rename to ", "copy from ", "copy to "] as const;
+const gitMetadataPathMarkers = [
+  "rename from ",
+  "rename to ",
+  "copy from ",
+  "copy to ",
+] as const;
 
 /** Decode quoted UTF-8 bytes in Git rename/copy metadata while preserving unrelated syntax. */
 function rewriteGitMetadataPathLine(line: string) {
-  const marker = gitMetadataPathMarkers.find((candidate) => line.startsWith(candidate));
+  const marker = gitMetadataPathMarkers.find((candidate) =>
+    line.startsWith(candidate),
+  );
   if (!marker) {
     return line;
   }
@@ -335,8 +352,8 @@ function findRenameOrCopyMetadata(blockLines: string[]) {
 
     if (oldPath && newPath) {
       return {
-        oldPath: stripGitPathQuotes(oldPath.slice(oldMarker.length)),
         newPath: stripGitPathQuotes(newPath.slice(newMarker.length)),
+        oldPath: stripGitPathQuotes(oldPath.slice(oldMarker.length)),
       };
     }
   }
@@ -350,11 +367,12 @@ function resolveDecodedGitFilePaths(
   blockLines: string[],
 ): NormalizedGitPatchFilePaths | undefined {
   if (!decodedPair) {
-    return undefined;
+    return;
   }
 
   const metadata = findRenameOrCopyMetadata(blockLines);
-  const previousPath = metadata?.oldPath ?? decodedPair.oldPath.replace(/^a\//, "");
+  const previousPath =
+    metadata?.oldPath ?? decodedPair.oldPath.replace(/^a\//, "");
   const path = metadata?.newPath ?? decodedPair.newPath.replace(/^b\//, "");
 
   return previousPath === path ? { path } : { path, previousPath };
@@ -366,11 +384,18 @@ function withGitPrefix(path: string, prefix: "a/" | "b/") {
 }
 
 /** Decide whether a mnemonic-looking path pair is real mnemonic output or a noprefix rename. */
-function shouldStripMnemonicPair(oldPath: string, newPath: string, blockLines: string[]) {
+function shouldStripMnemonicPair(
+  oldPath: string,
+  newPath: string,
+  blockLines: string[],
+) {
   const oldMnemonic = splitGitMnemonicPrefix(oldPath);
   const newMnemonic = splitGitMnemonicPrefix(newPath);
 
-  if (!oldMnemonic || !newMnemonic || oldMnemonic.prefix === newMnemonic.prefix) {
+  if (
+    !(oldMnemonic && newMnemonic) ||
+    oldMnemonic.prefix === newMnemonic.prefix
+  ) {
     return null;
   }
 
@@ -383,7 +408,10 @@ function shouldStripMnemonicPair(oldPath: string, newPath: string, blockLines: s
     return false;
   }
 
-  if (metadata.oldPath === oldMnemonic.path && metadata.newPath === newMnemonic.path) {
+  if (
+    metadata.oldPath === oldMnemonic.path &&
+    metadata.newPath === newMnemonic.path
+  ) {
     return true;
   }
 
@@ -391,7 +419,11 @@ function shouldStripMnemonicPair(oldPath: string, newPath: string, blockLines: s
 }
 
 /** Convert already-prefixed or mnemonic-prefixed path pairs into Pierre's canonical shape. */
-function canonicalizeKnownGitPathPair(oldPath: string, newPath: string, blockLines: string[]) {
+function canonicalizeKnownGitPathPair(
+  oldPath: string,
+  newPath: string,
+  blockLines: string[],
+) {
   const oldMnemonic = splitGitMnemonicPrefix(oldPath);
   const newMnemonic = splitGitMnemonicPrefix(newPath);
   const isCanonical = oldPath.startsWith("a/") && newPath.startsWith("b/");
@@ -403,16 +435,26 @@ function canonicalizeKnownGitPathPair(oldPath: string, newPath: string, blockLin
     if (metadata?.oldPath === oldPath && metadata.newPath === newPath) {
       return null;
     }
-    return { oldPath, newPath, rewriteMode: "add" as const, changed: false, isCanonical: true };
+    return {
+      changed: false,
+      isCanonical: true,
+      newPath,
+      oldPath,
+      rewriteMode: "add" as const,
+    };
   }
 
-  if (oldMnemonic && newMnemonic && shouldStripMnemonicPair(oldPath, newPath, blockLines)) {
+  if (
+    oldMnemonic &&
+    newMnemonic &&
+    shouldStripMnemonicPair(oldPath, newPath, blockLines)
+  ) {
     return {
-      oldPath: `a/${oldMnemonic.path}`,
-      newPath: `b/${newMnemonic.path}`,
-      rewriteMode: "strip" as const,
       changed: true,
       isCanonical: false,
+      newPath: `b/${newMnemonic.path}`,
+      oldPath: `a/${oldMnemonic.path}`,
+      rewriteMode: "strip" as const,
     };
   }
 
@@ -420,14 +462,18 @@ function canonicalizeKnownGitPathPair(oldPath: string, newPath: string, blockLin
 }
 
 /** Convert one quoted `diff --git` path pair into Pierre's canonical side-prefix shape. */
-function canonicalizeGitPathPair(oldPath: string, newPath: string, blockLines: string[]) {
+function canonicalizeGitPathPair(
+  oldPath: string,
+  newPath: string,
+  blockLines: string[],
+) {
   return (
     canonicalizeKnownGitPathPair(oldPath, newPath, blockLines) ?? {
-      oldPath: `a/${oldPath}`,
-      newPath: `b/${newPath}`,
-      rewriteMode: "prepend-prefix" as const,
       changed: true,
       isCanonical: false,
+      newPath: `b/${newPath}`,
+      oldPath: `a/${oldPath}`,
+      rewriteMode: "prepend-prefix" as const,
     }
   );
 }
@@ -448,7 +494,9 @@ function rewriteUnifiedFileLine(
     return line;
   }
 
-  const decodedPathName = quotedPath ? decodeGitQuotedUtf8Path(pathName) : pathName;
+  const decodedPathName = quotedPath
+    ? decodeGitQuotedUtf8Path(pathName)
+    : pathName;
   const normalizedPath =
     mode === "strip"
       ? (splitGitMnemonicPrefix(decodedPathName)?.path ?? decodedPathName)
