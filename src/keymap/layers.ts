@@ -136,6 +136,14 @@ export function registerAppLayers(
         return true;
       },
     })),
+    enabled: layerEnabled(
+      store,
+      (s) =>
+        s.commitDraft === null &&
+        s.rewordDraft === null &&
+        s.commentDraft === null &&
+        !(s.diffSearch?.open ?? false),
+    ),
     priority: 0,
   });
   disposers.push(offNormal);
