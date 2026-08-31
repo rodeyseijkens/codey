@@ -459,10 +459,18 @@ export function DiffPane() {
         style={{
           alignItems: "center",
           backgroundColor: C.bg,
+          flexDirection: "column",
           flexGrow: 1,
+          gap: 1,
           justifyContent: "center",
         }}
       >
+        <ascii-font
+          color={C.faint}
+          font="block"
+          selectable={false}
+          text="CODEY"
+        />
         <text style={{ fg: C.faint }}>No file selected — j/k to navigate</text>
       </box>
     );
