@@ -105,7 +105,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `Space`       | Expand/collapse commit                                        |
 | `c`           | Open commit input                                             |
 | `p` / `P`     | Pull / push to the remote                                     |
-| `g`           | Edit selected commit (squash/fixup/drop/amend); `r` for reset |
+| `g`           | Edit selected commit (squash/fixup/drop/amend/reword/reset) |
 | `Alt+j` / `Alt+k` | Reorder commit up / down in history (interactive rebase)  |
 
 #### Global

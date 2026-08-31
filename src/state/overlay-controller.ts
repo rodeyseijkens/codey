@@ -12,7 +12,8 @@ export type OverlayAction =
   | { kind: "dismiss" }
   | { kind: "git-reset"; mode: "mixed" | "soft" | "hard" }
   | { kind: "git-edit"; action: "squash" | "fixup" | "drop" | "amend" }
-  | { kind: "switch-to-reset" };
+  | { kind: "switch-to-reset" }
+  | { kind: "switch-to-reword" };
 
 const CONFIRM_OVERLAYS = new Set<string>([
   "confirm-force-push",
@@ -105,6 +106,9 @@ export function resolveOverlayKey(
       return { action, kind: "git-edit" };
     }
     if (chordKey === "r") {
+      return { kind: "switch-to-reword" };
+    }
+    if (chordKey === "g") {
       return { kind: "switch-to-reset" };
     }
     return null;

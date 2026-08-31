@@ -7,7 +7,7 @@ import {
   confirmGitEdit,
   confirmGitReset,
 } from "../actions/commits";
-import { closeOverlay } from "../actions/drafts";
+import { closeOverlay, openRewordDraft } from "../actions/drafts";
 import { confirmForcePush } from "../actions/remote";
 import { confirmDiscard, confirmDiscardAll } from "../actions/staging";
 import { resolveOverlayKey } from "../overlay-controller";
@@ -62,6 +62,13 @@ export function handleOverlayMode(
       if (overlay.kind === "edit-commit") {
         store.set({ overlay: { hash: overlay.hash, kind: "reset-commits" } });
       }
+      break;
+    case "switch-to-reword":
+      if (overlay.kind === "edit-commit") {
+        openRewordDraft(overlay.hash);
+      }
+      break;
+    default:
       break;
   }
 }

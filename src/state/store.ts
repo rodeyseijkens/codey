@@ -81,7 +81,8 @@ export type Overlay =
   | { kind: "help" }
   | { kind: "palette" }
   | { kind: "reset-commits"; hash: string }
-  | { kind: "edit-commit"; hash: string };
+  | { kind: "edit-commit"; hash: string }
+  | { kind: "reword-commit"; hash: string };
 
 export type DiffSearch = {
   index: number;
@@ -143,6 +144,7 @@ export type AppState = {
   remoteBusy: "push" | "pull" | null;
   repoRoot: string | null;
   selection: Selection | null;
+  rewordDraft: string | null;
   sidebarView: SidebarView;
   sidebarVisible: boolean;
   sidebarWidth: number;
@@ -203,6 +205,7 @@ export function initialState(): AppState {
     pendingStage: null,
     remoteBusy: null,
     repoRoot: null,
+    rewordDraft: null,
     selection: null,
     sidebarView: SIDEBAR_VIEWS.tree,
     sidebarVisible: true,

@@ -260,6 +260,14 @@ export async function reorderCommit(
   }
 }
 
+export async function rewordCommit(
+  root: string,
+  _hash: string,
+  message: string,
+): Promise<void> {
+  await gitThrow(["commit", "--amend", "-m", message], root);
+}
+
 export async function undoCommit(root: string, hash: string): Promise<void> {
   await gitThrow(["reset", "--soft", `${hash}^`], root);
 }

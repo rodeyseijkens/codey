@@ -59,6 +59,10 @@ export function handleKeyEvent(e: KeyEvent, keymap: ResolvedKeymap): void {
     handleDiffSearchMode(e, chord, cmd);
     return;
   }
+  if (state.rewordDraft !== null) {
+    handleDraftMode(e, chord, cmd);
+    return;
+  }
   if (state.overlay) {
     handleOverlayMode(e, chord, cmd);
     return;

@@ -8,6 +8,7 @@ import {
   gitThrow,
   reorderCommit,
   resetCommit,
+  rewordCommit,
   undoCommit,
 } from "../../vcs/git";
 import { type CommitRow, commitRowKey, getStore, type Store } from "../store";
@@ -431,5 +432,31 @@ export async function copyCommitHash(hash: string): Promise<void> {
       TOAST_KINDS.error,
       `clipboard failed: ${result.error}`,
     );
+  }
+}
+
+export async function confirmGitReword(message: string): Promise<void> {
+  const store = getStore();
+  const { overlay, repoRoot } = store.getState();
+  if (overlay?.kind !== "reword-commit" || !repoRoot) {
+    store.set({ overlay: null, rewordDraft: null });
+    return;
+  }
+  const trimmed = message.trim();
+  if (trimmed === "") {
+    store.set({ overlay: null, rewordDraft: null });
+    store.showToast(TOAST_KINDS.info, "empty commit message");
+    return;
+  }
+  const { hash } = overlay;
+  store.set({ commitLoading: true, overlay: null, rewordDraft: null });
+  try {
+    await rewordCommit(repoRoot, hash, trimmed);
+    store.showToast(TOAST_KINDS.success, `reworded ${hash.slice(0, 7)}`);
+    store.set({ commitLoading: false });
+    await refresh();
+  } catch (err) {
+    store.set({ commitLoading: false });
+    toastError(store, "reword", err);
   }
 }

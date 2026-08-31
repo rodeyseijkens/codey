@@ -2,7 +2,7 @@ import type { KeyEvent } from "@opentui/core";
 
 import type { KeyChord } from "../../keymap/chords";
 import type { CommandId } from "../../keymap/commands";
-import { cancelCommitDraft } from "../actions/drafts";
+import { cancelCommitDraft, cancelRewordDraft } from "../actions/drafts";
 import { cancelCommentDraft } from "../comment-actions";
 import { getStore } from "../store";
 
@@ -16,6 +16,13 @@ export function handleDraftMode(
   if (state.commitDraft !== null) {
     if (cmd === "cancel" || chord.key === "escape") {
       cancelCommitDraft();
+    }
+    return;
+  }
+
+  if (state.rewordDraft !== null) {
+    if (cmd === "cancel" || chord.key === "escape") {
+      cancelRewordDraft();
     }
     return;
   }

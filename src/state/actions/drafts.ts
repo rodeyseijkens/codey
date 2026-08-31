@@ -26,3 +26,11 @@ export function clearCommitDraft(): void {
   const store = getStore();
   store.set({ draftClearTick: store.getState().draftClearTick + 1 });
 }
+
+export function openRewordDraft(hash: string): void {
+  getStore().set({ overlay: { hash, kind: "reword-commit" }, rewordDraft: "" });
+}
+
+export function cancelRewordDraft(): void {
+  getStore().set({ overlay: null, rewordDraft: null });
+}

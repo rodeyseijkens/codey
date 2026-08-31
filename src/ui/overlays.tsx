@@ -15,8 +15,10 @@ import {
 import {
   confirmGitEdit,
   confirmGitReset,
+  confirmGitReword,
   submitCommitDraft,
 } from "../state/actions/commits";
+import { openRewordDraft } from "../state/actions/drafts";
 import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { EM_SPACE } from "./icons";
@@ -341,7 +343,7 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
   const store = getStore();
   return (
     <OverlayFrame
-      height={12}
+      height={15}
       title={`Edit ${shortHash}`}
       titleEnd={<text style={{ fg: C.dim }}>esc</text>}
       width={50}
@@ -396,13 +398,23 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
         </box>
         <box
           onMouseDown={() => {
+            openRewordDraft(props.overlay.hash);
+          }}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>r</text>
+          <text style={{ fg: C.fg }}>Reword</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} edit commit message</text>
+        </box>
+        <box
+          onMouseDown={() => {
             store.set({
               overlay: { hash: props.overlay.hash, kind: "reset-commits" },
             });
           }}
           style={{ flexDirection: "row", gap: 1 }}
         >
-          <text style={{ fg: C.yellow, width: 3 }}>r</text>
+          <text style={{ fg: C.yellow, width: 3 }}>g</text>
           <text style={{ fg: C.fg }}>Reset</text>
           <text style={{ fg: C.dim }}>{EM_SPACE} mixed/soft/hard reset</text>
         </box>
@@ -411,9 +423,45 @@ function GitEditOverlay(props: { overlay: OverlayKind<"edit-commit"> }) {
   );
 }
 
+function RewordInputOverlay() {
+  const { ui: C } = useColors();
+  const textareaRef = useRef<TextareaRenderable | null>(null);
+  const contentWidth = 68;
+  useDraftClear(textareaRef);
+  return (
+    <OverlayFrame
+      height={5}
+      title="Reword commit message"
+      titleEnd={<text style={{ fg: C.dim }}>esc</text>}
+      width={72}
+    >
+      <textarea
+        backgroundColor={C.panel}
+        focused
+        focusedBackgroundColor={C.panel}
+        focusedTextColor={C.fg}
+        height={1}
+        initialValue={getStore().getState().rewordDraft ?? ""}
+        keyBindings={[{ action: "submit", name: "return" }]}
+        onSubmit={async () => {
+          const text = textareaRef.current?.plainText ?? "";
+          await confirmGitReword(text);
+        }}
+        placeholder="new commit message — Enter to confirm, esc to cancel"
+        ref={textareaRef}
+        textColor={C.fg}
+        width={contentWidth}
+      />
+    </OverlayFrame>
+  );
+}
+
 export function Overlays() {
   const state = useAppState();
   const { overlay } = state;
+  if (state.rewordDraft !== null) {
+    return <RewordInputOverlay />;
+  }
   if (state.commitDraft !== null) {
     return <CommitInputOverlay />;
   }
