@@ -5,7 +5,7 @@ import {
   stageFiles,
   unstageFiles,
 } from "../../vcs/git";
-import { type AppStore, getStore, type PendingStage } from "../store";
+import { getStore, type PendingStage, type Store } from "../store";
 import { refresh, toastError } from "./core";
 
 function buildPendingStage(
@@ -22,7 +22,7 @@ function buildPendingStage(
 }
 
 function selectionPaths(
-  store: AppStore,
+  store: Store,
 ): { paths: string[]; scope: Scope } | null {
   const sel = store.getState().selection;
   if (!sel) {

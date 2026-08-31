@@ -1,23 +1,19 @@
 import { TOAST_KINDS } from "../../types";
 import {
   type AppState,
-  type AppStore,
   commitRowKey,
   getStore,
   rowKey,
   type Selection,
   type SidebarRow,
+  type Store,
 } from "../store";
 
 export const SIDEBAR_MIN_WIDTH = 16;
 export const SIDEBAR_MAX_WIDTH = 80;
 export const SIDEBAR_RESIZE_STEP = 4;
 
-export function toastError(
-  store: AppStore,
-  action: string,
-  err: unknown,
-): void {
+export function toastError(store: Store, action: string, err: unknown): void {
   store.showToast(
     TOAST_KINDS.error,
     `${action} failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -25,7 +21,7 @@ export function toastError(
 }
 
 function preserveSelection(
-  store: AppStore,
+  store: Store,
   prevSel: Selection | null,
 ): Selection | null {
   if (prevSel) {
@@ -93,7 +89,7 @@ export async function refresh(): Promise<void> {
   }
 }
 
-function repairCommitCursor(store: AppStore, prev: string): void {
+function repairCommitCursor(store: Store, prev: string): void {
   const rows = store.commitRows();
   if (!rows[0]) {
     store.set({ commitCursor: null });
@@ -105,7 +101,7 @@ function repairCommitCursor(store: AppStore, prev: string): void {
   store.set({ commitCursor: key });
 }
 
-export function applySelection(store: AppStore, row: SidebarRow | null): void {
+export function applySelection(store: Store, row: SidebarRow | null): void {
   if (!row) {
     store.set({ anchorRow: null, cursorRow: 0, selection: null });
     return;
@@ -121,7 +117,7 @@ export function applySelection(store: AppStore, row: SidebarRow | null): void {
   store.set(patch);
 }
 
-export function repairSelection(store: AppStore): void {
+export function repairSelection(store: Store): void {
   const sel = store.getState().selection;
   if (!sel) {
     return;

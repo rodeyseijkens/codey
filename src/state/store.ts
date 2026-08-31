@@ -218,7 +218,7 @@ export function initialState(): AppState {
 
 type Listener = () => void;
 
-export class AppStore {
+export class AppStore implements Store {
   private state: AppState;
   private readonly listeners = new Set<Listener>();
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -380,13 +380,29 @@ export class AppStore {
   }
 }
 
-let activeStore: AppStore = new AppStore();
+export type Store = {
+  changeset: (scope: Scope) => Changeset | undefined;
+  clearCommentsFor: (scope: Scope, paths: string[]) => void;
+  commentsFor: (scope: Scope, path: string) => Comment[];
+  commitCursorRow: () => CommitRow | null;
+  commitRows: () => CommitRow[];
+  getState: () => AppState;
+  pendingCommentCount: (scope: Scope, paths: string[]) => number;
+  selectedFile: () => { scope: Scope; file: FileDiff } | null;
+  set: (patch: Partial<AppState>) => void;
+  showToast: (kind: ToastKind, message: string, ttlMs?: number) => void;
+  sidebarRows: () => SidebarRow[];
+  subscribe: (listener: () => void) => () => void;
+  update: (fn: (state: AppState) => Partial<AppState>) => void;
+};
 
-export function getStore(): AppStore {
+let activeStore: Store = new AppStore();
+
+export function getStore(): Store {
   return activeStore;
 }
 
-export function setStore(store: AppStore): void {
+export function setStore(store: Store): void {
   activeStore = store;
 }
 

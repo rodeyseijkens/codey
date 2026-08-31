@@ -10,12 +10,7 @@ import {
   resetCommit,
   undoCommit,
 } from "../../vcs/git";
-import {
-  type AppStore,
-  type CommitRow,
-  commitRowKey,
-  getStore,
-} from "../store";
+import { type CommitRow, commitRowKey, getStore, type Store } from "../store";
 import { refresh, toastError } from "./core";
 
 const COMMIT_PAGE_SIZE = 10;
@@ -97,7 +92,7 @@ export function toggleCommitExpand(hash: string): void {
   store.set({ collapsed: expanded });
 }
 
-async function moveCommitCursor(store: AppStore, delta: -1 | 1): Promise<void> {
+async function moveCommitCursor(store: Store, delta: -1 | 1): Promise<void> {
   const rows = store.commitRows();
   if (rows.length === 0) {
     return;
@@ -128,7 +123,7 @@ export function commitSelectPrev(): Promise<void> {
 }
 
 async function moveCommitCursorToFile(
-  store: AppStore,
+  store: Store,
   delta: -1 | 1,
 ): Promise<void> {
   const rows = store.commitRows();

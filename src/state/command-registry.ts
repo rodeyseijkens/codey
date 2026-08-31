@@ -40,7 +40,7 @@ import {
   openEditCommentDraft,
   visualSelect,
 } from "./comment-actions";
-import { type AppState, type AppStore, getStore } from "./store";
+import { type AppState, getStore, type Store } from "./store";
 
 let quitHandler: (() => void) | null = null;
 let restartHandler: (() => void) | null = null;
@@ -71,7 +71,7 @@ function commitFileShown(state: AppState): boolean {
 
 type CommandHandler = {
   guard?: (state: AppState) => boolean;
-  run: (store: AppStore, state: AppState) => void;
+  run: (store: Store, state: AppState) => void;
 };
 
 function buildRegistry(): Map<CommandId, CommandHandler> {
