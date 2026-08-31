@@ -28,8 +28,9 @@
     ]
   },
   "dependencies": {
-    "@opentui/core": "^0.5.3",
-    "@opentui/react": "^0.5.3",
+    "@opentui/core": "^0.5.9",
+    "@opentui/keymap": "^0.5.9",
+    "@opentui/react": "^0.5.9",
     "@pierre/diffs": "1.2.2",
     "chokidar": "^4.0.3",
     "commander": "^14.0.3",
