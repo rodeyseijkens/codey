@@ -1,40 +1,17 @@
-import { KeyEvent } from "@opentui/core";
-
-import { resolveKeymap } from "../src/keymap/index";
-import { handleKeyEvent, setQuitHandler } from "../src/state/dispatch";
+import { handleCtrlC } from "../src/state/ctrl-c";
+import { setQuitHandler } from "../src/state/lifecycle";
 import { AppStore, setStore } from "../src/state/store";
 import { describe, expect, test } from "bun:test";
 
-const keymapRes = resolveKeymap({});
-if (!keymapRes.ok) {
-  throw new Error("expected default keymap");
-}
-
-function ctrlC(): KeyEvent {
-  return new KeyEvent({
-    ctrl: true,
-    eventType: "press",
-    meta: false,
-    name: "c",
-    number: false,
-    option: false,
-    raw: "\x03",
-    sequence: "\x03",
-    shift: false,
-    source: "raw",
-  });
-}
-
-describe("handleKeyEvent ctrl+c", () => {
+describe("handleCtrlC", () => {
   test("clears the commit draft instead of quitting", () => {
     const store = new AppStore({
       commitDraft: "",
       focus: "commits",
-      keymap: keymapRes.keymap,
     });
     setStore(store);
 
-    handleKeyEvent(ctrlC(), keymapRes.keymap);
+    handleCtrlC(store);
 
     const state = store.getState();
     expect(state.commitDraft).not.toBeNull();
@@ -53,11 +30,10 @@ describe("handleKeyEvent ctrl+c", () => {
         text: "hello",
       },
       focus: "diff",
-      keymap: keymapRes.keymap,
     });
     setStore(store);
 
-    handleKeyEvent(ctrlC(), keymapRes.keymap);
+    handleCtrlC(store);
 
     const state = store.getState();
     expect(state.commentDraft).not.toBeNull();
@@ -66,7 +42,7 @@ describe("handleKeyEvent ctrl+c", () => {
   });
 
   test("quits when no input field is active", () => {
-    const store = new AppStore({ keymap: keymapRes.keymap });
+    const store = new AppStore();
     setStore(store);
 
     let quitCalled = false;
@@ -74,7 +50,7 @@ describe("handleKeyEvent ctrl+c", () => {
       quitCalled = true;
     });
 
-    handleKeyEvent(ctrlC(), keymapRes.keymap);
+    handleCtrlC(store);
 
     expect(quitCalled).toBe(true);
     expect(store.getState().draftClearTick).toBe(0);

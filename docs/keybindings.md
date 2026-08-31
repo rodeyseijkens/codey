@@ -4,9 +4,10 @@ All keys are remappable via the `[keybindings]` table in `~/.config/codey/config
 Chord grammar: `ctrl+`, `alt+`, `shift+` modifiers plus a key, e.g. `ctrl+s`, `alt+j`.
 A single uppercase letter means shift (e.g. `A` = `shift+a`).
 
-The keybindings table is validated as a whole file: an unknown command, an invalid
-chord, or two commands bound to the same chord invalidates the entire table (and the
-whole config), and codey shows an error pane until the file is fixed.
+The keybindings table is validated per-layer: an unknown command or an invalid
+chord invalidates the entire table (and the whole config), and codey shows an error
+pane until the file is fixed. Collisions are legal across layers (e.g. `s` binds
+different commands in the reset-commits vs edit-commit overlays).
 
 ## Defaults
 
@@ -26,31 +27,34 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `<`     | sidebar-shrink   | Make the sidebar narrower                                |
 | `>`     | sidebar-grow     | Make the sidebar wider                                   |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
-| `A`     | stage-all        | Stage all changed files                                  |
+| `shift+a` | stage-all      | Stage all changed files                                  |
 | `u`     | unstage-file     | Unstage selected file (`git restore --staged <file>`); discards working-tree changes in the changes scope |
-| `U`     | unstage-all      | Unstage all staged files; discards all working-tree changes in the changes scope |
+| `shift+u` | unstage-all   | Unstage all staged files; discards all working-tree changes in the changes scope |
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
 | `w`     | wrap-text        | Toggle diff line wrapping                                |
 
 ### Diff Pane
 
-| Key     | Command          | Description                                              |
-| ------- | ---------------- | -------------------------------------------------------- |
-| `]`     | next-hunk        | Jump to next hunk (diff pane)                            |
-| `[`     | prev-hunk        | Jump to previous hunk (diff pane)                        |
-| `ctrl+f`| page-down        | Move page down (diff pane)                               |
-| `ctrl+b`| page-up          | Move page up (diff pane)                                 |
-| `ctrl+d`| page-cursor-half-down | Move cursor and page half page down (diff pane)       |
-| `ctrl+u`| page-cursor-half-up | Move cursor and page half page up (diff pane)         |
-| `v`     | visual-select    | Start line/range selection for comments                  |
-| `c`     | add-comment      | Add a transient comment on the selected line/range; in the commit log, open a commit input |
-| `e`     | edit-comment     | Edit the comment on the current line                     |
-| `d`     | delete-comment   | Delete the comment on the current line                   |
-| `n`     | next-comment     | Jump to next comment                                     |
-| `N`     | prev-comment     | Jump to previous comment                                 |
-| `s`     | send-comments    | Send pending comments (standalone: copy to clipboard)    |
-| `y`     | copy             | Copy selected file's diff to clipboard                   |
+| Key      | Command                | Description                                              |
+| -------- | ---------------------- | -------------------------------------------------------- |
+| `]`      | next-hunk              | Jump to next hunk                                        |
+| `[`      | prev-hunk              | Jump to previous hunk                                    |
+| `ctrl+f` | page-down              | Move page down                                           |
+| `ctrl+b` | page-up                | Move page up                                             |
+| `ctrl+d` | page-cursor-half-down  | Move cursor and page half page down                      |
+| `ctrl+u` | page-cursor-half-up    | Move cursor and page half page up                        |
+| `v`      | visual-select          | Start line/range selection for comments                  |
+| `c`      | add-comment            | Add a transient comment on the selected line/range; in the commit log, open a commit input |
+| `e`      | edit-comment           | Edit the comment on the current line                     |
+| `d`      | delete-comment         | Delete the comment on the current line                   |
+| `n`      | next-comment           | Jump to next comment                                     |
+| `N`      | prev-comment           | Jump to previous comment                                 |
+| `s`      | send-comments          | Send pending comments (standalone: copy to clipboard)    |
+| `y`      | copy                   | Copy selected file's diff to clipboard                   |
+| `/`      | open-diff-search       | Open diff search                                         |
+| `n`      | diff-search-next       | Next diff search match (when diff search is closed)      |
+| `N`      | diff-search-prev       | Previous diff search match (when diff search is closed)  |
 
 ### Commits Pane
 
@@ -79,6 +83,17 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `q`     | quit             | Quit codey                                               |
 | `?`     | help             | Show help overlay                                        |
 | `esc`   | cancel           | Cancel overlay or pending confirmation                   |
+
+### Overlays
+
+| Key              | Command              | Description                                        |
+| ---------------- | -------------------- | -------------------------------------------------- |
+| `esc`            | cancel               | Dismiss current overlay                            |
+| `y` / `return`   | overlay-confirm      | Confirm action (force-push, discard, commit-all)   |
+| `m` / `s` / `h`  | overlay-reset-*      | Reset mode: mixed, soft, hard                      |
+| `s` / `f` / `d` / `a` | overlay-edit-*  | Edit commit: squash, fixup, drop, amend            |
+| `r`              | overlay-to-reword    | Switch to reword mode                              |
+| `g`              | overlay-to-reset     | Switch to reset overlay                            |
 
 ## Sidebar view
 

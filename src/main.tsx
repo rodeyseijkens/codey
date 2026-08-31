@@ -1,13 +1,15 @@
 import { type CliRenderer, createCliRenderer } from "@opentui/core";
+import { createDefaultOpenTuiKeymap } from "@opentui/keymap/opentui";
 import { createRoot } from "@opentui/react";
 import { Command } from "commander";
 
 import { loadConfig } from "./config";
 import { captureTurnBaseline, isHerdrPlugin } from "./herdr";
-import { resolveKeymap } from "./keymap/index";
+import { registerAppLayers } from "./keymap/layers";
+import { validateKeybindings } from "./keymap/validation";
 import { buildRuntime, type Runtime } from "./runtime";
 import { refresh } from "./state/actions/core";
-import { setQuitHandler, setRestartHandler } from "./state/dispatch";
+import { setQuitHandler, setRestartHandler } from "./state/lifecycle";
 import { AppStore, getStore, setStore } from "./state/store";
 import type { LoaderMode } from "./types";
 import { parseDiffMode, parseSidebarView } from "./types";
@@ -36,6 +38,8 @@ type RunOptions = {
 let renderer: CliRenderer | null = null;
 let stopWatcher: (() => void) | null = null;
 let sessionOpts: RunOptions | null = null;
+let disposeLayers: (() => void) | null = null;
+let keymapRef: ReturnType<typeof createDefaultOpenTuiKeymap> | null = null;
 
 async function readAllStdin(): Promise<string> {
   if (process.stdin.isTTY) {
@@ -59,19 +63,30 @@ async function startSession(opts: RunOptions): Promise<void> {
   }
   const { config } = cfgRes;
 
-  const keymapRes = resolveKeymap(config.keybindings);
-  if (!keymapRes.ok) {
-    const msg = keymapRes.errors.map((e) => e.message).join("; ");
+  const keymap = keymapRef;
+  if (!keymap) {
+    store.set({ fatalError: "keymap not initialized — press r to retry" });
+    return;
+  }
+
+  const validation = validateKeybindings(keymap, config.keybindings);
+  if (!validation.ok) {
+    const msg = validation.errors.map((e) => e.message).join("; ");
     store.set({
       fatalError: `keybindings invalid: ${msg} — fix ${cfgRes.path} and press r to retry`,
     });
     return;
   }
 
+  if (disposeLayers) {
+    disposeLayers();
+    disposeLayers = null;
+  }
+  disposeLayers = registerAppLayers(keymap, store, config.keybindings);
+
   store.set({
     gutterSign: config.gutterSign,
     ignoreFiles: config.ignoreFiles,
-    keymap: keymapRes.keymap,
     layoutMode: parseDiffMode(opts.flags.mode) ?? config.mode,
     lineNumbers: config.lineNumbers,
     sidebarView: parseSidebarView(opts.flags.view) ?? config.view,
@@ -164,8 +179,10 @@ async function boot(opts: RunOptions): Promise<void> {
     setTimeout(() => process.exit(0), EXIT_DELAY_MS);
   });
 
+  keymapRef = createDefaultOpenTuiKeymap(renderer);
+
   const root = createRoot(renderer);
-  root.render(<App />);
+  root.render(<App keymap={keymapRef} />);
 
   sessionOpts = opts;
   setRestartHandler(() => {

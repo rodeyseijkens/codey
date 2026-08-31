@@ -1,17 +1,23 @@
+import type { KeyEvent, Renderable } from "@opentui/core";
+import type { Keymap } from "@opentui/keymap";
+import { KeymapProvider } from "@opentui/keymap/react";
 import { useKeyboard } from "@opentui/react";
 
-import { keyEventToChord } from "../keymap/chords";
-import { handleKeyEvent, restart } from "../state/dispatch";
+import { handleCtrlC } from "../state/ctrl-c";
+import { restart } from "../state/lifecycle";
 import { getStore, useAppState } from "../state/store";
 import { ColorProvider } from "./color-context";
 import { getThemeColors } from "./colors";
 import { DiffPane } from "./diff-pane";
-import { KeymapContext } from "./keymap-context";
 import { Overlays } from "./overlays";
 import { Sidebar } from "./sidebar";
 import { BottomBar, TopBar } from "./status-bar";
 
-export function App() {
+function isCtrlC(e: KeyEvent): boolean {
+  return Boolean(e.ctrl) && !e.meta && !e.shift && e.name.toLowerCase() === "c";
+}
+
+export function App({ keymap }: { keymap: Keymap<Renderable, KeyEvent> }) {
   const state = useAppState();
   const colors = getThemeColors(state.theme);
   const C = colors.ui;
@@ -19,15 +25,17 @@ export function App() {
   useKeyboard((e) => {
     const s = getStore().getState();
     if (s.fatalError) {
-      const chord = keyEventToChord(e);
-      if (chord?.key === "q" || (chord?.ctrl && chord.key === "c")) {
+      const name = e.name?.toLowerCase() ?? "";
+      if (name === "q" || (e.ctrl && name === "c")) {
         process.exit(0);
-      } else if (chord?.key === "r") {
+      } else if (name === "r") {
         restart();
       }
       return;
     }
-    handleKeyEvent(e, s.keymap);
+    if (isCtrlC(e)) {
+      handleCtrlC(getStore());
+    }
   });
 
   if (state.fatalError) {
@@ -51,7 +59,7 @@ export function App() {
 
   return (
     <ColorProvider colors={colors}>
-      <KeymapContext.Provider value={state.keymap}>
+      <KeymapProvider keymap={keymap}>
         <box
           style={{
             backgroundColor: C.bg,
@@ -68,7 +76,7 @@ export function App() {
           <BottomBar />
           <Overlays />
         </box>
-      </KeymapContext.Provider>
+      </KeymapProvider>
     </ColorProvider>
   );
 }

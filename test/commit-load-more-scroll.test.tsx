@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { act } from "react";
 import { testRender } from "@opentui/react/test-utils";
 
-import { resolveKeymap } from "../src/keymap/index";
 import { loadMoreCommits } from "../src/state/actions/commits";
 import { AppStore, setStore } from "../src/state/store";
 import type { CommitEntry, FileStatus } from "../src/types";
@@ -13,11 +12,6 @@ import { gitThrow } from "../src/vcs/git";
 import { afterAll, describe, expect, test } from "bun:test";
 
 const CURSOR_KEY_RE = /^commit:/;
-
-const keymapRes = resolveKeymap({});
-if (!keymapRes.ok) {
-  throw new Error("expected default keymap");
-}
 
 const dirs: string[] = [];
 
@@ -125,7 +119,6 @@ describe("commit load more keeps scroll position", () => {
       commitEntries,
       commitHasMore: true,
       commitOffset: 10,
-      keymap: keymapRes.keymap,
     });
     setStore(store);
     store.set({

@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from "react";
 
-import { type ResolvedKeymap, resolveKeymap } from "../keymap/index";
 import { buildFileTree, visibleTreeNodes } from "../lib/tree";
 import type {
   Changeset,
@@ -128,7 +127,6 @@ export type AppState = {
   focus: FocusPane;
   gutterSign: boolean;
   ignoreFiles: readonly string[];
-  keymap: ResolvedKeymap;
   lastFile: { index: number; scope: Scope } | null;
   layoutMode: DiffMode;
   lineNumbers: boolean;
@@ -156,14 +154,6 @@ export type AppState = {
   wrapLines: boolean;
 };
 
-function defaultKeymap(): ResolvedKeymap {
-  const res = resolveKeymap({});
-  if (res.ok) {
-    return res.keymap;
-  }
-  return { byChord: new Map(), byCommand: new Map(), chords: new Map() };
-}
-
 export function initialState(): AppState {
   return {
     anchorRow: null,
@@ -190,7 +180,6 @@ export function initialState(): AppState {
     focus: "sidebar",
     gutterSign: false,
     ignoreFiles: [],
-    keymap: defaultKeymap(),
     lastFile: null,
     layoutMode: LAYOUT_MODES.auto,
     lineNumbers: true,

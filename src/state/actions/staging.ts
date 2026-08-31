@@ -43,7 +43,7 @@ function selectionPaths(
       .map((f) => f.path);
     return { paths, scope: sel.scope };
   }
-  return { paths: cs.files.map((f) => f.path), scope: sel.scope };
+  return null;
 }
 
 export async function stageSelected(): Promise<void> {

@@ -5,6 +5,7 @@ import {
   type ScrollBoxRenderable,
   type TextareaRenderable,
 } from "@opentui/core";
+import { useKeymap } from "@opentui/keymap/react";
 import { useKeyboard } from "@opentui/react";
 
 import {
@@ -22,8 +23,25 @@ import { openRewordDraft } from "../state/actions/drafts";
 import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { EM_SPACE } from "./icons";
-import { useKeymap } from "./keymap-context";
 import { useDraftClear } from "./use-draft-clear";
+
+const SHORT_HASH_LEN = 7;
+const SCROLL_STEP = 10;
+
+function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): void {
+  if (!scroll) {
+    return;
+  }
+  if (name === "j" || name === "down") {
+    scroll.scrollTop += 1;
+  } else if (name === "k" || name === "up") {
+    scroll.scrollTop = Math.max(0, scroll.scrollTop - 1);
+  } else if (name === "pagedown") {
+    scroll.scrollTop += SCROLL_STEP;
+  } else if (name === "pageup") {
+    scroll.scrollTop = Math.max(0, scroll.scrollTop - SCROLL_STEP);
+  }
+}
 
 function OverlayFrame(props: {
   title: string;
@@ -82,50 +100,32 @@ function OverlayFrame(props: {
   );
 }
 
-const SHORT_HASH_LEN = 7;
-const SCROLL_STEP = 10;
-
-function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): void {
-  if (!scroll) {
-    return;
-  }
-  if (name === "j" || name === "down") {
-    scroll.scrollTop += 1;
-  } else if (name === "k" || name === "up") {
-    scroll.scrollTop = Math.max(0, scroll.scrollTop - 1);
-  } else if (name === "pagedown") {
-    scroll.scrollTop += SCROLL_STEP;
-  } else if (name === "pageup") {
-    scroll.scrollTop = Math.max(0, scroll.scrollTop - SCROLL_STEP);
-  }
+function ActiveBindingRow({ cmd }: { cmd: CommandId }) {
+  const keymap = useKeymap();
+  const { ui: C } = useColors();
+  const entries = keymap.getCommandBindings({
+    commands: [cmd],
+    visibility: "registered",
+  });
+  const bindings = entries.get(cmd);
+  const firstBinding = bindings?.[0];
+  const firstPart = firstBinding?.sequence[0];
+  const chord = firstPart?.stroke ? keymap.formatKey(firstPart.stroke) : "";
+  const desc = COMMAND_DESCRIPTIONS[cmd] ?? "";
+  return (
+    <box style={{ flexDirection: "row", height: 1 }}>
+      <text style={{ fg: chord ? C.yellow : C.dim, width: 16 }}>
+        {chord || "\u2014"}
+      </text>
+      <text style={{ fg: C.dim }}>{desc}</text>
+    </box>
+  );
 }
 
 function HelpOverlay() {
-  const keymap = useKeymap();
   const store = getStore();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const { ui: C } = useColors();
-  const entries = [...keymap.byCommand.entries()].map(([cmd, chord]) => ({
-    chord,
-    cmd,
-    desc: COMMAND_DESCRIPTIONS[cmd as CommandId] ?? "",
-  }));
-  const byCmd = new Map(entries.map((e) => [e.cmd, e]));
-  const sections = COMMAND_SECTIONS.map((section) => ({
-    entries: section.commands.map((cmd) => {
-      const e = byCmd.get(cmd);
-      if (e) {
-        return e;
-      }
-      return {
-        chord: "",
-        cmd,
-        desc: COMMAND_DESCRIPTIONS[cmd as CommandId] ?? "",
-      };
-    }),
-    title: section.title,
-  }));
-  const leftover = entries.filter((e) => !byCmd.has(e.cmd));
 
   useKeyboard((e) => {
     if (store.getState().overlay?.kind !== "help") {
@@ -148,41 +148,17 @@ function HelpOverlay() {
         style={{ flexGrow: 1 }}
       >
         <box style={{ flexDirection: "column" }}>
-          {sections.map((section, sectionIndex) => (
+          {COMMAND_SECTIONS.map((section, sectionIndex) => (
             <box key={section.title} style={{ flexDirection: "column" }}>
               {sectionIndex > 0 ? (
-                <text style={{ fg: C.border }}>{"─".repeat(40)}</text>
+                <text style={{ fg: C.border }}>{"\u2500".repeat(40)}</text>
               ) : null}
               <text style={{ fg: C.accent }}>{section.title}</text>
-              {section.entries.map((entry) => (
-                <box
-                  key={entry.cmd}
-                  style={{ flexDirection: "row", height: 1 }}
-                >
-                  <text
-                    style={{
-                      fg: entry.chord ? C.yellow : C.dim,
-                      width: 16,
-                    }}
-                  >
-                    {entry.chord || "—"}
-                  </text>
-                  <text style={{ fg: C.dim }}>{entry.desc}</text>
-                </box>
+              {section.commands.map((cmd) => (
+                <ActiveBindingRow cmd={cmd} key={cmd} />
               ))}
             </box>
           ))}
-          {leftover.length > 0 ? (
-            <box key="other" style={{ flexDirection: "column" }}>
-              <text style={{ fg: C.accent }}>Other</text>
-              {leftover.map((e) => (
-                <box key={e.cmd} style={{ flexDirection: "row", height: 1 }}>
-                  <text style={{ fg: C.yellow, width: 16 }}>{e.chord}</text>
-                  <text style={{ fg: C.dim }}>{e.desc}</text>
-                </box>
-              ))}
-            </box>
-          ) : null}
         </box>
       </scrollbox>
     </OverlayFrame>
@@ -275,7 +251,7 @@ function CommitInputOverlay() {
           const text = textareaRef.current?.plainText ?? "";
           await submitCommitDraft(text);
         }}
-        placeholder="commit message — Enter to commit, esc to cancel"
+        placeholder="commit message \u2014 Enter to commit, esc to cancel"
         ref={textareaRef}
         textColor={C.fg}
         width={contentWidth}
@@ -447,7 +423,7 @@ function RewordInputOverlay() {
           const text = textareaRef.current?.plainText ?? "";
           await confirmGitReword(text);
         }}
-        placeholder="new commit message — Enter to confirm, esc to cancel"
+        placeholder="new commit message \u2014 Enter to confirm, esc to cancel"
         ref={textareaRef}
         textColor={C.fg}
         width={contentWidth}

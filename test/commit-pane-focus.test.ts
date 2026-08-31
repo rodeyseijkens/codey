@@ -2,7 +2,6 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { resolveKeymap } from "../src/keymap/index";
 import {
   commitSelectNext,
   commitSelectNextFile,
@@ -19,7 +18,7 @@ import {
   toggleFocus,
   toggleSidebar,
 } from "../src/state/actions/navigation";
-import { dispatchCommand } from "../src/state/dispatch";
+import { dispatchCommand } from "../src/state/command-registry";
 import {
   type AppState,
   AppStore,
@@ -29,12 +28,6 @@ import {
 import type { CommitEntry, FileDiff, FileStatus } from "../src/types";
 import { gitThrow } from "../src/vcs/git";
 import { afterAll, describe, expect, test } from "bun:test";
-
-const keymapRes = resolveKeymap({});
-if (!keymapRes.ok) {
-  throw new Error("expected default keymap");
-}
-const { keymap } = keymapRes;
 
 const dirs: string[] = [];
 
@@ -68,7 +61,7 @@ afterAll(async () => {
 });
 
 function setupStore(init: Partial<AppState> = {}, repoRoot?: string): AppStore {
-  const store = new AppStore({ keymap, ...init });
+  const store = new AppStore(init);
   setStore(store);
   if (repoRoot) {
     store.set({

@@ -1,7 +1,12 @@
-export type CommandSection = "changes" | "diff" | "commits" | "global";
+export type CommandSection =
+  | "changes"
+  | "diff"
+  | "commits"
+  | "global"
+  | "overlay";
 
 export type CommandDef = {
-  defaultKey: string;
+  defaultKey: string | readonly string[];
   description: string;
   section: CommandSection;
 };
@@ -41,6 +46,16 @@ export const COMMAND_DEFS = {
   "delete-comment": {
     defaultKey: "d",
     description: "Delete the comment on the current line",
+    section: "diff",
+  },
+  "diff-search-next": {
+    defaultKey: "n",
+    description: "Next diff search match",
+    section: "diff",
+  },
+  "diff-search-prev": {
+    defaultKey: "shift+n",
+    description: "Previous diff search match",
     section: "diff",
   },
   "edit-comment": {
@@ -84,7 +99,7 @@ export const COMMAND_DEFS = {
     section: "commits",
   },
   "git-push": {
-    defaultKey: "P",
+    defaultKey: "shift+p",
     description: "Push to the remote (commit pane)",
     section: "commits",
   },
@@ -108,6 +123,65 @@ export const COMMAND_DEFS = {
     description: "Jump to next hunk",
     section: "diff",
   },
+
+  // Search commands
+  "open-diff-search": {
+    defaultKey: "/",
+    description: "Open diff search",
+    section: "diff",
+  },
+
+  // Overlay commands
+  "overlay-confirm": {
+    defaultKey: ["return", "y"],
+    description: "Confirm overlay action",
+    section: "overlay",
+  },
+  "overlay-edit-amend": {
+    defaultKey: "a",
+    description: "Amend commit with staged changes",
+    section: "overlay",
+  },
+  "overlay-edit-drop": {
+    defaultKey: "d",
+    description: "Drop commit",
+    section: "overlay",
+  },
+  "overlay-edit-fixup": {
+    defaultKey: "f",
+    description: "Fixup commit (discard message)",
+    section: "overlay",
+  },
+  "overlay-edit-squash": {
+    defaultKey: "s",
+    description: "Squash commit into parent",
+    section: "overlay",
+  },
+  "overlay-reset-hard": {
+    defaultKey: "h",
+    description: "Git reset --hard",
+    section: "overlay",
+  },
+  "overlay-reset-mixed": {
+    defaultKey: "m",
+    description: "Git reset --mixed",
+    section: "overlay",
+  },
+  "overlay-reset-soft": {
+    defaultKey: "s",
+    description: "Git reset --soft",
+    section: "overlay",
+  },
+  "overlay-to-reset": {
+    defaultKey: "g",
+    description: "Switch to reset overlay",
+    section: "overlay",
+  },
+  "overlay-to-reword": {
+    defaultKey: "r",
+    description: "Reword commit message",
+    section: "overlay",
+  },
   "page-cursor-half-down": {
     defaultKey: "ctrl+d",
     description: "Move cursor and page half page down",
@@ -119,22 +193,22 @@ export const COMMAND_DEFS = {
     section: "diff",
   },
   "page-down": {
-    defaultKey: "ctrl+f",
+    defaultKey: ["ctrl+f", "pagedown"],
     description: "Move page down",
     section: "diff",
   },
   "page-up": {
-    defaultKey: "ctrl+b",
+    defaultKey: ["ctrl+b", "pageup"],
     description: "Move page up",
     section: "diff",
   },
   "prev-comment": {
-    defaultKey: "N",
+    defaultKey: "shift+n",
     description: "Jump to previous comment",
     section: "diff",
   },
   "prev-file": {
-    defaultKey: "F",
+    defaultKey: "shift+f",
     description: "Jump to previous file",
     section: "changes",
   },
@@ -150,12 +224,12 @@ export const COMMAND_DEFS = {
     section: "changes",
   },
   "select-next": {
-    defaultKey: "j",
+    defaultKey: ["j", "down"],
     description: "Move selection down",
     section: "changes",
   },
   "select-prev": {
-    defaultKey: "k",
+    defaultKey: ["k", "up"],
     description: "Move selection up",
     section: "changes",
   },
@@ -175,7 +249,7 @@ export const COMMAND_DEFS = {
     section: "changes",
   },
   "stage-all": {
-    defaultKey: "A",
+    defaultKey: "shift+a",
     description: "Stage all changed files",
     section: "changes",
   },
@@ -200,7 +274,7 @@ export const COMMAND_DEFS = {
     section: "changes",
   },
   "unstage-all": {
-    defaultKey: "U",
+    defaultKey: "shift+u",
     description: "Unstage all staged files",
     section: "changes",
   },
@@ -231,13 +305,14 @@ export const COMMAND_DESCRIPTIONS = Object.fromEntries(
 
 export const DEFAULT_KEYBINDINGS = Object.fromEntries(
   Object.entries(COMMAND_DEFS).map(([key, def]) => [key, def.defaultKey]),
-) as Record<CommandId, string>;
+) as Record<CommandId, string | readonly string[]>;
 
 const SECTION_TITLES = {
   changes: "Changes",
   commits: "Commits",
   diff: "Diff",
   global: "Global",
+  overlay: "Overlays",
 };
 
 const sectionEntries = Object.entries(COMMAND_DEFS) as [
@@ -251,7 +326,7 @@ const grouped = Object.groupBy(
 ) as Record<CommandSection, [CommandId, CommandDef][]>;
 
 export const COMMAND_SECTIONS = (
-  ["changes", "diff", "commits", "global"] as CommandSection[]
+  ["changes", "diff", "commits", "global", "overlay"] as CommandSection[]
 ).map((section) => ({
   commands: (grouped[section] ?? []).map(([id]) => id),
   title: SECTION_TITLES[section],
