@@ -1,0 +1,457 @@
+export const BUNDLED_SHIKI_THEME_IDS = [
+  "andromeeda",
+  "aurora-x",
+  "ayu-dark",
+  "ayu-light",
+  "ayu-mirage",
+  "catppuccin-frappe",
+  "catppuccin-latte",
+  "catppuccin-macchiato",
+  "catppuccin-mocha",
+  "dark-plus",
+  "dracula",
+  "dracula-soft",
+  "everforest-dark",
+  "everforest-light",
+  "github-dark",
+  "github-dark-default",
+  "github-dark-dimmed",
+  "github-dark-high-contrast",
+  "github-light",
+  "github-light-default",
+  "github-light-high-contrast",
+  "gruvbox-dark-hard",
+  "gruvbox-dark-medium",
+  "gruvbox-dark-soft",
+  "gruvbox-light-hard",
+  "gruvbox-light-medium",
+  "gruvbox-light-soft",
+  "horizon",
+  "horizon-bright",
+  "houston",
+  "kanagawa-dragon",
+  "kanagawa-lotus",
+  "kanagawa-wave",
+  "laserwave",
+  "light-plus",
+  "material-theme",
+  "material-theme-darker",
+  "material-theme-lighter",
+  "material-theme-ocean",
+  "material-theme-palenight",
+  "min-dark",
+  "min-light",
+  "monokai",
+  "night-owl",
+  "night-owl-light",
+  "nord",
+  "one-dark-pro",
+  "one-light",
+  "plastic",
+  "poimandres",
+  "red",
+  "rose-pine",
+  "rose-pine-dawn",
+  "rose-pine-moon",
+  "slack-dark",
+  "slack-ochin",
+  "snazzy-light",
+  "solarized-dark",
+  "solarized-light",
+  "synthwave-84",
+  "tokyo-night",
+  "vesper",
+  "vitesse-black",
+  "vitesse-dark",
+  "vitesse-light",
+] as const;
+
+export type BundledShikiThemeId = (typeof BUNDLED_SHIKI_THEME_IDS)[number];
+
+export const LEGACY_THEME_ID_ALIASES = {
+  ember: "dark-plus",
+  graphite: "github-dark-default",
+  midnight: "github-dark-dimmed",
+  paper: "github-light-default",
+  zenburn: "everforest-dark",
+} as const satisfies Record<string, BundledShikiThemeId>;
+
+/** Map removed pre-refactor theme ids to their closest built-in replacements. */
+export function resolveLegacyThemeId(themeId: string | undefined) {
+  return themeId
+    ? (LEGACY_THEME_ID_ALIASES[
+        themeId as keyof typeof LEGACY_THEME_ID_ALIASES
+      ] ?? themeId)
+    : undefined;
+}
+
+/** Resolve a current or legacy id when it names one bundled theme. */
+export function resolveBundledShikiThemeId(
+  themeId: string | undefined,
+): BundledShikiThemeId | undefined {
+  const resolvedThemeId = resolveLegacyThemeId(themeId);
+  return BUNDLED_SHIKI_THEME_IDS.includes(
+    resolvedThemeId as BundledShikiThemeId,
+  )
+    ? (resolvedThemeId as BundledShikiThemeId)
+    : undefined;
+}
+
+export type BundledShikiThemeDiffColors = {
+  added?: string;
+  modified?: string;
+  removed?: string;
+};
+
+export const BUNDLED_SHIKI_THEME_BACKGROUNDS: Record<
+  BundledShikiThemeId,
+  string
+> = {
+  andromeeda: "#23262e",
+  "aurora-x": "#07090f",
+  "ayu-dark": "#10141c",
+  "ayu-light": "#fcfcfc",
+  "ayu-mirage": "#242936",
+  "catppuccin-frappe": "#303446",
+  "catppuccin-latte": "#eff1f5",
+  "catppuccin-macchiato": "#24273a",
+  "catppuccin-mocha": "#1e1e2e",
+  "dark-plus": "#1e1e1e",
+  dracula: "#282a36",
+  "dracula-soft": "#282a36",
+  "everforest-dark": "#2d353b",
+  "everforest-light": "#fdf6e3",
+  "github-dark": "#24292e",
+  "github-dark-default": "#0d1117",
+  "github-dark-dimmed": "#22272e",
+  "github-dark-high-contrast": "#0a0c10",
+  "github-light": "#ffffff",
+  "github-light-default": "#ffffff",
+  "github-light-high-contrast": "#ffffff",
+  "gruvbox-dark-hard": "#1d2021",
+  "gruvbox-dark-medium": "#282828",
+  "gruvbox-dark-soft": "#32302f",
+  "gruvbox-light-hard": "#f9f5d7",
+  "gruvbox-light-medium": "#fbf1c7",
+  "gruvbox-light-soft": "#f2e5bc",
+  horizon: "#1c1e26",
+  "horizon-bright": "#fdf0ed",
+  houston: "#17191e",
+  "kanagawa-dragon": "#181616",
+  "kanagawa-lotus": "#f2ecbc",
+  "kanagawa-wave": "#1f1f28",
+  laserwave: "#27212e",
+  "light-plus": "#ffffff",
+  "material-theme": "#263238",
+  "material-theme-darker": "#212121",
+  "material-theme-lighter": "#fafafa",
+  "material-theme-ocean": "#0f111a",
+  "material-theme-palenight": "#292d3e",
+  "min-dark": "#1f1f1f",
+  "min-light": "#ffffff",
+  monokai: "#272822",
+  "night-owl": "#011627",
+  "night-owl-light": "#fbfbfb",
+  nord: "#2e3440",
+  "one-dark-pro": "#282c34",
+  "one-light": "#fafafa",
+  plastic: "#21252b",
+  poimandres: "#1b1e28",
+  red: "#390000",
+  "rose-pine": "#191724",
+  "rose-pine-dawn": "#faf4ed",
+  "rose-pine-moon": "#232136",
+  "slack-dark": "#222222",
+  "slack-ochin": "#ffffff",
+  "snazzy-light": "#fafbfc",
+  "solarized-dark": "#002b36",
+  "solarized-light": "#fdf6e3",
+  "synthwave-84": "#262335",
+  "tokyo-night": "#1a1b26",
+  vesper: "#101010",
+  "vitesse-black": "#000000",
+  "vitesse-dark": "#121212",
+  "vitesse-light": "#ffffff",
+};
+
+export const BUNDLED_SHIKI_THEME_FOREGROUNDS: Partial<
+  Record<BundledShikiThemeId, string>
+> = {
+  andromeeda: "#d5ced9",
+  "ayu-dark": "#bfbdb6",
+  "ayu-light": "#5c6166",
+  "ayu-mirage": "#cccac2",
+  "catppuccin-frappe": "#c6d0f5",
+  "catppuccin-latte": "#4c4f69",
+  "catppuccin-macchiato": "#cad3f5",
+  "catppuccin-mocha": "#cdd6f4",
+  "dark-plus": "#d4d4d4",
+  dracula: "#f8f8f2",
+  "dracula-soft": "#f6f6f4",
+  "everforest-dark": "#d3c6aa",
+  "everforest-light": "#5c6a72",
+  "github-dark": "#e1e4e8",
+  "github-dark-default": "#e6edf3",
+  "github-dark-dimmed": "#adbac7",
+  "github-dark-high-contrast": "#f0f3f6",
+  "github-light": "#24292e",
+  "github-light-default": "#1f2328",
+  "github-light-high-contrast": "#0e1116",
+  "gruvbox-dark-hard": "#ebdbb2",
+  "gruvbox-dark-medium": "#ebdbb2",
+  "gruvbox-dark-soft": "#ebdbb2",
+  "gruvbox-light-hard": "#3c3836",
+  "gruvbox-light-medium": "#3c3836",
+  "gruvbox-light-soft": "#3c3836",
+  houston: "#eef0f9",
+  "kanagawa-dragon": "#c5c9c5",
+  "kanagawa-lotus": "#545464",
+  "kanagawa-wave": "#dcd7ba",
+  laserwave: "#ffffff",
+  "light-plus": "#000000",
+  "material-theme": "#eeffff",
+  "material-theme-darker": "#eeffff",
+  "material-theme-lighter": "#90a4ae",
+  "material-theme-ocean": "#babed8",
+  "material-theme-palenight": "#babed8",
+  "min-light": "#212121",
+  monokai: "#f8f8f2",
+  "night-owl": "#d6deeb",
+  "night-owl-light": "#403f53",
+  nord: "#d8dee9",
+  "one-dark-pro": "#abb2bf",
+  "one-light": "#383a42",
+  plastic: "#a9b2c3",
+  poimandres: "#a6accd",
+  red: "#f8f8f8",
+  "rose-pine": "#e0def4",
+  "rose-pine-dawn": "#575279",
+  "rose-pine-moon": "#e0def4",
+  "slack-dark": "#e6e6e6",
+  "slack-ochin": "#000000",
+  "snazzy-light": "#565869",
+  "solarized-dark": "#839496",
+  "solarized-light": "#657b83",
+  "tokyo-night": "#a9b1d6",
+  vesper: "#ffffff",
+  "vitesse-black": "#dbd7ca",
+  "vitesse-dark": "#dbd7ca",
+  "vitesse-light": "#393a34",
+};
+
+export const BUNDLED_SHIKI_THEME_DIFF_COLORS: Partial<
+  Record<BundledShikiThemeId, BundledShikiThemeDiffColors>
+> = {
+  andromeeda: { added: "#96e072", modified: "#7cb7ff", removed: "#ee5d43" },
+  "aurora-x": { added: "#63d188", modified: "#c778db", removed: "#dd5074" },
+  "ayu-dark": { added: "#70bf56", modified: "#73b8ff", removed: "#f26d78" },
+  "ayu-light": { added: "#6cbf43", modified: "#478acc", removed: "#ff7383" },
+  "ayu-mirage": { added: "#87d96c", modified: "#80bfff", removed: "#f27983" },
+  "catppuccin-frappe": {
+    added: "#a6d189",
+    modified: "#e5c890",
+    removed: "#e78284",
+  },
+  "catppuccin-latte": {
+    added: "#40a02b",
+    modified: "#df8e1d",
+    removed: "#d20f39",
+  },
+  "catppuccin-macchiato": {
+    added: "#a6da95",
+    modified: "#eed49f",
+    removed: "#ed8796",
+  },
+  "catppuccin-mocha": {
+    added: "#a6e3a1",
+    modified: "#f9e2af",
+    removed: "#f38ba8",
+  },
+  dracula: { added: "#50fa7b", modified: "#8be9fd", removed: "#ff5555" },
+  "dracula-soft": { added: "#62e884", modified: "#97e1f1", removed: "#ee6666" },
+  "everforest-dark": {
+    added: "#7a8c66",
+    modified: "#608986",
+    removed: "#a16366",
+  },
+  "everforest-light": {
+    added: "#b7c155",
+    modified: "#83b9d0",
+    removed: "#fa9188",
+  },
+  "github-dark": { added: "#34d058", modified: "#79b8ff", removed: "#ea4a5a" },
+  "github-dark-default": {
+    added: "#3fb950",
+    modified: "#d29922",
+    removed: "#f85149",
+  },
+  "github-dark-dimmed": {
+    added: "#57ab5a",
+    modified: "#c69026",
+    removed: "#e5534b",
+  },
+  "github-dark-high-contrast": {
+    added: "#26cd4d",
+    modified: "#f0b72f",
+    removed: "#ff6a69",
+  },
+  "github-light": { added: "#28a745", modified: "#005cc5", removed: "#d73a49" },
+  "github-light-default": {
+    added: "#1a7f37",
+    modified: "#9a6700",
+    removed: "#cf222e",
+  },
+  "github-light-high-contrast": {
+    added: "#055d20",
+    modified: "#744500",
+    removed: "#a0111f",
+  },
+  "gruvbox-dark-hard": {
+    added: "#ebdbb2",
+    modified: "#d79921",
+    removed: "#cc241d",
+  },
+  "gruvbox-dark-medium": {
+    added: "#ebdbb2",
+    modified: "#d79921",
+    removed: "#cc241d",
+  },
+  "gruvbox-dark-soft": {
+    added: "#ebdbb2",
+    modified: "#d79921",
+    removed: "#cc241d",
+  },
+  "gruvbox-light-hard": {
+    added: "#3c3836",
+    modified: "#d79921",
+    removed: "#cc241d",
+  },
+  "gruvbox-light-medium": {
+    added: "#3c3836",
+    modified: "#d79921",
+    removed: "#cc241d",
+  },
+  "gruvbox-light-soft": {
+    added: "#3c3836",
+    modified: "#d79921",
+    removed: "#cc241d",
+  },
+  horizon: { added: "#24a075", modified: "#fab38e", removed: "#f43e5c" },
+  "horizon-bright": {
+    added: "#60c9a0",
+    modified: "#af5427",
+    removed: "#f43e5c",
+  },
+  houston: { added: "#4bf3c8", modified: "#ffd493", removed: "#f4587e" },
+  "kanagawa-dragon": {
+    added: "#8a9a7b",
+    modified: "#8ba4b0",
+    removed: "#c4746e",
+  },
+  "kanagawa-lotus": {
+    added: "#6f894e",
+    modified: "#4d699b",
+    removed: "#c84053",
+  },
+  "kanagawa-wave": {
+    added: "#76946a",
+    modified: "#7e9cd8",
+    removed: "#c34043",
+  },
+  laserwave: { added: "#74dfc4", modified: "#74dfc4", removed: "#b381c5" },
+  "material-theme": {
+    added: "#c3e88d",
+    modified: "#5a76a8",
+    removed: "#98565c",
+  },
+  "material-theme-darker": {
+    added: "#c3e88d",
+    modified: "#586e9e",
+    removed: "#964e52",
+  },
+  "material-theme-lighter": {
+    added: "#91b859",
+    modified: "#a4b6d5",
+    removed: "#ee8d8b",
+  },
+  "material-theme-ocean": {
+    added: "#c3e88d",
+    modified: "#50679b",
+    removed: "#8e474f",
+  },
+  "material-theme-palenight": {
+    added: "#c3e88d",
+    modified: "#5b74ab",
+    removed: "#99535f",
+  },
+  "min-light": { added: "#77cc00", modified: "#e0e0e0", removed: "#d32f2f" },
+  monokai: { added: "#86b42b", modified: "#6a7ec8", removed: "#c4265e" },
+  "night-owl": { added: "#22da6e", modified: "#a2bffc", removed: "#87383e" },
+  "night-owl-light": {
+    added: "#08916a",
+    modified: "#288ed7",
+    removed: "#de3d3b",
+  },
+  nord: { added: "#a3be8c", modified: "#ebcb8b", removed: "#bf616a" },
+  "one-dark-pro": { added: "#8cc265", modified: "#4aa5f0", removed: "#e05561" },
+  plastic: { added: "#98c379", modified: "#d19a66", removed: "#e06c75" },
+  poimandres: { added: "#5fb3a1", modified: "#add7ff", removed: "#d0679d" },
+  "rose-pine": { added: "#9ccfd8", modified: "#ebbcba", removed: "#908caa" },
+  "rose-pine-dawn": {
+    added: "#56949f",
+    modified: "#d7827e",
+    removed: "#797593",
+  },
+  "rose-pine-moon": {
+    added: "#9ccfd8",
+    modified: "#ea9a97",
+    removed: "#908caa",
+  },
+  "slack-dark": { added: "#ecb22e", modified: "#ecb22e", removed: "#ffffff" },
+  "slack-ochin": { added: "#ecb22e", modified: "#ecb22e", removed: "#ffffff" },
+  "snazzy-light": { added: "#2dae58", modified: "#00a39f", removed: "#ff5c57" },
+  "solarized-dark": {
+    added: "#859900",
+    modified: "#268bd2",
+    removed: "#dc322f",
+  },
+  "solarized-light": {
+    added: "#859900",
+    modified: "#268bd2",
+    removed: "#dc322f",
+  },
+  "synthwave-84": { added: "#63c89e", modified: "#ae8cc4", removed: "#fe4450" },
+  "tokyo-night": { added: "#449dab", modified: "#6183bb", removed: "#914c54" },
+  "vitesse-black": {
+    added: "#4d9375",
+    modified: "#6394bf",
+    removed: "#cb7676",
+  },
+  "vitesse-dark": { added: "#4d9375", modified: "#6394bf", removed: "#cb7676" },
+  "vitesse-light": {
+    added: "#1e754f",
+    modified: "#296aa3",
+    removed: "#ab5959",
+  },
+};
+
+/** Return the editor surface declared by a bundled Shiki theme, when Hunk knows it. */
+export function getBundledShikiThemeBackground(themeId: string | undefined) {
+  return themeId && themeId in BUNDLED_SHIKI_THEME_BACKGROUNDS
+    ? BUNDLED_SHIKI_THEME_BACKGROUNDS[themeId as BundledShikiThemeId]
+    : undefined;
+}
+
+/** Return the editor foreground declared by a bundled Shiki theme, when Hunk knows it. */
+export function getBundledShikiThemeForeground(themeId: string | undefined) {
+  return themeId && themeId in BUNDLED_SHIKI_THEME_FOREGROUNDS
+    ? BUNDLED_SHIKI_THEME_FOREGROUNDS[themeId as BundledShikiThemeId]
+    : undefined;
+}
+
+/** Return semantic diff colors declared by a bundled Shiki theme, when Hunk knows them. */
+export function getBundledShikiThemeDiffColors(themeId: string | undefined) {
+  return themeId && themeId in BUNDLED_SHIKI_THEME_DIFF_COLORS
+    ? BUNDLED_SHIKI_THEME_DIFF_COLORS[themeId as BundledShikiThemeId]
+    : undefined;
+}
