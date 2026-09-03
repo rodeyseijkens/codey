@@ -1,7 +1,7 @@
 import { Fragment, isValidElement, memo, type ReactNode } from "react";
 import { parseColor, StyledText, type TextChunk } from "@opentui/core";
 
-import { reviewGapId } from "../../../diff/gap";
+import { reviewGapId } from "../../../patch/gap";
 import type { AppTheme } from "../../theme/resolve";
 import {
   type ReviewEmptyDiffReason,

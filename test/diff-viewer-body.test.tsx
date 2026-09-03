@@ -3,12 +3,12 @@ import { act } from "react";
 import { testRender } from "@opentui/react/test-utils";
 
 import {
-  createHunkDiffFilesFromPatch,
-  HunkDiffBody,
-  type HunkDiffNote,
-} from "../src/ui/hunk-diff";
-import { buildLineHighlightPaintIndex } from "../src/ui/hunk-diff/diff/lineHighlightPaint";
-import { toInternalDiffFile } from "../src/ui/hunk-diff/model";
+  createDiffViewerFilesFromPatch,
+  DiffBody,
+  type DiffNote,
+} from "../src/ui/diff-viewer";
+import { toInternalDiffFile } from "../src/ui/diff-viewer/model";
+import { buildLineHighlightPaintIndex } from "../src/ui/diff-viewer/render/lineHighlightPaint";
 import { describe, expect, test } from "bun:test";
 
 const DIFF = `diff --git a/foo.ts b/foo.ts
@@ -24,7 +24,7 @@ index 123..456 100644
  line5
 `;
 
-const [file] = createHunkDiffFilesFromPatch(DIFF, "example");
+const [file] = createDiffViewerFilesFromPatch(DIFF, "example");
 if (!file) {
   throw new Error("expected one file");
 }
@@ -47,10 +47,10 @@ async function captureFrame(node: ReactNode, width = 120, height = 24) {
   }
 }
 
-describe("HunkDiffBody extension", () => {
+describe("DiffBody extension", () => {
   test("renders a diff with a cursor row", async () => {
     const frame = await captureFrame(
-      <HunkDiffBody cursorRow={2} file={file} layout="stack" width={80} />,
+      <DiffBody cursorRow={2} file={file} layout="stack" width={80} />,
     );
     expect(frame).toContain("line2 new");
     expect(frame).toContain("line2 old");
@@ -59,7 +59,7 @@ describe("HunkDiffBody extension", () => {
   test("reports the resolved layout row for the cursor", async () => {
     const resolved: number[] = [];
     const setup = await testRender(
-      <HunkDiffBody
+      <DiffBody
         cursorRow={2}
         file={file}
         layout="stack"
@@ -83,7 +83,7 @@ describe("HunkDiffBody extension", () => {
   test("resolves a canonical cursor row against the split layout", async () => {
     const resolved: number[] = [];
     const setup = await testRender(
-      <HunkDiffBody
+      <DiffBody
         cursorRow={3}
         file={file}
         layout="split"
@@ -116,7 +116,7 @@ describe("HunkDiffBody extension", () => {
     });
     expect(lineHighlights).toBeDefined();
     const frame = await captureFrame(
-      <HunkDiffBody
+      <DiffBody
         file={file}
         layout="stack"
         lineHighlights={lineHighlights}
@@ -127,11 +127,11 @@ describe("HunkDiffBody extension", () => {
   });
 
   test("renders inline notes after their anchored rows", async () => {
-    const notes: HunkDiffNote[] = [
+    const notes: DiffNote[] = [
       { anchorRow: 3, id: "n1", text: "should this be here?" },
     ];
     const frame = await captureFrame(
-      <HunkDiffBody file={file} layout="stack" notes={notes} width={80} />,
+      <DiffBody file={file} layout="stack" notes={notes} width={80} />,
     );
     expect(frame).toContain("Your note");
     expect(frame).toContain("foo.ts");
@@ -143,11 +143,11 @@ describe("HunkDiffBody extension", () => {
 
   test("cursor offset accounts for note blocks above the cursor", async () => {
     const resolved: number[] = [];
-    const notes: HunkDiffNote[] = [
+    const notes: DiffNote[] = [
       { anchorRow: 0, id: "n1", text: "note on the header" },
     ];
     const setup = await testRender(
-      <HunkDiffBody
+      <DiffBody
         cursorRow={2}
         file={file}
         layout="stack"
@@ -171,7 +171,7 @@ describe("HunkDiffBody extension", () => {
   });
 
   test("renders a draft input for editing notes", async () => {
-    const notes: HunkDiffNote[] = [
+    const notes: DiffNote[] = [
       {
         anchorRow: 3,
         editing: true,
@@ -181,7 +181,7 @@ describe("HunkDiffBody extension", () => {
       },
     ];
     const frame = await captureFrame(
-      <HunkDiffBody file={file} layout="stack" notes={notes} width={80} />,
+      <DiffBody file={file} layout="stack" notes={notes} width={80} />,
     );
     expect(frame).toContain("Draft note");
     expect(frame).toContain("draft text");

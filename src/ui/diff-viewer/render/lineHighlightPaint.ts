@@ -4,7 +4,7 @@ import {
   type ReviewGapAddress,
   reviewLeadingGap,
   reviewTrailingGap,
-} from "../../../diff/gap";
+} from "../../../patch/gap";
 import type { ValidatedLineHighlight } from "../highlights/validate";
 import { normalizedReviewSourceLines } from "../review/geometry";
 import { reviewExpansionSide } from "../review/types";

@@ -1,4 +1,4 @@
-import { measureTextWidth, sliceTextByWidth } from "../diff/text";
+import { measureTextWidth, sliceTextByWidth } from "../render/text";
 import { isInlineStmlRole, stmlTagRole } from "../review/stml";
 import {
   decodeStmlEntities,

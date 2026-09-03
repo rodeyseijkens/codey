@@ -1,4 +1,4 @@
-import { diffRowsFromPatch } from "../diff/from-patch";
+import { diffRowsFromPatch } from "../patch/from-patch";
 import type { DiffSearch } from "./store";
 
 export function createOpenSearch(): DiffSearch {

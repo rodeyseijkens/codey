@@ -5,11 +5,11 @@ export {
   parsePatchFiles,
 } from "@pierre/diffs";
 
-export { HunkDiffBody } from "./hunk-diff-body";
+export { DiffBody } from "./diff-body";
 export {
-  countHunkDiffStats,
-  createHunkDiffFile,
-  createHunkDiffFilesFromPatch,
+  countDiffViewerStats,
+  createDiffViewerFile,
+  createDiffViewerFilesFromPatch,
 } from "./model";
 export {
   buildCanonicalDiffRows,
@@ -18,10 +18,10 @@ export {
   canonicalRowLabel,
 } from "./rows";
 export type {
-  HunkDiffBodyProps,
-  HunkDiffFile,
-  HunkDiffFileInput,
-  HunkDiffLayout,
-  HunkDiffNote,
-  HunkDiffStats,
+  DiffBodyProps,
+  DiffLayout,
+  DiffNote,
+  DiffStats,
+  DiffViewerFile,
+  DiffViewerFileInput,
 } from "./types";

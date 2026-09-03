@@ -1,7 +1,7 @@
 import type {
   CustomSyntaxColorsConfig,
   CustomSyntaxScopesConfig,
-} from "../hunk-diff/diff/types";
+} from "../diff-viewer/render/types";
 
 /** Deprecated role keys accepted only during the temporary configuration migration window. */
 export const LEGACY_CUSTOM_SYNTAX_COLOR_KEYS = [

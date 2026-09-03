@@ -1,4 +1,4 @@
-export type { ReviewHunkSpan } from "../../../diff/gap";
+export type { ReviewHunkSpan } from "../../../patch/gap";
 export type ReviewSide = "old" | "new";
 
 export type ReviewHunkContentBlock = {

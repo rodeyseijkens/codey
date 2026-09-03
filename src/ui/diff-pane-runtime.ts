@@ -1,7 +1,7 @@
 import type { ScrollBoxRenderable } from "@opentui/core";
 
 import { getStore } from "../state/store";
-import type { CanonicalDiffRow } from "./hunk-diff";
+import type { CanonicalDiffRow } from "./diff-viewer";
 
 type DiffPaneHandle = {
   getRows: () => readonly CanonicalDiffRow[];

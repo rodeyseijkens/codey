@@ -1,5 +1,5 @@
-import { diffRowsFromPatch } from "../diff/from-patch";
-import { type CanonicalDiffRow, canonicalRowLabel } from "../diff/rows";
+import { diffRowsFromPatch } from "../patch/from-patch";
+import { type CanonicalDiffRow, canonicalRowLabel } from "../patch/rows";
 import { type Comment, TOAST_KINDS } from "../types";
 import { getStore } from "./store";
 

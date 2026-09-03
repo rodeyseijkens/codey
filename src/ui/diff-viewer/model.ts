@@ -1,27 +1,27 @@
 import { parsePatchFiles } from "@pierre/diffs";
 
-import { normalizePatch } from "../../diff/patch/normalize";
-import { buildCanonicalDiffRows } from "../../diff/rows";
-import { patchLooksBinary } from "./diff/binary";
-import { findPatchChunk, splitPatchIntoFileChunks } from "./diff/chunks";
-import { countDiffStats } from "./diff/diffFile";
+import { normalizePatch } from "../../patch/patch/normalize";
+import { buildCanonicalDiffRows } from "../../patch/rows";
+import { patchLooksBinary } from "./render/binary";
+import { findPatchChunk, splitPatchIntoFileChunks } from "./render/chunks";
+import { countDiffStats } from "./render/diffFile";
 import {
   normalizeDiffMetadataPaths,
   normalizeDiffPath,
-} from "./diff/diffPaths";
-import type { DiffFile } from "./diff/types";
-import type { HunkDiffFile, HunkDiffFileInput } from "./types";
+} from "./render/diffPaths";
+import type { DiffFile } from "./render/types";
+import type { DiffViewerFile, DiffViewerFileInput } from "./types";
 
-const NORMALIZED_HUNK_DIFF_FILES = new WeakSet<HunkDiffFile>();
+const NORMALIZED_DIFF_VIEWER_FILES = new WeakSet<DiffViewerFile>();
 
 /** Count visible additions and deletions from Pierre metadata. */
-export const countHunkDiffStats = countDiffStats;
+export const countDiffViewerStats = countDiffStats;
 
 /** Build one public file while optionally preserving paths decoded exactly from Git quoting. */
-function buildHunkDiffFile(
-  input: HunkDiffFileInput,
+function buildDiffViewerFile(
+  input: DiffViewerFileInput,
   pathsAreExact: boolean,
-): HunkDiffFile {
+): DiffViewerFile {
   const metadata = pathsAreExact
     ? input.metadata
     : normalizeDiffMetadataPaths(input.metadata);
@@ -38,30 +38,32 @@ function buildHunkDiffFile(
     metadata,
     path,
     previousPath,
-    stats: input.stats ?? countHunkDiffStats(metadata),
-  } satisfies HunkDiffFile;
+    stats: input.stats ?? countDiffViewerStats(metadata),
+  } satisfies DiffViewerFile;
 
-  NORMALIZED_HUNK_DIFF_FILES.add(normalized);
+  NORMALIZED_DIFF_VIEWER_FILES.add(normalized);
   return normalized;
 }
 
 /** Build Hunk's public OpenTUI file model with normalized paths and default stats. */
-export function createHunkDiffFile(input: HunkDiffFileInput): HunkDiffFile {
-  return buildHunkDiffFile(input, false);
+export function createDiffViewerFile(
+  input: DiffViewerFileInput,
+): DiffViewerFile {
+  return buildDiffViewerFile(input, false);
 }
 
 /** Return an already-normalized public file as-is, or normalize a raw input shape. */
-function resolveHunkDiffFile(input: HunkDiffFileInput) {
-  if (NORMALIZED_HUNK_DIFF_FILES.has(input as HunkDiffFile)) {
-    return input as HunkDiffFile;
+function resolveDiffViewerFile(input: DiffViewerFileInput) {
+  if (NORMALIZED_DIFF_VIEWER_FILES.has(input as DiffViewerFile)) {
+    return input as DiffViewerFile;
   }
 
-  return createHunkDiffFile(input);
+  return createDiffViewerFile(input);
 }
 
 /** Adapt the public OpenTUI file shape into Hunk's internal review file model. */
-export function toInternalDiffFile(diff: HunkDiffFileInput): DiffFile {
-  const normalized = resolveHunkDiffFile(diff);
+export function toInternalDiffFile(diff: DiffViewerFileInput): DiffFile {
+  const normalized = resolveDiffViewerFile(diff);
   const patch = normalized.patch ?? "";
 
   return {
@@ -81,7 +83,7 @@ export function toInternalDiffFile(diff: HunkDiffFileInput): DiffFile {
 }
 
 /** Parse unified diff text into Hunk's public OpenTUI file model. */
-export function createHunkDiffFilesFromPatch(
+export function createDiffViewerFilesFromPatch(
   patchText: string,
   sourceId = "patch",
 ) {
@@ -100,7 +102,7 @@ export function createHunkDiffFilesFromPatch(
           }
         : metadata;
 
-      return buildHunkDiffFile(
+      return buildDiffViewerFile(
         {
           id: `${sourceId}:${index}:${normalizedMetadata.name}`,
           metadata: normalizedMetadata,
@@ -112,6 +114,6 @@ export function createHunkDiffFilesFromPatch(
 }
 
 /** Adapt a list of public OpenTUI files into Hunk's internal review file model. */
-export function toInternalDiffFiles(files: HunkDiffFileInput[]) {
+export function toInternalDiffFiles(files: DiffViewerFileInput[]) {
   return files.map(toInternalDiffFile);
 }

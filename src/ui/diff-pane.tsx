@@ -16,13 +16,13 @@ import { useColors } from "./color-context";
 import { registerDiffPaneHandle } from "./diff-pane-runtime";
 import {
   type CanonicalDiffRow,
-  createHunkDiffFilesFromPatch,
-  HunkDiffBody,
-  type HunkDiffNote,
-} from "./hunk-diff";
-import { buildLineHighlightPaintIndex } from "./hunk-diff/diff/lineHighlightPaint";
-import type { ValidatedLineHighlight } from "./hunk-diff/highlights/validate";
-import { toInternalDiffFile } from "./hunk-diff/model";
+  createDiffViewerFilesFromPatch,
+  DiffBody,
+  type DiffNote,
+} from "./diff-viewer";
+import type { ValidatedLineHighlight } from "./diff-viewer/highlights/validate";
+import { toInternalDiffFile } from "./diff-viewer/model";
+import { buildLineHighlightPaintIndex } from "./diff-viewer/render/lineHighlightPaint";
 
 function resolveViewMode(
   layoutMode: string,
@@ -209,7 +209,7 @@ export function DiffPane() {
   const hunkFiles = useMemo(
     () =>
       file?.diff
-        ? createHunkDiffFilesFromPatch(file.diff, file.path).map((f) => ({
+        ? createDiffViewerFilesFromPatch(file.diff, file.path).map((f) => ({
             ...f,
             language: getFiletypeFromFileName(file.path),
           }))
@@ -237,7 +237,7 @@ export function DiffPane() {
 
   const notes = useMemo(() => {
     const draft = state.commentDraft;
-    const list: HunkDiffNote[] = comments.map((comment) => {
+    const list: DiffNote[] = comments.map((comment) => {
       const editing = draft?.mode === "edit" && draft.commentId === comment.id;
       return {
         anchorRow: comment.endRow,
@@ -475,7 +475,7 @@ export function DiffPane() {
         viewportCulling={false}
         width="100%"
       >
-        <HunkDiffBody
+        <DiffBody
           anchorRow={state.anchorRow ?? undefined}
           cursorRow={state.cursorRow}
           file={hunkFile}

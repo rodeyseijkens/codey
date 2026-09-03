@@ -4,8 +4,8 @@ import { gitUnstaged } from "../src/loaders/gitUnstaged";
 import { twoFile } from "../src/loaders/twoFile";
 import {
   buildCanonicalDiffRows,
-  createHunkDiffFilesFromPatch,
-} from "../src/ui/hunk-diff";
+  createDiffViewerFilesFromPatch,
+} from "../src/ui/diff-viewer";
 import { getRepoRoot, isRepo } from "../src/vcs/git";
 
 async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {
@@ -23,7 +23,7 @@ async function runOnce(root: string, hasHeadCommit: boolean): Promise<void> {
     let rows = 0;
     for (const f of [...staged.files, ...unstaged.files]) {
       if (f.diff) {
-        const files = createHunkDiffFilesFromPatch(f.diff, f.path);
+        const files = createDiffViewerFilesFromPatch(f.diff, f.path);
         rows += files.reduce(
           (total, file) => total + buildCanonicalDiffRows(file).length,
           0,

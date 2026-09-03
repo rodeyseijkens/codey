@@ -4,9 +4,9 @@ import { createTextAttributes, type TextareaRenderable } from "@opentui/core";
 
 import type { AppTheme } from "../../theme/resolve";
 import { useDraftClear } from "../../use-draft-clear";
-import { sanitizeTerminalLine } from "../diff/terminalText";
-import { fitText } from "../diff/text";
-import type { AgentAnnotation, DiffFile, LayoutMode } from "../diff/types";
+import { sanitizeTerminalLine } from "../render/terminalText";
+import { fitText } from "../render/text";
+import type { AgentAnnotation, DiffFile, LayoutMode } from "../render/types";
 import { resolveStmlColor } from "../stml/colors";
 import { layoutStmlCached, type StmlLine } from "../stml/layout";
 import { annotationRangeLabel, reviewNoteSource } from "./agentAnnotations";

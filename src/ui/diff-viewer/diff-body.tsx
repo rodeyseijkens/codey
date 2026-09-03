@@ -5,21 +5,21 @@ import {
   CommentCard,
   measureCommentCardHeight,
 } from "./annotations/CommentCard";
-import { findMaxLineNumber } from "./diff/codeColumns";
-import { buildSplitRows, buildStackRows } from "./diff/pierre";
+import { toInternalDiffFile } from "./model";
+import { findMaxLineNumber } from "./render/codeColumns";
+import { buildSplitRows, buildStackRows } from "./render/pierre";
 import {
   type CursorHighlight,
   DiffRowView,
   diffMessage,
   fitText,
   measureRenderedRowHeight,
-} from "./diff/renderRows";
-import { DEFAULT_TAB_WIDTH } from "./diff/tabWidth";
-import type { AgentAnnotation } from "./diff/types";
-import { useHighlightedDiff } from "./diff/useHighlightedDiff";
-import { toInternalDiffFile } from "./model";
+} from "./render/renderRows";
+import { DEFAULT_TAB_WIDTH } from "./render/tabWidth";
+import type { AgentAnnotation } from "./render/types";
+import { useHighlightedDiff } from "./render/useHighlightedDiff";
 import { buildCanonicalDiffRows, type CanonicalDiffRow } from "./rows";
-import type { HunkDiffBodyProps, HunkDiffNote } from "./types";
+import type { DiffBodyProps, DiffNote } from "./types";
 
 function cursorSideFor(cursor: CanonicalDiffRow): "old" | "new" {
   return cursor.kind === "add" ? "new" : "old";
@@ -135,7 +135,7 @@ type PlannedBodyRow =
   | { kind: "diff"; row: ReturnType<typeof buildStackRows>[number] }
   | {
       kind: "note";
-      note: HunkDiffNote;
+      note: DiffNote;
       noteCount: number;
       noteIndex: number;
     };
@@ -144,9 +144,9 @@ type PlannedBodyRow =
 function buildPlannedRows(
   rows: ReturnType<typeof buildStackRows>,
   canonicalRows: readonly CanonicalDiffRow[],
-  notes: readonly HunkDiffNote[],
+  notes: readonly DiffNote[],
 ): PlannedBodyRow[] {
-  const notesByLayoutIndex = new Map<number, HunkDiffNote[]>();
+  const notesByLayoutIndex = new Map<number, DiffNote[]>();
   for (const note of notes) {
     const canonical = canonicalRows[note.anchorRow];
     if (!canonical) {
@@ -181,7 +181,7 @@ function buildPlannedRows(
 function buildGuideSideByLayoutRow(
   rows: ReturnType<typeof buildStackRows>,
   canonicalRows: readonly CanonicalDiffRow[],
-  notes: readonly HunkDiffNote[],
+  notes: readonly DiffNote[],
 ): Map<number, "old" | "new"> {
   const map = new Map<number, "old" | "new">();
   for (const note of notes) {
@@ -210,7 +210,7 @@ function buildGuideSideByLayoutRow(
 function buildCommentMarkedLayoutRows(
   rows: ReturnType<typeof buildStackRows>,
   canonicalRows: readonly CanonicalDiffRow[],
-  notes: readonly HunkDiffNote[],
+  notes: readonly DiffNote[],
 ): Set<number> {
   const set = new Set<number>();
   for (const note of notes) {
@@ -256,7 +256,7 @@ function lineRangeForRows(
 }
 
 function noteToAnnotation(
-  note: HunkDiffNote,
+  note: DiffNote,
   rows: readonly CanonicalDiffRow[],
 ): AgentAnnotation {
   const start = note.guideStartRow ?? note.anchorRow;
@@ -271,7 +271,7 @@ function noteToAnnotation(
 }
 
 function noteAnchorSide(
-  note: HunkDiffNote,
+  note: DiffNote,
   rows: readonly CanonicalDiffRow[],
 ): "old" | "new" {
   const row = rows[note.anchorRow];
@@ -282,7 +282,7 @@ function noteAnchorSide(
 }
 
 /** Render one diff file body with inline notes, without owning navigation or app chrome. */
-export function HunkDiffBody({
+export function DiffBody({
   file,
   layout = "split",
   width,
@@ -301,7 +301,7 @@ export function HunkDiffBody({
   onCursorOffsetResolved,
   onRowMouseDown,
   notes = [],
-}: HunkDiffBodyProps) {
+}: DiffBodyProps) {
   const resolvedTheme = resolveTheme(theme, null);
   const internalFile = useMemo(
     () => (file ? toInternalDiffFile(file) : undefined),

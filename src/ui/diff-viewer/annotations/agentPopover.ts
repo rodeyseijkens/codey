@@ -1,5 +1,5 @@
-import { sanitizeTerminalLine } from "../diff/terminalText";
-import { measureTextWidth, sliceTextByWidth } from "../diff/text";
+import { sanitizeTerminalLine } from "../render/terminalText";
+import { measureTextWidth, sliceTextByWidth } from "../render/text";
 
 function pushLine(lines: string[], line: string) {
   if (line.length > 0) {

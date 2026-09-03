@@ -1,5 +1,5 @@
-import { resolveSplitPaneWidths } from "../diff/codeColumns";
-import type { LayoutMode } from "../diff/types";
+import { resolveSplitPaneWidths } from "../render/codeColumns";
+import type { LayoutMode } from "../render/types";
 
 export type AgentNoteGeometryInput = {
   anchorSide?: "old" | "new";

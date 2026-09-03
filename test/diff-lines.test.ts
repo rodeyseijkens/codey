@@ -3,8 +3,8 @@ import {
   type CanonicalDiffRow,
   canonicalHunkOffsets,
   canonicalRowLabel,
-  createHunkDiffFilesFromPatch,
-} from "../src/ui/hunk-diff";
+  createDiffViewerFilesFromPatch,
+} from "../src/ui/diff-viewer";
 import { describe, expect, test } from "bun:test";
 
 function rowAt(rows: CanonicalDiffRow[], index: number): CanonicalDiffRow {
@@ -29,7 +29,7 @@ index 123..456 100644
 `;
 
 function rowsOf(diff: string): CanonicalDiffRow[] {
-  const [file] = createHunkDiffFilesFromPatch(diff, "test");
+  const [file] = createDiffViewerFilesFromPatch(diff, "test");
   if (!file) {
     throw new Error("expected one file");
   }

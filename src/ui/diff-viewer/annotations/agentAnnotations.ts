@@ -1,10 +1,10 @@
-import { normalizeDiffPath } from "../diff/diffPaths";
-import { formatTerminalPath } from "../diff/terminalText";
+import { normalizeDiffPath } from "../render/diffPaths";
+import { formatTerminalPath } from "../render/terminalText";
 import type {
   AgentAnnotation,
   DiffFile,
   ReviewNoteSource,
-} from "../diff/types";
+} from "../render/types";
 
 export function reviewNoteSource(
   annotation: AgentAnnotation,

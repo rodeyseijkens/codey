@@ -1,7 +1,7 @@
 import type { ThemeMode } from "@opentui/core";
 
 import { blendHex, contrastRatio, relativeLuminance } from "../color-utils";
-import type { NamedCustomThemeConfig } from "../hunk-diff/diff/types";
+import type { NamedCustomThemeConfig } from "../diff-viewer/render/types";
 import {
   BUNDLED_SHIKI_THEME_IDS,
   type BundledShikiThemeDiffColors,

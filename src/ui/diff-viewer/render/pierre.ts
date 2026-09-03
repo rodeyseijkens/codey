@@ -12,8 +12,8 @@ import {
   type ReviewGapPosition,
   reviewLeadingGap,
   reviewTrailingGap,
-} from "../../../diff/gap";
-import { formatHunkHeader } from "../../../diff/hunk-header";
+} from "../../../patch/gap";
+import { formatHunkHeader } from "../../../patch/hunk-header";
 import { blendHex, hexColorDistance } from "../../color-utils";
 import { type AppTheme, TRANSPARENT_BACKGROUND } from "../../theme/resolve";
 import { expandDiffTabs } from "./codeColumns";

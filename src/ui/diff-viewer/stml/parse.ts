@@ -1,4 +1,4 @@
-import { sanitizeTerminalText } from "../diff/terminalText";
+import { sanitizeTerminalText } from "../render/terminalText";
 import { isRawTextStmlTag, isVoidStmlTag } from "../review/stml";
 import { utf8ByteLength } from "../review/validation";
 
