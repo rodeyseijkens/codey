@@ -1,5 +1,6 @@
 import type { FileDiffMetadata } from "@pierre/diffs";
 
+import type { CanonicalDiffRow } from "../../../diff/rows";
 import type { LineHighlightPaintIndex } from "../ui/diff/lineHighlightPaint";
 
 export type HunkDiffLayout = "split" | "stack";
@@ -23,6 +24,8 @@ export type HunkDiffFileInput = {
   previousPath?: string;
   stats?: HunkDiffStats;
   statsTruncated?: boolean;
+  /** Pre-computed canonical rows, populated during file construction. */
+  canonicalRows?: CanonicalDiffRow[];
 };
 
 /** Normalized diff file returned by createHunkDiffFile and patch helpers. */

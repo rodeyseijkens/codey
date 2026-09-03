@@ -15,7 +15,6 @@ import { LAYOUT_MODES } from "../types";
 import { useColors } from "./color-context";
 import { registerDiffPaneHandle } from "./diff-pane-runtime";
 import {
-  buildCanonicalDiffRows,
   type CanonicalDiffRow,
   createHunkDiffFilesFromPatch,
   HunkDiffBody,
@@ -214,7 +213,7 @@ export function DiffPane() {
     [hunkFile],
   );
   const rows = useMemo(
-    () => (hunkFile ? buildCanonicalDiffRows(hunkFile) : []),
+    () => (hunkFile ? (hunkFile.canonicalRows ?? []) : []),
     [hunkFile],
   );
 

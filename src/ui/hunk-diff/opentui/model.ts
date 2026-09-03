@@ -1,4 +1,5 @@
 import { parsePatchFiles } from "@pierre/diffs";
+import { buildCanonicalDiffRows } from "../../../diff/rows";
 import { patchLooksBinary } from "../core/binary";
 import { normalizeDiffMetadataPaths, normalizeDiffPath } from "../core/diffPaths";
 import { countDiffStats } from "../core/diffFile";
@@ -23,6 +24,7 @@ function buildHunkDiffFile(input: HunkDiffFileInput, pathsAreExact: boolean): Hu
     : (normalizeDiffPath(input.previousPath) ?? metadata.prevName);
   const normalized = {
     ...input,
+    canonicalRows: input.canonicalRows ?? buildCanonicalDiffRows(metadata),
     id: input.id,
     metadata,
     path,
