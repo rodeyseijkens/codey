@@ -6,9 +6,9 @@ import {
   createHunkDiffFilesFromPatch,
   HunkDiffBody,
   type HunkDiffNote,
-} from "../src/ui/hunk-diff/opentui";
-import { toInternalDiffFile } from "../src/ui/hunk-diff/opentui/model";
-import { buildLineHighlightPaintIndex } from "../src/ui/hunk-diff/ui/diff/lineHighlightPaint";
+} from "../src/ui/hunk-diff";
+import { buildLineHighlightPaintIndex } from "../src/ui/hunk-diff/diff/lineHighlightPaint";
+import { toInternalDiffFile } from "../src/ui/hunk-diff/model";
 import { describe, expect, test } from "bun:test";
 
 const DIFF = `diff --git a/foo.ts b/foo.ts

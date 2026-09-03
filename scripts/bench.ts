@@ -5,7 +5,7 @@ import { twoFile } from "../src/loaders/twoFile";
 import {
   buildCanonicalDiffRows,
   createHunkDiffFilesFromPatch,
-} from "../src/ui/hunk-diff/opentui";
+} from "../src/ui/hunk-diff";
 import { getRepoRoot, isRepo } from "../src/vcs/git";
 
 async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {

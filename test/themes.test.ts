@@ -1,5 +1,5 @@
 import { getThemeColors } from "../src/ui/colors";
-import { resolveTheme } from "../src/ui/hunk-diff/ui/themes";
+import { resolveTheme } from "../src/ui/theme/resolve";
 import { describe, expect, test } from "bun:test";
 
 const HEX_COLOR_LENGTH = 7;

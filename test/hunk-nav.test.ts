@@ -1,6 +1,6 @@
 import { AppStore, setStore } from "../src/state/store";
 import { jumpHunk, registerDiffPaneHandle } from "../src/ui/diff-pane-runtime";
-import type { CanonicalDiffRow } from "../src/ui/hunk-diff/opentui";
+import type { CanonicalDiffRow } from "../src/ui/hunk-diff";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 const rows: CanonicalDiffRow[] = [

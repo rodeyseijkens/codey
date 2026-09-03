@@ -4,7 +4,7 @@ import {
   canonicalHunkOffsets,
   canonicalRowLabel,
   createHunkDiffFilesFromPatch,
-} from "../src/ui/hunk-diff/opentui";
+} from "../src/ui/hunk-diff";
 import { describe, expect, test } from "bun:test";
 
 function rowAt(rows: CanonicalDiffRow[], index: number): CanonicalDiffRow {

@@ -1,7 +1,6 @@
 import type { ThemeMode } from "@opentui/core";
 
-import { blendHex } from "./hunk-diff/ui/lib/color";
-import { type AppTheme, resolveTheme } from "./hunk-diff/ui/themes";
+import { blendHex } from "./color-utils";
 import {
   STATUS_ADDED,
   STATUS_COPIED,
@@ -10,6 +9,7 @@ import {
   STATUS_RENAMED,
   STATUS_TYPE_CHANGED,
 } from "./icons";
+import { type AppTheme, resolveTheme } from "./theme/resolve";
 
 export type IconColorKey =
   | "aqua"
