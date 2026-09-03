@@ -27,6 +27,7 @@ export type NormalizedGitPatch = {
 
 const gitQuotedUtf8Decoder = new TextDecoder("utf-8", { fatal: true });
 const gitQuotedUtf8Encoder = new TextEncoder();
+// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional ANSI escape matching
 const gitUnsafeDecodedHeaderCharacter = /[\x00-\x1f\x7f-\x9f]/;
 const gitSimpleEscapeBytes: Readonly<Record<string, number>> = {
   '"': 0x22,
@@ -40,13 +41,21 @@ const gitSimpleEscapeBytes: Readonly<Record<string, number>> = {
   v: 0x0b,
 };
 
+const gitOctalEscape3Regex = /^\\([0-7]{3})/;
+const gitOctalEscape13Regex = /^\\([0-7]{1,3})/;
+const gitQuotedPairRegex = /^"((?:\\.|[^"\\])*)" "((?:\\.|[^"\\])*)"$/;
+const gitQuotedPathRegex = /^"((?:\\.|[^"\\])*)"$/;
+const gitQuotedPathSuffixRegex = /^"((?:\\.|[^"\\])*)"(.*)$/;
+const gitPrefixARegex = /^a\//;
+const gitPrefixBRegex = /^b\//;
+
 /** Decode Git's octal-escaped UTF-8 pathname bytes without exposing escaped controls to parsing. */
 function decodeGitQuotedUtf8Path(path: string) {
   let decodedPath = "";
   let index = 0;
 
   while (index < path.length) {
-    const escape = path.slice(index).match(/^\\([0-7]{3})/);
+    const escape = path.slice(index).match(gitOctalEscape3Regex);
     if (!escape) {
       // Advance over a complete non-octal escape so a protected literal backslash cannot make the
       // following digits look like an octal byte escape on the next iteration.
@@ -63,13 +72,14 @@ function decodeGitQuotedUtf8Path(path: string) {
     const escapedBytes: number[] = [];
     const escapedText: string[] = [];
     while (index < path.length) {
-      const byteEscape = path.slice(index).match(/^\\([0-7]{3})/);
+      const byteEscape = path.slice(index).match(gitOctalEscape3Regex);
       if (!byteEscape) {
         break;
       }
-      escapedText.push(byteEscape[0]);
-      escapedBytes.push(Number.parseInt(byteEscape[1]!, 8));
-      index += byteEscape[0].length;
+      const [fullEscape, firstByteOctet] = byteEscape;
+      escapedText.push(fullEscape);
+      escapedBytes.push(Number.parseInt(firstByteOctet ?? "", 8));
+      index += fullEscape.length;
     }
 
     // Git uses these runs for UTF-8 bytes when core.quotePath is enabled. Leave ASCII control
@@ -112,9 +122,9 @@ function decodeGitQuotedPath(path: string) {
       continue;
     }
 
-    const octalEscape = path.slice(index).match(/^\\([0-7]{1,3})/);
+    const octalEscape = path.slice(index).match(gitOctalEscape13Regex);
     if (octalEscape) {
-      const byte = Number.parseInt(octalEscape[1]!, 8);
+      const byte = Number.parseInt(octalEscape[1] ?? "", 8);
       if (byte > 0xff) {
         return null;
       }
@@ -181,7 +191,7 @@ export function normalizeGitPatch(patchText: string): NormalizedGitPatch {
 
 /** Rewrite one `diff --git` block, keeping file-header rewrites out of hunk bodies. */
 function rewriteGitPatchBlock(blockLines: string[]) {
-  const firstLine = blockLines[0];
+  const [firstLine] = blockLines;
   if (!firstLine?.startsWith("diff --git ")) {
     return { filePaths: undefined, lines: blockLines };
   }
@@ -228,7 +238,7 @@ function rewriteGitDiffHeader(
 } {
   const rest = line.slice("diff --git ".length).trimEnd();
 
-  const quotedMatch = rest.match(/^"((?:\\.|[^"\\])*)" "((?:\\.|[^"\\])*)"$/);
+  const quotedMatch = rest.match(gitQuotedPairRegex);
   if (quotedMatch) {
     const quotedOldPath = quotedMatch[1] ?? "";
     const quotedNewPath = quotedMatch[2] ?? "";
@@ -310,7 +320,7 @@ function splitGitMnemonicPrefix(path: string) {
 
 /** Remove Git's outer quotes and decode valid C-style pathname bytes for comparisons. */
 function stripGitPathQuotes(path: string) {
-  const quotedPath = path.match(/^"((?:\\.|[^"\\])*)"$/)?.[1];
+  const quotedPath = path.match(gitQuotedPathRegex)?.[1];
   return quotedPath === undefined
     ? path
     : (decodeGitQuotedPath(quotedPath) ?? decodeGitQuotedUtf8Path(quotedPath));
@@ -333,7 +343,7 @@ function rewriteGitMetadataPathLine(line: string) {
   }
 
   const value = line.slice(marker.length);
-  const quotedPath = value.match(/^"((?:\\.|[^"\\])*)"$/)?.[1];
+  const quotedPath = value.match(gitQuotedPathRegex)?.[1];
   if (quotedPath === undefined) {
     return line;
   }
@@ -372,8 +382,9 @@ function resolveDecodedGitFilePaths(
 
   const metadata = findRenameOrCopyMetadata(blockLines);
   const previousPath =
-    metadata?.oldPath ?? decodedPair.oldPath.replace(/^a\//, "");
-  const path = metadata?.newPath ?? decodedPair.newPath.replace(/^b\//, "");
+    metadata?.oldPath ?? decodedPair.oldPath.replace(gitPrefixARegex, "");
+  const path =
+    metadata?.newPath ?? decodedPair.newPath.replace(gitPrefixBRegex, "");
 
   return previousPath === path ? { path } : { path, previousPath };
 }
@@ -486,7 +497,7 @@ function rewriteUnifiedFileLine(
   mode: GitHeaderRewriteMode,
 ) {
   const path = line.slice(marker.length);
-  const quotedPath = path.match(/^"((?:\\.|[^"\\])*)"(.*)$/);
+  const quotedPath = path.match(gitQuotedPathSuffixRegex);
   const pathName = quotedPath?.[1] ?? path;
   const suffix = quotedPath?.[2] ?? "";
 

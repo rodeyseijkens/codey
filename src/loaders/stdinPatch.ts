@@ -82,7 +82,7 @@ function buildPatchFile(section: string): FileDiff | null {
     notice: isBinary ? "binary file" : check.notice,
     oldPath: renamed ? oldStripped : undefined,
     path,
-    status: inferStatus(section, oldName, newName),
+    status: inferStatus(section, oldName ?? undefined, newName ?? undefined),
     tooLarge: check.tooLarge,
   };
 }
