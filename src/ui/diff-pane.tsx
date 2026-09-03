@@ -19,10 +19,10 @@ import {
   createHunkDiffFilesFromPatch,
   HunkDiffBody,
   type HunkDiffNote,
-} from "./hunk-diff/opentui";
-import { toInternalDiffFile } from "./hunk-diff/opentui/model";
-import { buildLineHighlightPaintIndex } from "./hunk-diff/ui/diff/lineHighlightPaint";
-import type { ValidatedLineHighlight } from "./hunk-diff/ui/highlights/validate";
+} from "./hunk-diff";
+import { buildLineHighlightPaintIndex } from "./hunk-diff/diff/lineHighlightPaint";
+import type { ValidatedLineHighlight } from "./hunk-diff/highlights/validate";
+import { toInternalDiffFile } from "./hunk-diff/model";
 
 function resolveViewMode(
   layoutMode: string,
@@ -99,6 +99,50 @@ function commentMarksForRange(
   return marks;
 }
 
+function addSearchMarkForRow(
+  marks: ValidatedLineHighlight[],
+  row: CanonicalDiffRow,
+  pos: number,
+  end: number,
+) {
+  if (row.kind === "add" && row.newLine !== undefined) {
+    marks.push({
+      end,
+      line: row.newLine,
+      side: "new",
+      start: pos,
+      tone: "match",
+    });
+  } else if (row.kind === "del" && row.oldLine !== undefined) {
+    marks.push({
+      end,
+      line: row.oldLine,
+      side: "old",
+      start: pos,
+      tone: "match",
+    });
+  } else if (row.kind === "context") {
+    if (row.oldLine !== undefined) {
+      marks.push({
+        end,
+        line: row.oldLine,
+        side: "old",
+        start: pos,
+        tone: "match",
+      });
+    }
+    if (row.newLine !== undefined) {
+      marks.push({
+        end,
+        line: row.newLine,
+        side: "new",
+        start: pos,
+        tone: "match",
+      });
+    }
+  }
+}
+
 /** Build character-range paint marks for diff search match rows. */
 function searchMarksForRows(
   rows: readonly CanonicalDiffRow[],
@@ -120,42 +164,7 @@ function searchMarksForRows(
         break;
       }
       const end = pos + query.length;
-      if (row.kind === "add" && row.newLine !== undefined) {
-        marks.push({
-          end,
-          line: row.newLine,
-          side: "new",
-          start: pos,
-          tone: "match",
-        });
-      } else if (row.kind === "del" && row.oldLine !== undefined) {
-        marks.push({
-          end,
-          line: row.oldLine,
-          side: "old",
-          start: pos,
-          tone: "match",
-        });
-      } else if (row.kind === "context") {
-        if (row.oldLine !== undefined) {
-          marks.push({
-            end,
-            line: row.oldLine,
-            side: "old",
-            start: pos,
-            tone: "match",
-          });
-        }
-        if (row.newLine !== undefined) {
-          marks.push({
-            end,
-            line: row.newLine,
-            side: "new",
-            start: pos,
-            tone: "match",
-          });
-        }
-      }
+      addSearchMarkForRow(marks, row, pos, end);
       searchFrom = end + 1;
     }
   }
