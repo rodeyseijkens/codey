@@ -58,6 +58,8 @@ export type HunkDiffBodyProps = {
    * highlight plus the active rail color.
    */
   cursorRow?: number;
+  /** Canonical row index where visual selection started (via `v` key). */
+  anchorRow?: number;
   file?: HunkDiffFileInput;
   /** Show the `+`/`-` sign column in the line-number gutter. */
   gutterSign?: boolean;

@@ -22,6 +22,7 @@ import {
   cursorLineHighlightBg,
   lineHighlightToneStyle,
   selectionHighlightBg,
+  visualSelectHighlightBg,
   splitCellPalette,
   splitGutterText,
   splitLeftRailColor,
@@ -794,15 +795,20 @@ function applyHighlightPalette<P extends { gutterBg: string; contentBg: string }
  * Choose which highlight paints one half of a row.
  *
  * An active drag outranks the resting cursor, so copy selection keeps its exact extent.
+ * The visual-select highlight fills rows not covered by either copy selection or the cursor.
  */
 function pickRowHighlight(
   selection: RowHighlight,
   cursor: RowHighlight | undefined,
   hasSelection: boolean,
   onCursor: boolean,
+  visualSelect?: RowHighlight,
 ) {
   if (hasSelection) {
     return selection;
+  }
+  if (visualSelect) {
+    return visualSelect;
   }
   return onCursor ? cursor : undefined;
 }
@@ -1305,6 +1311,8 @@ function renderRow(
   onHoverRow?: (rowKey: string) => void,
   onToggleGap?: (gapKey: string) => void,
   showSign = false,
+  visualSelect = false,
+  commentMarked = false,
 ) {
   // Extension marks repaint span backgrounds only; geometry inputs keep using the source row.
   const row = withRowLineHighlights(sourceRow, lineHighlights, theme);
@@ -1321,6 +1329,9 @@ function renderRow(
   const splitContextRow =
     row.type === "split-line" && row.left.kind === "context" && row.right.kind === "context";
   const onCursorRow = cursorHighlight !== undefined;
+  const yellowRailLeft = (visualSelect || commentMarked) && !hasLeftSelection;
+  const yellowRailRight = (visualSelect || commentMarked) && !hasRightSelection;
+  const yellowRailStack = (visualSelect || commentMarked) && !hasCopySelection;
   const selectionHighlight: RowHighlight = {
     bg: (baseBg) => selectionHighlightBg(baseBg, theme),
     colRange: copySelectedRowRange,
@@ -1331,23 +1342,31 @@ function renderRow(
         colRange: cursorHighlight.style === "row" ? FULL_ROW_COL_RANGE : undefined,
       }
     : undefined;
+  const visualSelectHighlight: RowHighlight | undefined = visualSelect
+    ? {
+        bg: (baseBg) => visualSelectHighlightBg(baseBg, theme),
+      }
+    : undefined;
   const leftHighlight = pickRowHighlight(
     selectionHighlight,
     cursorRowHighlight,
     hasLeftSelection,
     onCursorRow && (splitContextRow || cursorHighlight.side === "old"),
+    visualSelectHighlight,
   );
   const rightHighlight = pickRowHighlight(
     selectionHighlight,
     cursorRowHighlight,
     hasRightSelection,
     onCursorRow && (splitContextRow || cursorHighlight.side === "new"),
+    visualSelectHighlight,
   );
   const cellHighlight = pickRowHighlight(
     selectionHighlight,
     cursorRowHighlight,
     hasCopySelection,
     onCursorRow,
+    visualSelectHighlight,
   );
   let baseRow: ReactNode;
 
@@ -1380,15 +1399,19 @@ function renderRow(
     const { leftWidth, rightWidth } = resolveSplitPaneWidths(width);
     const rightRenderWidth = Math.max(0, rightWidth - (guideOnNewSide ? 1 : 0));
     const leftPrefix = {
-      text: guideOnOldSide ? "│" : marker(),
-      fg: guideOnOldSide
-        ? theme.noteBorder
-        : splitLeftRailColor(row.left.kind, theme, selected || hasCopySelection),
+      text: yellowRailLeft ? marker() : guideOnOldSide ? "│" : marker(),
+      fg: yellowRailLeft
+        ? theme.fileModified
+        : guideOnOldSide
+          ? theme.noteBorder
+          : splitLeftRailColor(row.left.kind, theme, selected || hasCopySelection),
       bg: theme.panel,
     };
     const rightPrefix = {
       text: "▌",
-      fg: splitRightRailColor(row.right.kind, theme, selected || hasCopySelection),
+      fg: yellowRailRight
+        ? theme.fileModified
+        : splitRightRailColor(row.right.kind, theme, selected || hasCopySelection),
       bg: theme.panel,
     };
 
@@ -1562,10 +1585,12 @@ function renderRow(
     const guideOnNewSide = noteGuideSide === "new";
     const contentWidth = Math.max(0, width - (guideOnNewSide ? 1 : 0));
     const prefix = {
-      text: guideOnOldSide ? "│" : marker(),
-      fg: guideOnOldSide
-        ? theme.noteBorder
-        : stackRailColor(row.cell.kind, theme, selected || hasCopySelection),
+      text: yellowRailStack ? marker() : guideOnOldSide ? "│" : marker(),
+      fg: yellowRailStack
+        ? theme.fileModified
+        : guideOnOldSide
+          ? theme.noteBorder
+          : stackRailColor(row.cell.kind, theme, selected || hasCopySelection),
       bg: theme.panel,
     };
 
@@ -1705,6 +1730,8 @@ interface DiffRowViewProps {
   noteGuideSide?: "old" | "new";
   onHoverRow?: (rowKey: string) => void;
   onToggleGap?: (gapKey: string) => void;
+  visualSelect?: boolean;
+  commentMarked?: boolean;
 }
 
 /**
@@ -1734,6 +1761,8 @@ export const DiffRowView = memo(
     noteGuideSide,
     onHoverRow,
     onToggleGap,
+    visualSelect = false,
+    commentMarked = false,
   }: DiffRowViewProps) {
     return renderRow(
       row,
@@ -1754,6 +1783,8 @@ export const DiffRowView = memo(
       onHoverRow,
       onToggleGap,
       showSign,
+      visualSelect,
+      commentMarked,
     );
   },
   (previous, next) => {
@@ -1775,7 +1806,9 @@ export const DiffRowView = memo(
       previous.anchorId === next.anchorId &&
       previous.noteGuideSide === next.noteGuideSide &&
       previous.onHoverRow === next.onHoverRow &&
-      previous.onToggleGap === next.onToggleGap
+      previous.onToggleGap === next.onToggleGap &&
+      previous.visualSelect === next.visualSelect &&
+      previous.commentMarked === next.commentMarked
     );
   },
 );

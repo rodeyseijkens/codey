@@ -6,6 +6,7 @@ import type { SplitLineCell, StackLineCell } from "./pierre";
 const INACTIVE_RAIL_BLEND = 0.35;
 const SELECTION_BG_BLEND = 0.75;
 const CURSOR_LINE_BG_BLEND = 0.2;
+const VISUAL_SELECT_BG_BLEND = 0.55;
 const selectionBackgroundCache = new WeakMap<AppTheme, Map<string, string>>();
 const cursorLineBackgroundCache = new WeakMap<AppTheme, Map<string, string>>();
 
@@ -65,6 +66,17 @@ export function cursorLineHighlightBg(baseBg: string, theme: AppTheme) {
         : baseBg;
     return blendHex(theme.text, source, CURSOR_LINE_BG_BLEND);
   });
+}
+
+const visualSelectBackgroundCache = new WeakMap<AppTheme, Map<string, string>>();
+
+/**
+ * Blend a cell background toward yellow to mark rows in an active visual selection.
+ */
+export function visualSelectHighlightBg(baseBg: string, theme: AppTheme) {
+  return cachedRowBackground(visualSelectBackgroundCache, theme, baseBg, () =>
+    blendHex(theme.fileModified, baseBg, VISUAL_SELECT_BG_BLEND),
+  );
 }
 
 /** Return the neutral active-hunk rail color for the current theme. */

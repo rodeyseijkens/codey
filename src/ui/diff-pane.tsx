@@ -395,6 +395,7 @@ export function DiffPane() {
         width="100%"
       >
         <HunkDiffBody
+          anchorRow={state.anchorRow ?? undefined}
           cursorRow={state.cursorRow}
           file={hunkFile}
           gutterSign={state.gutterSign}

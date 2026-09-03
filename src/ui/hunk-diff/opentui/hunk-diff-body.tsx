@@ -206,6 +206,29 @@ function buildGuideSideByLayoutRow(
   return map;
 }
 
+/** Set of layout row indices that fall inside a note range (including the anchor). */
+function buildCommentMarkedLayoutRows(
+  rows: ReturnType<typeof buildStackRows>,
+  canonicalRows: readonly CanonicalDiffRow[],
+  notes: readonly HunkDiffNote[],
+): Set<number> {
+  const set = new Set<number>();
+  for (const note of notes) {
+    const start = note.guideStartRow ?? note.anchorRow;
+    for (let index = start; index <= note.anchorRow; index += 1) {
+      const canonical = canonicalRows[index];
+      if (!canonical) {
+        continue;
+      }
+      const layoutIndex = resolveLayoutRow(canonical, canonicalRows, index, rows);
+      if (layoutIndex >= 0) {
+        set.add(layoutIndex);
+      }
+    }
+  }
+  return set;
+}
+
 function lineRangeForRows(
   rows: readonly CanonicalDiffRow[],
   startRow: number,
@@ -268,6 +291,7 @@ export function HunkDiffBody({
   highlight = true,
   selectedHunkIndex = 0,
   cursorRow,
+  anchorRow,
   lineHighlights,
   onCursorOffsetResolved,
   onRowMouseDown,
@@ -311,12 +335,39 @@ export function HunkDiffBody({
         : -1,
     [cursor, cursorRow, canonicalRows, rows],
   );
+  const anchor = useMemo(
+    () => (anchorRow === undefined ? undefined : canonicalRows[anchorRow]),
+    [anchorRow, canonicalRows],
+  );
+  const resolvedAnchorRow = useMemo(
+    () =>
+      anchor !== undefined && anchorRow !== undefined
+        ? resolveLayoutRow(anchor, canonicalRows, anchorRow, rows)
+        : -1,
+    [anchor, anchorRow, canonicalRows, rows],
+  );
+  const visualSelectLayoutRows = useMemo(() => {
+    if (resolvedAnchorRow < 0 || resolvedCursorRow < 0) {
+      return new Set<number>();
+    }
+    const min = Math.min(resolvedAnchorRow, resolvedCursorRow);
+    const max = Math.max(resolvedAnchorRow, resolvedCursorRow);
+    const set = new Set<number>();
+    for (let i = min; i <= max; i += 1) {
+      set.add(i);
+    }
+    return set;
+  }, [resolvedAnchorRow, resolvedCursorRow]);
   const plannedRows = useMemo(
     () => buildPlannedRows(rows, canonicalRows, notes),
     [rows, canonicalRows, notes],
   );
   const guideSideByLayoutRow = useMemo(
     () => buildGuideSideByLayoutRow(rows, canonicalRows, notes),
+    [rows, canonicalRows, notes],
+  );
+  const commentMarkedLayoutRows = useMemo(
+    () => buildCommentMarkedLayoutRows(rows, canonicalRows, notes),
     [rows, canonicalRows, notes],
   );
 
@@ -476,6 +527,7 @@ export function HunkDiffBody({
           >
             <DiffRowView
               codeHorizontalOffset={horizontalOffset}
+              commentMarked={commentMarkedLayoutRows.has(rowIndex)}
               cursorHighlight={
                 rowIndex === resolvedCursorRow ? cursorHighlight : undefined
               }
@@ -491,6 +543,7 @@ export function HunkDiffBody({
               showLineNumbers={showLineNumbers}
               showSign={gutterSign}
               theme={resolvedTheme}
+              visualSelect={visualSelectLayoutRows.has(rowIndex)}
               width={width}
               wrapLines={wrapLines}
             />
