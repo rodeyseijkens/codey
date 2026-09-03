@@ -2,18 +2,7 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/biome/core", "ultracite/biome/react"],
   "files": {
-    "includes": [
-      "src/**",
-      "test/**",
-      "scripts/**",
-      "*.jsonc",
-      "*.mjs",
-      "*.ts",
-      "!src/ui/hunk-diff/core",
-      "!src/ui/hunk-diff/ui",
-      "!src/ui/hunk-diff/lib",
-      "!src/ui/hunk-diff/opentui"
-    ]
+    "includes": ["src/**", "test/**", "scripts/**", "*.jsonc", "*.mjs", "*.ts"]
   },
   "formatter": {
     "useEditorconfig": true
