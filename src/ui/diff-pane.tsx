@@ -100,6 +100,69 @@ function commentMarksForRange(
   return marks;
 }
 
+/** Build character-range paint marks for diff search match rows. */
+function searchMarksForRows(
+  rows: readonly CanonicalDiffRow[],
+  matchIndices: readonly number[],
+  query: string,
+): ValidatedLineHighlight[] {
+  const marks: ValidatedLineHighlight[] = [];
+  const lowerQuery = query.toLowerCase();
+  for (const index of matchIndices) {
+    const row = rows[index];
+    if (!row) {
+      continue;
+    }
+    const lowerText = row.text.toLowerCase();
+    let searchFrom = 0;
+    while (searchFrom < row.text.length) {
+      const pos = lowerText.indexOf(lowerQuery, searchFrom);
+      if (pos < 0) {
+        break;
+      }
+      const end = pos + query.length;
+      if (row.kind === "add" && row.newLine !== undefined) {
+        marks.push({
+          end,
+          line: row.newLine,
+          side: "new",
+          start: pos,
+          tone: "match",
+        });
+      } else if (row.kind === "del" && row.oldLine !== undefined) {
+        marks.push({
+          end,
+          line: row.oldLine,
+          side: "old",
+          start: pos,
+          tone: "match",
+        });
+      } else if (row.kind === "context") {
+        if (row.oldLine !== undefined) {
+          marks.push({
+            end,
+            line: row.oldLine,
+            side: "old",
+            start: pos,
+            tone: "match",
+          });
+        }
+        if (row.newLine !== undefined) {
+          marks.push({
+            end,
+            line: row.newLine,
+            side: "new",
+            start: pos,
+            tone: "match",
+          });
+        }
+      }
+      searchFrom = end + 1;
+    }
+  }
+  return marks;
+}
+
 function diffSearchCounter(
   diffSearch: NonNullable<ReturnType<typeof useAppState>["diffSearch"]>,
   C: ReturnType<typeof useColors>["ui"],
@@ -120,6 +183,7 @@ function diffSearchCounter(
 
 export function DiffPane() {
   const state = useAppState();
+  const { diffSearch } = state;
   const store = getStore();
   const dims = useTerminalDimensions();
   const { ui: C } = useColors();
@@ -195,14 +259,23 @@ export function DiffPane() {
   }, [comments, state.commentDraft]);
 
   const lineHighlights = useMemo(() => {
-    if (!internalFile || comments.length === 0) {
+    if (!internalFile) {
       return;
     }
-    const marks = comments.flatMap((c) =>
-      commentMarksForRange(rows, c.startRow, c.endRow),
-    );
+    const marks: ValidatedLineHighlight[] = [];
+    for (const c of comments) {
+      marks.push(...commentMarksForRange(rows, c.startRow, c.endRow));
+    }
+    if (diffSearch && diffSearch.matches.length > 0 && diffSearch.query) {
+      marks.push(
+        ...searchMarksForRows(rows, diffSearch.matches, diffSearch.query),
+      );
+    }
+    if (marks.length === 0) {
+      return;
+    }
     return buildLineHighlightPaintIndex({ file: internalFile, marks });
-  }, [internalFile, comments, rows]);
+  }, [internalFile, comments, rows, diffSearch]);
 
   const MIN_CONTENT_WIDTH = 10;
 
