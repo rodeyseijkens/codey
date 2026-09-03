@@ -5,7 +5,11 @@ import {
   CommentCard,
   measureCommentCardHeight,
 } from "./annotations/CommentCard";
-import { toInternalDiffFile } from "./model";
+import {
+  buildCanonicalDiffRows,
+  type CanonicalDiffRow,
+  toInternalDiffFile,
+} from "./model";
 import { findMaxLineNumber } from "./render/codeColumns";
 import { buildSplitRows, buildStackRows } from "./render/pierre";
 import {
@@ -18,7 +22,6 @@ import {
 import { DEFAULT_TAB_WIDTH } from "./render/tabWidth";
 import type { AgentAnnotation } from "./render/types";
 import { useHighlightedDiff } from "./render/useHighlightedDiff";
-import { buildCanonicalDiffRows, type CanonicalDiffRow } from "./rows";
 import type { DiffBodyProps, DiffNote } from "./types";
 
 function cursorSideFor(cursor: CanonicalDiffRow): "old" | "new" {

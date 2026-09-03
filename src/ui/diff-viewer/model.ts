@@ -1,7 +1,13 @@
 import { parsePatchFiles } from "@pierre/diffs";
 
 import { normalizePatch } from "../../patch/patch/normalize";
-import { buildCanonicalDiffRows } from "../../patch/rows";
+import {
+  buildCanonicalDiffRows as buildRowsFromMetadata,
+  type CanonicalDiffRow,
+} from "../../patch/rows";
+
+export type { CanonicalDiffRow } from "../../patch/rows";
+
 import { patchLooksBinary } from "./render/binary";
 import { findPatchChunk, splitPatchIntoFileChunks } from "./render/chunks";
 import { countDiffStats } from "./render/diffFile";
@@ -33,7 +39,7 @@ function buildDiffViewerFile(
     : (normalizeDiffPath(input.previousPath) ?? metadata.prevName);
   const normalized = {
     ...input,
-    canonicalRows: input.canonicalRows ?? buildCanonicalDiffRows(metadata),
+    canonicalRows: input.canonicalRows ?? buildRowsFromMetadata(metadata),
     id: input.id,
     metadata,
     path,
@@ -111,6 +117,14 @@ export function createDiffViewerFilesFromPatch(
         Boolean(decodedPaths),
       );
     });
+}
+
+/** Build canonical diff rows from a public OpenTUI file input. */
+export function buildCanonicalDiffRows(
+  input: DiffViewerFileInput,
+): CanonicalDiffRow[] {
+  const { metadata } = toInternalDiffFile(input);
+  return buildRowsFromMetadata(metadata);
 }
 
 /** Adapt a list of public OpenTUI files into Hunk's internal review file model. */

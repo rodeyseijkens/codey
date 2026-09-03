@@ -1,10 +1,9 @@
+import { canonicalHunkOffsets, canonicalRowLabel } from "../src/patch/rows";
 import {
   buildCanonicalDiffRows,
   type CanonicalDiffRow,
-  canonicalHunkOffsets,
-  canonicalRowLabel,
   createDiffViewerFilesFromPatch,
-} from "../src/ui/diff-viewer";
+} from "../src/ui/diff-viewer/model";
 import { describe, expect, test } from "bun:test";
 
 function rowAt(rows: CanonicalDiffRow[], index: number): CanonicalDiffRow {

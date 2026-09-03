@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import { act } from "react";
 import { testRender } from "@opentui/react/test-utils";
 
+import { DiffBody } from "../src/ui/diff-viewer/diff-body";
 import {
   createDiffViewerFilesFromPatch,
-  DiffBody,
-  type DiffNote,
-} from "../src/ui/diff-viewer";
-import { toInternalDiffFile } from "../src/ui/diff-viewer/model";
+  toInternalDiffFile,
+} from "../src/ui/diff-viewer/model";
 import { buildLineHighlightPaintIndex } from "../src/ui/diff-viewer/render/lineHighlightPaint";
+import type { DiffNote } from "../src/ui/diff-viewer/types";
 import { describe, expect, test } from "bun:test";
 
 const DIFF = `diff --git a/foo.ts b/foo.ts

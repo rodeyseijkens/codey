@@ -5,7 +5,7 @@ import { twoFile } from "../src/loaders/twoFile";
 import {
   buildCanonicalDiffRows,
   createDiffViewerFilesFromPatch,
-} from "../src/ui/diff-viewer";
+} from "../src/ui/diff-viewer/model";
 import { getRepoRoot, isRepo } from "../src/vcs/git";
 
 async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {

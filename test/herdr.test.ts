@@ -5,9 +5,9 @@ import { join } from "node:path";
 import {
   captureTurnBaseline,
   getAgentPicker,
-  isHerdrPlugin,
   sendToAgent,
-} from "../src/herdr";
+} from "../src/herdr/agent";
+import { isHerdrPlugin } from "../src/herdr/env";
 import { loadManifest, MANIFEST_PATH } from "../src/herdr/manifest";
 import type { Comment } from "../src/types";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";

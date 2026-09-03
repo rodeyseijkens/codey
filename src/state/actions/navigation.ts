@@ -1,4 +1,5 @@
-import { isHerdrPlugin, sendToAgent } from "../../herdr";
+import { sendToAgent } from "../../herdr/agent";
+import { isHerdrPlugin } from "../../herdr/env";
 import { copyText, formatCommentsAsMarkdown } from "../../lib/clipboard";
 import { treeKey } from "../../lib/tree";
 import type { Scope, SidebarView } from "../../types";

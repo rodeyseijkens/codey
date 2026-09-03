@@ -4,7 +4,8 @@ import { createRoot } from "@opentui/react";
 import { Command } from "commander";
 
 import { loadConfig } from "./config";
-import { captureTurnBaseline, isHerdrPlugin } from "./herdr";
+import { captureTurnBaseline } from "./herdr/agent";
+import { isHerdrPlugin } from "./herdr/env";
 import { registerAppLayers } from "./keymap/layers";
 import { validateKeybindings } from "./keymap/validation";
 import { buildRuntime, type Runtime } from "./runtime";

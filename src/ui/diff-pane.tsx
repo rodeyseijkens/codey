@@ -14,15 +14,15 @@ import { getStore, useAppState } from "../state/store";
 import { LAYOUT_MODES } from "../types";
 import { useColors } from "./color-context";
 import { registerDiffPaneHandle } from "./diff-pane-runtime";
-import {
-  type CanonicalDiffRow,
-  createDiffViewerFilesFromPatch,
-  DiffBody,
-  type DiffNote,
-} from "./diff-viewer";
+import { DiffBody } from "./diff-viewer/diff-body";
 import type { ValidatedLineHighlight } from "./diff-viewer/highlights/validate";
-import { toInternalDiffFile } from "./diff-viewer/model";
+import type { CanonicalDiffRow } from "./diff-viewer/model";
+import {
+  createDiffViewerFilesFromPatch,
+  toInternalDiffFile,
+} from "./diff-viewer/model";
 import { buildLineHighlightPaintIndex } from "./diff-viewer/render/lineHighlightPaint";
+import type { DiffNote } from "./diff-viewer/types";
 
 function resolveViewMode(
   layoutMode: string,
