@@ -22,7 +22,7 @@ export async function loadCommits(): Promise<void> {
   if (!repoRoot || store.getState().commitLoading) {
     return;
   }
-  store.set({ commitEntries: [], commitLoading: true, commitOffset: 0 });
+  store.set({ commitLoading: true, commitOffset: 0 });
   try {
     const { commits, hasMore, behind, ahead } = await gitLog(
       repoRoot,
@@ -37,11 +37,7 @@ export async function loadCommits(): Promise<void> {
       commitLoading: false,
     });
   } catch {
-    store.set({
-      commitEntries: [],
-      commitHasMore: false,
-      commitLoading: false,
-    });
+    store.set({ commitHasMore: false, commitLoading: false });
   }
 }
 

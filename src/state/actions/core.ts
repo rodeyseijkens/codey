@@ -1,4 +1,5 @@
-import { TOAST_KINDS } from "../../types";
+import { type FileDiff, type Scope, TOAST_KINDS } from "../../types";
+import { createDiffViewerFilesFromPatch } from "../../ui/diff-viewer/model";
 import {
   type AppState,
   commitRowKey,
@@ -56,24 +57,84 @@ function preserveSelection(
   return rows.find((r) => r.kind === "file") ?? rows[0] ?? null;
 }
 
+/** True when the previously displayed file is still the given selection. */
+function isSameFileSelection(
+  store: Store,
+  prevFile: { file: FileDiff; scope: Scope } | null,
+  sel: Selection,
+): boolean {
+  if (!prevFile || sel.kind !== "file") {
+    return false;
+  }
+  const file = store.changeset(sel.scope)?.files[sel.index];
+  return (
+    prevFile.scope === sel.scope &&
+    file !== undefined &&
+    file.path === prevFile.file.path
+  );
+}
+
+/** Canonical diff row count of the selected file, for clamping the cursor. */
+function selectedFileRowCount(store: Store, sel: Selection): number {
+  if (sel.kind !== "file") {
+    return 0;
+  }
+  const file = store.changeset(sel.scope)?.files[sel.index];
+  if (!file) {
+    return 0;
+  }
+  const [hunk] = createDiffViewerFilesFromPatch(file.diff, file.path);
+  return hunk?.canonicalRows?.length ?? 0;
+}
+
+/** Scroll state to restore after a refresh, or null when switching files. */
+function preservedScroll(
+  store: Store,
+  prevFile: { file: FileDiff; scope: Scope } | null,
+  prevCursor: number,
+  prevAnchor: number | null,
+  sel: Selection,
+): { anchorRow: number | null; cursorRow: number } | null {
+  if (!isSameFileSelection(store, prevFile, sel)) {
+    return null;
+  }
+  const max = Math.max(0, selectedFileRowCount(store, sel) - 1);
+  return {
+    anchorRow: prevAnchor === null ? null : Math.min(prevAnchor, max),
+    cursorRow: Math.min(prevCursor, max),
+  };
+}
+
 export async function refresh(): Promise<void> {
   const store = getStore();
   const { load: loadFn } = store.getState();
+  const prevState = store.getState();
+  const prevSel = prevState.selection;
+  const prevCursor = prevState.cursorRow;
+  const prevAnchor = prevState.anchorRow;
+  const prevFile = store.selectedFile();
   store.set({ loading: true });
   try {
     const { changesets, branch, conflictNotice } = await loadFn();
-    const prevSel = store.getState().selection;
     store.set({
-      anchorRow: null,
       branch,
       changesets,
       conflictNotice,
-      cursorRow: 0,
       loading: false,
     });
     const nextSel = preserveSelection(store, prevSel);
     if (nextSel) {
       applySelection(store, nextSel);
+      const scroll = preservedScroll(
+        store,
+        prevFile,
+        prevCursor,
+        prevAnchor,
+        nextSel,
+      );
+      if (scroll) {
+        store.set(scroll);
+      }
     }
     const prevCommitCursor = store.getState().commitCursor;
     const { loadCommits } = await import("./commits");
