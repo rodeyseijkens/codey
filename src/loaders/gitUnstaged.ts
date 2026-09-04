@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { createTwoFilesPatch } from "diff";
 
@@ -29,8 +30,30 @@ function comparePaths(a: string, b: string): number {
   return 0;
 }
 
+async function isDirectory(cwd: string, rel: string): Promise<boolean> {
+  try {
+    return (await stat(join(cwd, rel))).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 async function buildUntrackedFile(cwd: string, rel: string): Promise<FileDiff> {
-  const file = Bun.file(join(cwd, rel));
+  const path = join(cwd, rel);
+  const file = Bun.file(path);
+  if (await isDirectory(cwd, rel)) {
+    const cleanPath = rel.endsWith("/") ? rel.slice(0, -1) : rel;
+    return {
+      additions: 0,
+      deletions: 0,
+      diff: "",
+      isBinary: false,
+      notice: "directory",
+      path: cleanPath,
+      status: "added",
+      tooLarge: false,
+    };
+  }
   if (file.size > MAX_DIFF_BYTES) {
     return {
       additions: 0,

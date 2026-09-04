@@ -417,6 +417,23 @@ export function DiffPane() {
     );
   }
 
+  if (file.notice === "directory") {
+    return (
+      <box
+        style={{
+          alignItems: "center",
+          backgroundColor: C.bg,
+          flexGrow: 1,
+          justifyContent: "center",
+        }}
+      >
+        <text style={{ fg: C.faint }}>
+          Directory — select a file to view its diff
+        </text>
+      </box>
+    );
+  }
+
   if (!(file.diff && hunkFile)) {
     return (
       <box

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -171,6 +171,20 @@ describe("gitUnstaged", () => {
     const shown = overridden.files.find((f) => f.path === "bun.lockb");
     expect(shown?.ignored).toBeFalsy();
     expect(shown?.diff).not.toBe("");
+  });
+
+  test("keeps untracked directories listed without reading them as files", async () => {
+    const dir = await initRepo();
+    const sub = join(dir, "workdir");
+    await mkdir(sub);
+    await gitThrow(["init", "-q", sub], dir);
+
+    const cs = await gitUnstaged(dir);
+    const entry = cs.files.find((f) => f.path === "workdir");
+    expect(entry).toBeDefined();
+    expect(entry?.notice).toBe("directory");
+    expect(entry?.diff).toBe("");
+    expect(entry?.status).toBe("added");
   });
 });
 
