@@ -131,8 +131,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
+          # npm >= 11.5.1 (bundled with node 24) is required for OIDC
+          # trusted-publishing auth; no registry-url, so setup-node writes no
+          # .npmrc that would block the OIDC flow.
+          node-version: 24
 
       - uses: oven-sh/setup-bun@v2
         with:

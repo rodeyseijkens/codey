@@ -105,6 +105,10 @@ Nothing manual:
   `glibc`/`musl`), so `pnpm install` links all six alongside `@opentui/core`.
 - **`npm publish` provenance error** — the `id-token: write` permission or the
   workflow-level OIDC configuration on npmjs.com is missing. See step 6.
+- **`npm publish` ENEEDAUTH** — OIDC trusted publishing needs npm CLI ≥ 11.5.1
+  (the publish job pins node 24 for this). Also check each package's trusted
+  publisher on npmjs.com allows direct `npm publish` — configurations created
+  after 2026-09-03 default to stage-publish only.
 - **`gh release upload` fails** — the tag `v<version>` must already exist
   (created by release-please, or manually for the bootstrap).
 - **Darwin cross-compile breaks in CI** — the smoke matrix gates the publish;
