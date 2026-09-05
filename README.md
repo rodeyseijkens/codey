@@ -13,9 +13,26 @@ A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged
 
 ## Installation
 
-`codey` is **not published to npm**. Install via herdr (which builds from source) or run directly with bun.
+Install globally from npm — a prebuilt binary for your platform is fetched automatically. **No bun and no Node dependencies required at runtime.**
 
-### As a herdr plugin (recommended)
+```sh
+npm install -g @rodey-io/codey
+
+# or with bun's faster installer
+bun add -g @rodey-io/codey
+
+codey
+```
+
+The npm package ships a small JS shim plus prebuilt binaries for macOS (arm64, x64) and Linux (x64, arm64, glibc and musl), published as `@rodey-io/codey-<os>-<arch>[-musl]` platform packages. On Alpine Linux (musl) the binary needs a couple of system libraries:
+
+```sh
+apk add libstdc++ libgcc
+```
+
+You can also install manually from the [GitHub Releases](https://github.com/rodeyseijkens/codey/releases) page: download the `codey-<version>-<os>-<arch>[-musl].tar.gz` asset for your platform, extract it, and put the `codey` binary on your `PATH`.
+
+### As a herdr plugin (recommended for agentic workflows)
 
 ```sh
 # Install from the git repository (builds locally)
@@ -25,7 +42,7 @@ herdr plugin install https://github.com/rodeyseijkens/codey
 herdr plugin action invoke open --plugin codey
 ```
 
-> herdr clones the repo, runs `bun run build`, and installs the `codey` and `codey-herdr` binaries into its plugin directory.
+> herdr clones the repo, runs `bun run build`, and installs the `codey` binary into its plugin directory. This path requires bun locally.
 
 ### Standalone (development)
 
@@ -41,7 +58,7 @@ bun run build
 ./bin/codey
 ```
 
-**Requirements:** Node.js 22+ (or Bun), macOS or Linux, and Git for staging operations.
+**Requirements:** the npm binary works on Node.js 18+ (just to launch the shim) on macOS or Linux with Git for staging operations. Building from source requires Node.js 22+ (or Bun).
 
 ---
 
