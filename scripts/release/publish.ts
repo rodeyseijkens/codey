@@ -165,9 +165,28 @@ async function stageRootPackage(
   return dir;
 }
 
+async function isPublished(name: string, version: string): Promise<boolean> {
+  const proc = Bun.spawn(["npm", "view", `${name}@${version}`, "version"], {
+    stderr: "ignore",
+    stdout: "pipe",
+  });
+  const out = (await new Response(proc.stdout).text()).trim();
+  const exit = await proc.exited;
+  return exit === 0 && out === version;
+}
+
 async function publishPackage(dir: string, dryRun: boolean): Promise<void> {
   if (dryRun) {
     await run(["npm", "pack", "--dry-run"], dir);
+    return;
+  }
+  const pkg: RepoPackage = JSON.parse(
+    await readFile(`${dir}/package.json`, "utf8"),
+  );
+  const name = String(pkg.name);
+  const version = String(pkg.version);
+  if (await isPublished(name, version)) {
+    console.info(`skipping ${name}@${version}: already published`);
     return;
   }
   await run(["npm", "publish", "--access", "public", "--provenance"], dir);

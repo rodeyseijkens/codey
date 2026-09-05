@@ -115,6 +115,8 @@ jobs:
   publish:
     needs: [build, smoke]
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
