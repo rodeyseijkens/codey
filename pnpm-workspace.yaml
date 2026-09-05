@@ -4,3 +4,15 @@ overrides:
   shell-quote: 1.10.0
 minimumReleaseAgeExclude:
   - ultracite@7.10.2
+# Install @opentui/core-* native packages for every release target so
+# `bun build --compile` can cross-compile standalone binaries from one machine.
+supportedArchitectures:
+  os:
+    - darwin
+    - linux
+  cpu:
+    - x64
+    - arm64
+  libc:
+    - glibc
+    - musl
