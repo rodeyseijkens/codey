@@ -1,0 +1,18 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "herdr-plugin.toml"
+        },
+        {
+          "type": "generic",
+          "path": "src/main.tsx"
+        }
+      ]
+    }
+  },
+  "include-component-in-tag": false
+}
