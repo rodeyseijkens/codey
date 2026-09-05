@@ -18,7 +18,7 @@ const DIFF = `diff --git a/foo.ts b/foo.ts
 index 123..456 100644
 --- a/foo.ts
 +++ b/foo.ts
-@@ -1,3 +1,3 @@
+@@ -1,2 +1,2 @@
 -const a = 1;
  const b = 2;
 +const c = 3;

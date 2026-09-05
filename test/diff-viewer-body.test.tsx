@@ -133,7 +133,7 @@ describe("DiffBody extension", () => {
     const frame = await captureFrame(
       <DiffBody file={file} layout="stack" notes={notes} width={80} />,
     );
-    expect(frame).toContain("Your note");
+    expect(frame).toContain("\uf4f6");
     expect(frame).toContain("foo.ts");
     expect(frame).toContain("should this be here?");
     expect(frame.indexOf("should this be here?")).toBeGreaterThan(
@@ -183,7 +183,7 @@ describe("DiffBody extension", () => {
     const frame = await captureFrame(
       <DiffBody file={file} layout="stack" notes={notes} width={80} />,
     );
-    expect(frame).toContain("Draft note");
+    expect(frame).toContain("\uf448");
     expect(frame).toContain("draft text");
   });
 });
