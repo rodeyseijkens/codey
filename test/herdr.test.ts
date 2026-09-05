@@ -127,11 +127,11 @@ command = ["sh", "-c", "exec \\"$HERDR_PLUGIN_ROOT/bin/codey\\""]
 id = "toggle"
 title = "codey: toggle pane"
 contexts = ["pane", "workspace"]
-command = ["sh", "-c", "exec \\"$HERDR_PLUGIN_ROOT/bin/codey-herdr\\" toggle"]
+command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "toggle"]
 
 [[events]]
 on = "worktree.created"
-command = ["sh", "-c", "exec \\"$HERDR_PLUGIN_ROOT/bin/codey-herdr\\" auto-open"]
+command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "auto-open"]
 `;
 
   let dir: string;

@@ -3,7 +3,6 @@ dist/
 .turbo/
 bin/codey
 bin/codey.cjs
-bin/codey-herdr
 *.log
 .DS_Store
 .env
