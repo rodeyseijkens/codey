@@ -58,7 +58,7 @@ jobs:
         run: bun run scripts/release/build-binaries.ts --version=${{ steps.version.outputs.version }}
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: codey-release
           path: dist/release/
@@ -85,9 +85,9 @@ jobs:
             runner: ubuntu-24.04-arm
           - target: linux-arm64-musl
             runner: ubuntu-24.04-arm
-            container: alpine:latest
+            docker: alpine:latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: codey-release
           path: dist/release
@@ -97,10 +97,20 @@ jobs:
         run: apk add --no-cache libstdc++ libgcc
 
       - name: Smoke test
+        if: matrix.docker == null
         run: |
           mkdir -p smoke
           tar -xzf dist/release/codey-${{ needs.build.outputs.version }}-${{ matrix.target }}.tar.gz -C smoke
           ./smoke/codey --version
+
+      # JavaScript actions can't run inside containers on arm64 runners, so
+      # the musl smoke test executes in a docker container instead.
+      - name: Smoke test (musl container)
+        if: matrix.docker != null
+        run: |
+          mkdir -p smoke
+          tar -xzf dist/release/codey-${{ needs.build.outputs.version }}-${{ matrix.target }}.tar.gz -C smoke
+          docker run --rm -v "$PWD/smoke:/smoke" ${{ matrix.docker }} sh -c 'apk add --no-cache libstdc++ libgcc && /smoke/codey --version'
 
   publish:
     needs: [build, smoke]
@@ -125,7 +135,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: codey-release
           path: dist/release
