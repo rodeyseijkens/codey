@@ -173,7 +173,7 @@ async function paneRunsCodey(paneId: string): Promise<boolean> {
       String(record.argv0 ?? "")
         .split("/")
         .pop() ?? "";
-    return base === "codey" || base === "codey-herdr";
+    return base === "codey";
   });
 }
 

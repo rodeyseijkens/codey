@@ -5,6 +5,7 @@ import { Command } from "commander";
 
 import { loadConfig } from "./config";
 import { captureTurnBaseline } from "./herdr/agent";
+import { runHerdrAction } from "./herdr/cli";
 import { isHerdrPlugin } from "./herdr/env";
 import { registerAppLayers } from "./keymap/layers";
 import { validateKeybindings } from "./keymap/validation";
@@ -260,5 +261,13 @@ addCommonFlags(
   const patchInput = await readAllStdin();
   await boot({ flags, mode: "pager", patchInput });
 });
+
+program
+  .command("herdr")
+  .description("run a headless herdr plugin action (used by herdr-plugin.toml)")
+  .argument("<action>", "action to run: toggle | open | close | auto-open")
+  .action(async (action: string) => {
+    await runHerdrAction(action);
+  });
 
 void program.parseAsync(process.argv);

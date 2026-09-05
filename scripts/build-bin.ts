@@ -37,7 +37,7 @@ async function main() {
   await mkdir(`${root}dist`, { recursive: true });
 
   const result = await Bun.build({
-    entrypoints: [`${root}src/main.tsx`, `${root}src/herdr/cli.ts`],
+    entrypoints: [`${root}src/main.tsx`],
     external: [
       "@opentui/core",
       "@opentui/react",
@@ -59,17 +59,9 @@ async function main() {
 
   await writeFile(`${root}bin/codey.cjs`, launcher("dist/main.js"), "utf8");
   await writeFile(`${root}bin/codey`, launcher("dist/main.js"), "utf8");
-  await writeFile(
-    `${root}bin/codey-herdr`,
-    launcher("dist/herdr/cli.js"),
-    "utf8",
-  );
   await chmod(`${root}bin/codey.cjs`, 0o755);
   await chmod(`${root}bin/codey`, 0o755);
-  await chmod(`${root}bin/codey-herdr`, 0o755);
-  console.info(
-    "built dist/main.js, dist/herdr/cli.js + bin/codey, bin/codey.cjs, bin/codey-herdr",
-  );
+  console.info("built dist/main.js + bin/codey, bin/codey.cjs");
 }
 
 main().catch((err) => {

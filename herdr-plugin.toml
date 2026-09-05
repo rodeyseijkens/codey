@@ -6,8 +6,8 @@ platforms = ["macos", "linux"]
 description = "Review-first git TUI beside your agent: staged/changes diff viewer with line comments and real git staging. Runs standalone too."
 
 # `herdr plugin install` runs this once (skipped by `herdr plugin link`). It must emit
-# executable binaries at $HERDR_PLUGIN_ROOT/bin/codey (the TUI pane) and
-# $HERDR_PLUGIN_ROOT/bin/codey-herdr (the headless action runner).
+# the executable binary at $HERDR_PLUGIN_ROOT/bin/codey (both the TUI pane and the
+# headless action runner via `codey herdr <action>`).
 [[build]]
 command = ["bash", "herdr/build.sh"]
 
@@ -23,23 +23,23 @@ command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey\""]
 id = "toggle"
 title = "codey: toggle pane"
 contexts = ["pane", "workspace"]
-command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey-herdr\" toggle"]
+command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "toggle"]
 
 [[actions]]
 id = "open"
 title = "codey: open pane"
 contexts = ["pane", "workspace"]
-command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey-herdr\" open"]
+command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "open"]
 
 [[actions]]
 id = "close"
 title = "codey: close pane"
 contexts = ["pane", "workspace"]
-command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey-herdr\" close"]
+command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "close"]
 
 # Auto-open a codey pane for a freshly created worktree (gated by `auto_open` in the
 # plugin config, default true). Turn tracking — snapshotting the diff baseline at the
 # start of each agent turn — is handled at runtime by the TUI via captureTurnBaseline().
 [[events]]
 on = "worktree.created"
-command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey-herdr\" auto-open"]
+command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "auto-open"]
