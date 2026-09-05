@@ -18,7 +18,7 @@ import { parseDiffMode, parseSidebarView } from "./types";
 import { App } from "./ui/app";
 import { startWatcher } from "./watch";
 
-const VERSION = "0.1.1"; // x-release-please-version
+const VERSION = "0.1.2"; // x-release-please-version
 const EXIT_DELAY_MS = 50;
 
 type CliFlags = {
