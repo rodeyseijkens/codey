@@ -7,9 +7,8 @@ This documents the one-time npm bootstrap and the steady-state release pipeline.
 | Event | Workflow | What happens |
 | ----- | -------- | ------------ |
 | PR opened / pushed | `ci.yml` | lint, type-check, tests, launcher build, `linux-x64` compile sanity check |
-| Push to `main` | `release.yml` | release-please bumps the version, updates `CHANGELOG.md` + `herdr-plugin.toml` (via `x-release-please-version`), opens a release PR |
-| Release PR merged | `release.yml` | release-please creates the `vX.Y.Z` tag + GitHub Release |
-| Release published | `publish.yml` | builds 6 platform binaries, smoke-tests each, publishes 7 npm packages (`@rodey-io/codey` + 6 `@rodey-io/codey-<target>`), uploads the `.tar.gz` assets to the release |
+| Push to `main` | `release.yml` | release-please bumps the version, updates `CHANGELOG.md`, `package.json`, `herdr-plugin.toml` and `src/main.tsx` (via inline `x-release-please-version` markers), opens a release PR |
+| Release PR merged | `release.yml` → `publish.yml` | release-please creates the `vX.Y.Z` tag + GitHub Release, then chains `publish.yml` via `workflow_call` (releases created by `GITHUB_TOKEN` don't fire `on: release` events): builds 6 platform binaries, smoke-tests each, publishes 7 npm packages (`@rodey-io/codey` + 6 `@rodey-io/codey-<target>`), uploads the `.tar.gz` assets to the release |
 
 Users install with `npm i -g @rodey-io/codey` — the npm package is a thin Node
 shim (`bin/codey.mjs`) that spawns the prebuilt binary from the matching
