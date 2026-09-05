@@ -45,8 +45,9 @@ Steps 1–7 are manual and never repeated.
    ```
 
    The `build` job cross-compiles all 6 binaries, `smoke` verifies
-   `codey --version` on every target (including musl containers), and `publish`
-   runs `scripts/release/publish.ts`, which:
+   `codey --version` on every target except darwin-x64 (macos-13 runners sit in
+   queues indefinitely; the darwin-x64 binary is still built and published), and
+   `publish` runs `scripts/release/publish.ts`, which:
 
    - stages 6 platform packages under `dist/publish/<target>/`
      (`@rodey-io/codey-<os>-<arch>[-musl]`, binary only) plus the root package
