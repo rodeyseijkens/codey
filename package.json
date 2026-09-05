@@ -1,7 +1,13 @@
 {
-  "name": "codey",
+  "name": "@rodey-io/codey",
   "version": "0.1.0",
   "description": "Review-first git TUI: two-section staged/changes diff viewer with transient comments and real git staging. Built on OpenTUI.",
+  "homepage": "https://github.com/rodeyseijkens/codey",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rodeyseijkens/codey.git"
+  },
+  "license": "MIT",
   "type": "module",
   "bin": {
     "codey": "./bin/codey.cjs"
