@@ -1,0 +1,134 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g. 0.1.0). Required for the one-time bootstrap; ignored on release events."
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "no version: pass workflow_dispatch input or run on a release tag" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies (all platforms)
+        # supportedArchitectures in pnpm-workspace.yaml installs every
+        # @opentui/core-* native package so bun can cross-compile all targets.
+        run: pnpm install --frozen-lockfile
+
+      - name: Compile standalone binaries
+        run: bun run scripts/release/build-binaries.ts --version=${{ steps.version.outputs.version }}
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: codey-release
+          path: dist/release/
+          retention-days: 7
+
+  smoke:
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-14
+          - target: darwin-x64
+            runner: macos-13
+          - target: linux-x64
+            runner: ubuntu-latest
+          - target: linux-x64-musl
+            runner: ubuntu-latest
+            container: alpine:latest
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-arm64-musl
+            runner: ubuntu-24.04-arm
+            container: alpine:latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: codey-release
+          path: dist/release
+
+      - name: Install runtime libs (Alpine/musl)
+        if: matrix.container != null
+        run: apk add --no-cache libstdc++ libgcc
+
+      - name: Smoke test
+        run: |
+          mkdir -p smoke
+          tar -xzf dist/release/codey-${{ needs.build.outputs.version }}-${{ matrix.target }}.tar.gz -C smoke
+          ./smoke/codey --version
+
+  publish:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Set up npm auth (bootstrap only)
+        if: env.NPM_TOKEN != ''
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: codey-release
+          path: dist/release
+
+      - name: Publish to npm + upload release assets
+        run: bun run scripts/release/publish.ts --version=${{ needs.build.outputs.version }}
