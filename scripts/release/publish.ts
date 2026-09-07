@@ -165,6 +165,9 @@ async function stageRootPackage(
   return dir;
 }
 
+const MIN_NPM_VERSION = [11, 5, 1] as const;
+const NPM_VERSION_REGEX = /^(\d+)\.(\d+)\.(\d+)/;
+
 async function isPublished(name: string, version: string): Promise<boolean> {
   const proc = Bun.spawn(["npm", "view", `${name}@${version}`, "version"], {
     stderr: "ignore",
@@ -173,6 +176,30 @@ async function isPublished(name: string, version: string): Promise<boolean> {
   const out = (await new Response(proc.stdout).text()).trim();
   const exit = await proc.exited;
   return exit === 0 && out === version;
+}
+
+async function assertNpmVersion(): Promise<void> {
+  const proc = Bun.spawn(["npm", "--version"], {
+    stderr: "ignore",
+    stdout: "pipe",
+  });
+  const out = (await new Response(proc.stdout).text()).trim();
+  const match = NPM_VERSION_REGEX.exec(out);
+  if (!match) {
+    throw new Error(`could not parse npm version: ${out}`);
+  }
+  const actual = match.slice(1).map(Number);
+  const min = MIN_NPM_VERSION;
+  const tooOld = min.some((n, i) => {
+    const part = actual[i];
+    return part === undefined || part < n;
+  });
+  if (tooOld) {
+    throw new Error(
+      `npm ${out} is too old for OIDC trusted publishing (needs >= ${min.join(".")}); ` +
+        "pin the publish job to a newer node (24+) that bundles npm 11.5.1+",
+    );
+  }
 }
 
 async function publishPackage(dir: string, dryRun: boolean): Promise<void> {
@@ -211,6 +238,10 @@ async function main() {
   console.info(
     `${flags.dryRun ? "[dry-run] " : ""}publishing ${ROOT_PACKAGE}@${version}`,
   );
+
+  if (!flags.dryRun) {
+    await assertNpmVersion();
+  }
 
   await rm(publishDir, { force: true, recursive: true });
   await mkdir(publishDir, { recursive: true });
