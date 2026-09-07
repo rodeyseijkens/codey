@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/rodeyseijkens/codey/compare/v0.1.2...v0.1.3) (2026-09-07)
+
+
+### Bug Fixes
+
+* fail fast when npm CLI is too old for trusted publishing ([#9](https://github.com/rodeyseijkens/codey/issues/9)) ([bc13f57](https://github.com/rodeyseijkens/codey/commit/bc13f577eabd1aa5b259d9c5b88213274d96c12a))
+
 ## [0.1.2](https://github.com/rodeyseijkens/codey/compare/v0.1.1...v0.1.2) (2026-09-05)
 
 
