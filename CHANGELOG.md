@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4](https://github.com/rodeyseijkens/codey/compare/v0.1.3...v0.1.4) (2026-09-12)
+
+
+### Bug Fixes
+
+* clear reword draft on ctrl+c ([958a05b](https://github.com/rodeyseijkens/codey/commit/958a05b9443c9aa38f8a85d46d021b29b361e127))
+* prefill reword input with original commit message ([cfc86d5](https://github.com/rodeyseijkens/codey/commit/cfc86d56d64d8952f75dc1823118ae2fb79ceab8))
+* replace em dash escapes in commit placeholder text ([042d440](https://github.com/rodeyseijkens/codey/commit/042d4403bd526a4b832c228b39e80fb663bbc7fa))
+
 ## [0.1.3](https://github.com/rodeyseijkens/codey/compare/v0.1.2...v0.1.3) (2026-09-07)
 
 
