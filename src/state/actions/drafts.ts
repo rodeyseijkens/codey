@@ -28,7 +28,12 @@ export function clearCommitDraft(): void {
 }
 
 export function openRewordDraft(hash: string): void {
-  getStore().set({ overlay: { hash, kind: "reword-commit" }, rewordDraft: "" });
+  const store = getStore();
+  const entry = store.getState().commitEntries.find((c) => c.hash === hash);
+  store.set({
+    overlay: { hash, kind: "reword-commit" },
+    rewordDraft: entry?.message ?? "",
+  });
 }
 
 export function cancelRewordDraft(): void {
