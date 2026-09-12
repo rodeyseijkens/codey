@@ -71,6 +71,16 @@ Steps 1–7 are manual and never repeated.
    - Workflow: `publish.yml`
    - Environments: (leave default)
 
+   Bootstrap publishes run `publish.yml` directly (`workflow_dispatch`), which
+   this entry covers.
+
+   Automatic releases need a second entry. Trusted publishing validates the
+   **calling** workflow's filename when `publish.yml` is invoked from
+   `release.yml` via `workflow_call`, so npm matches against `release.yml` on
+   automatic releases. Add a **second** publisher per package with Workflow:
+   `release.yml`; without it the chained publish fails with `ENEEDAUTH` even
+   though dispatch publishes work.
+
 7. **Remove the throwaway credential.** Delete the `NPM_TOKEN` repo secret and
    expire the npm token. All future publishes use OIDC only — no token anywhere.
 
@@ -109,6 +119,10 @@ Nothing manual:
   (the publish job pins node 24 for this). Also check each package's trusted
   publisher on npmjs.com allows direct `npm publish` — configurations created
   after 2026-09-03 default to stage-publish only.
+- **`npm publish` fails with ENEEDAUTH on the automatic chain but not on a
+  manual `workflow_dispatch`** — the trusted publisher for each package is
+  missing the `release.yml` entry. npm validates the calling workflow's
+  filename when `publish.yml` runs via `workflow_call` (step 6).
 - **`gh release upload` fails** — the tag `v<version>` must already exist
   (created by release-please, or manually for the bootstrap).
 - **Darwin cross-compile breaks in CI** — the smoke matrix gates the publish;
