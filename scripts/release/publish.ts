@@ -22,6 +22,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 
+import { isOlderVersion, MIN_NPM_VERSION } from "./npm-version";
 import {
   platformPackageName,
   RELEASE_TARGETS,
@@ -165,7 +166,6 @@ async function stageRootPackage(
   return dir;
 }
 
-const MIN_NPM_VERSION = [11, 5, 1] as const;
 const NPM_VERSION_REGEX = /^(\d+)\.(\d+)\.(\d+)/;
 
 async function isPublished(name: string, version: string): Promise<boolean> {
@@ -190,10 +190,7 @@ async function assertNpmVersion(): Promise<void> {
   }
   const actual = match.slice(1).map(Number);
   const min = MIN_NPM_VERSION;
-  const tooOld = min.some((n, i) => {
-    const part = actual[i];
-    return part === undefined || part < n;
-  });
+  const tooOld = isOlderVersion(actual, min);
   if (tooOld) {
     throw new Error(
       `npm ${out} is too old for OIDC trusted publishing (needs >= ${min.join(".")}); ` +
