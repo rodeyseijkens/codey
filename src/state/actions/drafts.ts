@@ -27,6 +27,11 @@ export function clearCommitDraft(): void {
   store.set({ draftClearTick: store.getState().draftClearTick + 1 });
 }
 
+export function clearRewordDraft(): void {
+  const store = getStore();
+  store.set({ draftClearTick: store.getState().draftClearTick + 1 });
+}
+
 export function openRewordDraft(hash: string): void {
   const store = getStore();
   const entry = store.getState().commitEntries.find((c) => c.hash === hash);

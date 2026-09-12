@@ -41,6 +41,20 @@ describe("handleCtrlC", () => {
     expect(state.draftClearTick).toBe(1);
   });
 
+  test("clears the reword draft text and keeps the overlay open", () => {
+    const store = new AppStore({
+      overlay: { hash: "abc1234", kind: "reword-commit" },
+      rewordDraft: "original message",
+    });
+    setStore(store);
+
+    handleCtrlC(store);
+
+    const state = store.getState();
+    expect(state.rewordDraft).not.toBeNull();
+    expect(state.draftClearTick).toBe(1);
+  });
+
   test("quits when no input field is active", () => {
     const store = new AppStore();
     setStore(store);
