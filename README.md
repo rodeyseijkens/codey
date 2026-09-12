@@ -3,17 +3,16 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-green.svg)](https://nodejs.org/)
 [![Built on OpenTUI](https://img.shields.io/badge/Built%20on-OpenTUI-orange.svg)](https://github.com/anomalyco/opentui)
-[![Uses hunk-diff](https://img.shields.io/badge/Uses-hunk--diff-purple.svg)](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff)
 
 A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged diff viewer with transient line comments, real git staging, and a commit log sidebar with pull/push and commit creation. Built on [OpenTUI](https://github.com/anomalyco/opentui) and [hunk-diff](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff).
 
-`codey` sits beside your agent while it writes code — review the diff it just produced, comment on lines, stage the parts you want, and hand the notes back. It runs standalone in any terminal and as a [herdr](https://herdr.dev) plugin pane.
+`codey` sits beside your agent while it writes code. Review the diff it just produced, comment on lines, stage the parts you want, and hand the notes back. It runs standalone in any terminal and as a [herdr](https://herdr.dev) plugin pane.
 
 ---
 
 ## Installation
 
-Install globally from npm — a prebuilt binary for your platform is fetched automatically. **No bun and no Node dependencies required at runtime.**
+Install globally from npm. A prebuilt binary for your platform is fetched automatically, so **no bun and no Node dependencies are required at runtime.**
 
 ```sh
 npm install -g @rodey-io/codey
@@ -30,7 +29,7 @@ The npm package ships a small JS shim plus prebuilt binaries for macOS (arm64, x
 apk add libstdc++ libgcc
 ```
 
-You can also install manually from the [GitHub Releases](https://github.com/rodeyseijkens/codey/releases) page: download the `codey-<version>-<os>-<arch>[-musl].tar.gz` asset for your platform, extract it, and put the `codey` binary on your `PATH`.
+You can also install manually from the [GitHub Releases](https://github.com/rodeyseijkens/codey/releases) page. Download the `codey-<version>-<os>-<arch>[-musl].tar.gz` asset for your platform, extract it, and put the `codey` binary on your `PATH`.
 
 ### As a herdr plugin (recommended for agentic workflows)
 
@@ -44,40 +43,21 @@ herdr plugin action invoke open --plugin codey
 
 > herdr clones the repo, runs `bun run build`, and installs the `codey` binary into its plugin directory. This path requires bun locally.
 
-### Standalone (development)
-
-```sh
-# Clone and run directly
-git clone https://github.com/rodeyseijkens/codey
-cd codey
-bun install
-bun run dev              # runs src/main.tsx with hot reload
-
-# Or build a standalone binary
-bun run build
-./bin/codey
-```
-
-**Requirements:** the npm binary works on Node.js 18+ (just to launch the shim) on macOS or Linux with Git for staging operations. Building from source requires Node.js 22+ (or Bun).
-
 ---
 
-## Running
+## Getting started
 
-```sh
-# Development (with hot reload)
-bun run dev
+Run `codey` in a repository. The default view splits your staged and unstaged changes into two sections. Press `?` for the full key list.
 
-# Build and run standalone binary
-bun run build
-./bin/codey
+A first pass through the app:
 
-# As a herdr plugin
-herdr plugin install https://github.com/rodeyseijkens/codey
-herdr plugin action invoke open --plugin codey
-```
+1. Move through the sidebar rows with `j`/`k` and open a file's diff in the diff pane.
+2. Stage changes with `a` (current file) or `A` (all of them). Unstage with `u`/`U`.
+3. Comment on a line or range: `v` to start a selection, `c` to add a comment, `s` to send.
+4. Commit: focus the commit log with `2`, press `c`, type the message, then Enter.
+5. Pull and push from the commit pane with `p` and `P`.
 
-The default command opens the staged/unstaged diff viewer. Press `?` inside for keybindings.
+`Esc` cancels overlays; `q` quits.
 
 ### Keybindings (defaults)
 
@@ -137,11 +117,13 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 All keybindings are customizable in `~/.config/codey/config.toml` under `[keybindings]`. Press `?` inside the app for the full live list.
 
+### Configuration
+
 Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, and custom keybindings live in `~/.config/codey/config.toml`.
 
 ### Ignoring files in the diff
 
-Lock files and dependency checksums are not loaded into the diff view by default: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `bun.lockb`, `Cargo.lock`, `Gemfile.lock`, `poetry.lock`, `Pipfile.lock`, `go.sum`, `composer.lock`, `Package.resolved`, `packages.lock.json`, `pubspec.lock`, `uv.lock`, `mix.lock`, `deno.lock`, `flake.lock`, `.terraform.lock.hcl`, and `gradle.lockfile`. They still appear in the file list — selecting one shows a placeholder instead of its diff.
+Lock files and dependency checksums are not loaded into the diff view by default: `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock`, `bun.lockb`, `Cargo.lock`, `Gemfile.lock`, `poetry.lock`, `Pipfile.lock`, `go.sum`, `composer.lock`, `Package.resolved`, `packages.lock.json`, `pubspec.lock`, `uv.lock`, `mix.lock`, `deno.lock`, `flake.lock`, `.terraform.lock.hcl`, and `gradle.lockfile`. They still appear in the file list: selecting one shows a placeholder instead of its diff.
 
 Set `ignoreFiles` to **replace** the default list with your own glob patterns. Patterns match the repo-relative path; `*` matches within a path segment, `**` crosses directories, and `?` matches a single character. A pattern without `/` matches that name at any depth. An empty list disables the filter.
 
@@ -154,24 +136,20 @@ ignoreFiles = ["**/package-lock.json", "**/pnpm-lock.yaml", "**/*.snap"]
 
 ## Documentation
 
-- [Keybindings](docs/keybindings.md) — Full keymap reference
-
----
-
-## Relationship to hunk
-
-`codey` incorporates a **modified copy of [`hunk-diff`](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff)** (MIT licensed) for its diff rendering engine, and shares the same [OpenTUI](https://github.com/anomalyco/opentui) foundation. It is not a direct fork of the full hunk application — rather, it adapts the diff renderer for a two-section staged/unstaged review UX with transient comments and a commit log sidebar.
+- [Keybindings](docs/keybindings.md): full keymap reference
+- [Development](docs/development.md): running from source, building, layout
+- [Releasing](docs/releasing.md): the release pipeline
 
 ---
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) Rodey Seijkens; includes modified code from [`hunk-diff`](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff) (MIT, Copyright Modem)
+[MIT](LICENSE). Copyright (c) Rodey Seijkens; includes modified code from [`hunk-diff`](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff) (MIT, Copyright Modem)
 
 ---
 
 ## Related Projects
 
-- [hunk](https://github.com/modem-dev/hunk) — The upstream project: multi-file review stream, inline AI annotations, Git/Jujutsu/Sapling support
-- [herdr-reviewr](https://github.com/persiyanov/herdr-reviewr) — Code-review sidebar for herdr: comment on agent diffs, send back, view PR checks/comments
-- [OpenTUI](https://github.com/anomalyco/opentui) — The TUI framework powering both projects
+- [hunk](https://github.com/modem-dev/hunk): the upstream project, a multi-file review stream with inline AI annotations and Git/Jujutsu/Sapling support
+- [herdr-reviewr](https://github.com/persiyanov/herdr-reviewr): a code-review sidebar for herdr, letting you comment on agent diffs, send them back, and view PR checks/comments
+- [OpenTUI](https://github.com/anomalyco/opentui): the TUI framework powering both projects
