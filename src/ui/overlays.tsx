@@ -251,7 +251,7 @@ function CommitInputOverlay() {
           const text = textareaRef.current?.plainText ?? "";
           await submitCommitDraft(text);
         }}
-        placeholder="commit message \u2014 Enter to commit, esc to cancel"
+        placeholder="commit message - Enter to commit, esc to cancel"
         ref={textareaRef}
         textColor={C.fg}
         width={contentWidth}
@@ -423,7 +423,7 @@ function RewordInputOverlay() {
           const text = textareaRef.current?.plainText ?? "";
           await confirmGitReword(text);
         }}
-        placeholder="new commit message \u2014 Enter to confirm, esc to cancel"
+        placeholder="new commit message - Enter to confirm, esc to cancel"
         ref={textareaRef}
         textColor={C.fg}
         width={contentWidth}
