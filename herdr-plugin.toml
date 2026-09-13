@@ -23,23 +23,23 @@ command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey\""]
 id = "toggle"
 title = "codey: toggle pane"
 contexts = ["pane", "workspace"]
-command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "toggle"]
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey\" herdr toggle"]
 
 [[actions]]
 id = "open"
 title = "codey: open pane"
 contexts = ["pane", "workspace"]
-command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "open"]
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey\" herdr open"]
 
 [[actions]]
 id = "close"
 title = "codey: close pane"
 contexts = ["pane", "workspace"]
-command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "close"]
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey\" herdr close"]
 
 # Auto-open a codey pane for a freshly created worktree (gated by `auto_open` in the
 # plugin config, default true). Turn tracking — snapshotting the diff baseline at the
 # start of each agent turn — is handled at runtime by the TUI via captureTurnBaseline().
 [[events]]
 on = "worktree.created"
-command = ["$HERDR_PLUGIN_ROOT/bin/codey", "herdr", "auto-open"]
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/codey\" herdr auto-open"]

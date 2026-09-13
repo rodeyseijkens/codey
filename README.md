@@ -34,14 +34,14 @@ You can also install manually from the [GitHub Releases](https://github.com/rode
 ### As a herdr plugin (recommended for agentic workflows)
 
 ```sh
-# Install from the git repository (builds locally)
-herdr plugin install https://github.com/rodeyseijkens/codey
+# Install from GitHub (downloads the matching release binary)
+herdr plugin install rodeyseijkens/codey
 
 # Open the pane
 herdr plugin action invoke open --plugin codey
 ```
 
-> herdr clones the repo, runs `bun run build`, and installs the `codey` binary into its plugin directory. This path requires bun locally.
+> herdr clones the repo and runs `herdr/build.sh`, which installs the standalone GitHub Release binary for this platform into the plugin directory. If no prebuilt exists, it falls back to `pnpm install` + `bun run build` (requires bun, and pnpm for OpenTUI native packages).
 
 ---
 
