@@ -41,7 +41,7 @@ herdr plugin install rodeyseijkens/codey
 herdr plugin action invoke open --plugin codey
 ```
 
-> herdr clones the repo and runs `herdr/build.sh`, which installs the standalone GitHub Release binary for this platform into the plugin directory. If no prebuilt exists, it falls back to `pnpm install` + `bun run build` (requires bun, and pnpm for OpenTUI native packages).
+> herdr clones the repo and runs `herdr/build.sh`, which installs the standalone GitHub Release binary for this platform into the plugin directory. If no prebuilt exists, it installs deps and compiles a standalone binary from source (requires bun, and pnpm for OpenTUI native packages).
 
 ---
 
