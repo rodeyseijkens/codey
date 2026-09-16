@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   RGBA,
   type ScrollBoxRenderable,
   type TextareaRenderable,
 } from "@opentui/core";
 import { useKeymap } from "@opentui/keymap/react";
-import { useKeyboard } from "@opentui/react";
 
 import {
   COMMAND_DESCRIPTIONS,
@@ -28,9 +27,9 @@ import { useDraftClear } from "./use-draft-clear";
 const SHORT_HASH_LEN = 7;
 const SCROLL_STEP = 10;
 
-function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): void {
+function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): boolean {
   if (!scroll) {
-    return;
+    return false;
   }
   if (name === "j" || name === "down") {
     scroll.scrollTop += 1;
@@ -40,7 +39,10 @@ function scrollHelp(scroll: ScrollBoxRenderable | null, name: string): void {
     scroll.scrollTop += SCROLL_STEP;
   } else if (name === "pageup") {
     scroll.scrollTop = Math.max(0, scroll.scrollTop - SCROLL_STEP);
+  } else {
+    return false;
   }
+  return true;
 }
 
 function OverlayFrame(props: {
@@ -125,14 +127,26 @@ function ActiveBindingRow({ cmd }: { cmd: CommandId }) {
 function HelpOverlay() {
   const store = getStore();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
+  const keymap = useKeymap();
   const { ui: C } = useColors();
 
-  useKeyboard((e) => {
-    if (store.getState().overlay?.kind !== "help") {
-      return;
-    }
-    scrollHelp(scrollRef.current, e.name?.toLowerCase() ?? "");
-  });
+  useEffect(
+    () =>
+      keymap.intercept(
+        "key",
+        (ctx) => {
+          if (store.getState().overlay?.kind !== "help") {
+            return;
+          }
+          const name = ctx.event.name?.toLowerCase() ?? "";
+          if (scrollHelp(scrollRef.current, name)) {
+            ctx.consume();
+          }
+        },
+        { priority: 100 },
+      ),
+    [keymap, store],
+  );
 
   return (
     <OverlayFrame
