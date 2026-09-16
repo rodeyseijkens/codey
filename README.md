@@ -124,6 +124,13 @@ All keybindings are customizable in `~/.config/codey/config.toml` under `[keybin
 
 Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, the file editor, and custom keybindings live in `~/.config/codey/config.toml`.
 
+Set `theme` to any bundled theme id, or leave it at `auto` to follow the terminal background. See [Themes](docs/themes.md) for the list.
+
+```toml
+# ~/.config/codey/config.toml
+theme = "tokyo-night"
+```
+
 `E` opens the focused file in the same terminal. Set `editor` to pick the program; otherwise codey uses `$VISUAL`, then `$EDITOR`, then `vi`.
 
 ```toml
@@ -147,6 +154,7 @@ ignoreFiles = ["**/package-lock.json", "**/pnpm-lock.yaml", "**/*.snap"]
 ## Documentation
 
 - [Keybindings](docs/keybindings.md): full keymap reference
+- [Themes](docs/themes.md): supported themes and how to set them
 - [Development](docs/development.md): running from source, building, layout
 - [Releasing](docs/releasing.md): the release pipeline
 
