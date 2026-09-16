@@ -4,7 +4,12 @@ import {
   type ThemeRegistrationResolved,
 } from "@pierre/diffs";
 
-import { blendHex, contrastRatio, relativeLuminance } from "../color-utils";
+import {
+  blendHex,
+  contrastRatio,
+  cssColorToHex,
+  relativeLuminance,
+} from "../color-utils";
 import type { NamedCustomThemeConfig } from "../diff-viewer/render/types";
 import {
   BUNDLED_THEME_IDS,
@@ -350,13 +355,33 @@ function applyCodeyPalette(
  */
 const RESOLVED_THEME_CACHE = new Map<string, AppTheme>();
 
-const hexColorPattern = /^#[0-9a-f]{6}$/i;
+const shortHexColorPattern = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i;
+const longHexColorPattern = /^#([0-9a-f]{6})(?:[0-9a-f]{2})?$/i;
 
-/** Return the first candidate that is a usable #rrggbb color. */
+/** Expand #rgb and drop the alpha from #rrggbbaa so every value becomes #rrggbb. */
+function opaqueHexColor(color: string) {
+  const short = shortHexColorPattern.exec(color);
+  if (short) {
+    const [, red, green, blue] = short;
+    return `#${red}${red}${green}${green}${blue}${blue}`;
+  }
+
+  const long = longHexColorPattern.exec(color);
+  return long ? `#${long[1]}` : undefined;
+}
+
+/** Return the first candidate that normalizes to a usable #rrggbb color. */
 function firstHexColor(...candidates: Array<string | undefined>) {
   for (const candidate of candidates) {
-    if (candidate && hexColorPattern.test(candidate)) {
-      return candidate;
+    if (!candidate) {
+      continue;
+    }
+
+    // Resolved Shiki/Pierre themes declare Display-P3, #rgb, and #rrggbbaa
+    // colors, so normalize each candidate before deciding it is unusable.
+    const hex = opaqueHexColor(cssColorToHex(candidate.trim()));
+    if (hex) {
+      return hex;
     }
   }
 }
