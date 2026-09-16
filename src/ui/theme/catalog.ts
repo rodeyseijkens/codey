@@ -68,6 +68,30 @@ export const BUNDLED_SHIKI_THEME_IDS = [
 
 export type BundledShikiThemeId = (typeof BUNDLED_SHIKI_THEME_IDS)[number];
 
+/** First-party Pierre themes bundled with the highlighter but not shipped as Shiki themes. */
+export const BUNDLED_PIERRE_THEME_IDS = [
+  "pierre-dark",
+  "pierre-dark-protanopia-deuteranopia",
+  "pierre-dark-soft",
+  "pierre-dark-tritanopia",
+  "pierre-dark-vibrant",
+  "pierre-light",
+  "pierre-light-protanopia-deuteranopia",
+  "pierre-light-soft",
+  "pierre-light-tritanopia",
+  "pierre-light-vibrant",
+] as const;
+
+export type BundledPierreThemeId = (typeof BUNDLED_PIERRE_THEME_IDS)[number];
+
+/** Every theme codey ships, from both the Shiki and Pierre collections. */
+export const BUNDLED_THEME_IDS = [
+  ...BUNDLED_SHIKI_THEME_IDS,
+  ...BUNDLED_PIERRE_THEME_IDS,
+] as const;
+
+export type BundledThemeId = (typeof BUNDLED_THEME_IDS)[number];
+
 export const LEGACY_THEME_ID_ALIASES = {
   ember: "dark-plus",
   graphite: "github-dark-default",
@@ -86,18 +110,16 @@ export function resolveLegacyThemeId(themeId: string | undefined) {
 }
 
 /** Resolve a current or legacy id when it names one bundled theme. */
-export function resolveBundledShikiThemeId(
+export function resolveBundledThemeId(
   themeId: string | undefined,
-): BundledShikiThemeId | undefined {
+): BundledThemeId | undefined {
   const resolvedThemeId = resolveLegacyThemeId(themeId);
-  return BUNDLED_SHIKI_THEME_IDS.includes(
-    resolvedThemeId as BundledShikiThemeId,
-  )
-    ? (resolvedThemeId as BundledShikiThemeId)
+  return BUNDLED_THEME_IDS.includes(resolvedThemeId as BundledThemeId)
+    ? (resolvedThemeId as BundledThemeId)
     : undefined;
 }
 
-export type BundledShikiThemeDiffColors = {
+export type BundledThemeDiffColors = {
   added?: string;
   modified?: string;
   removed?: string;
@@ -240,7 +262,7 @@ export const BUNDLED_SHIKI_THEME_FOREGROUNDS: Partial<
 };
 
 export const BUNDLED_SHIKI_THEME_DIFF_COLORS: Partial<
-  Record<BundledShikiThemeId, BundledShikiThemeDiffColors>
+  Record<BundledShikiThemeId, BundledThemeDiffColors>
 > = {
   andromeeda: { added: "#96e072", modified: "#7cb7ff", removed: "#ee5d43" },
   "aurora-x": { added: "#63d188", modified: "#c778db", removed: "#dd5074" },
@@ -435,23 +457,136 @@ export const BUNDLED_SHIKI_THEME_DIFF_COLORS: Partial<
   },
 };
 
-/** Return the editor surface declared by a bundled Shiki theme, when Hunk knows it. */
-export function getBundledShikiThemeBackground(themeId: string | undefined) {
-  return themeId && themeId in BUNDLED_SHIKI_THEME_BACKGROUNDS
-    ? BUNDLED_SHIKI_THEME_BACKGROUNDS[themeId as BundledShikiThemeId]
+/** Editor surface declared by each first-party Pierre theme. */
+export const BUNDLED_PIERRE_THEME_BACKGROUNDS: Record<
+  BundledPierreThemeId,
+  string
+> = {
+  "pierre-dark": "#0a0a0a",
+  "pierre-dark-protanopia-deuteranopia": "#0a0a0a",
+  "pierre-dark-soft": "#171717",
+  "pierre-dark-tritanopia": "#0a0a0a",
+  "pierre-dark-vibrant": "#0a0a0a",
+  "pierre-light": "#ffffff",
+  "pierre-light-protanopia-deuteranopia": "#ffffff",
+  "pierre-light-soft": "#ffffff",
+  "pierre-light-tritanopia": "#ffffff",
+  "pierre-light-vibrant": "#ffffff",
+};
+
+/** Editor foreground declared by each first-party Pierre theme. */
+export const BUNDLED_PIERRE_THEME_FOREGROUNDS: Record<
+  BundledPierreThemeId,
+  string
+> = {
+  "pierre-dark": "#fafafa",
+  "pierre-dark-protanopia-deuteranopia": "#fafafa",
+  "pierre-dark-soft": "#d4d4d4",
+  "pierre-dark-tritanopia": "#fafafa",
+  "pierre-dark-vibrant": "#fafafa",
+  "pierre-light": "#0a0a0a",
+  "pierre-light-protanopia-deuteranopia": "#0a0a0a",
+  "pierre-light-soft": "#525252",
+  "pierre-light-tritanopia": "#0a0a0a",
+  "pierre-light-vibrant": "#0a0a0a",
+};
+
+/**
+ * Semantic diff colors for each Pierre theme.
+ *
+ * The vibrant variants ship as `color(display-p3 ...)`; these are the sRGB
+ * conversions codey's hex color math needs.
+ */
+export const BUNDLED_PIERRE_THEME_DIFF_COLORS: Record<
+  BundledPierreThemeId,
+  BundledThemeDiffColors
+> = {
+  "pierre-dark": {
+    added: "#07c480",
+    modified: "#009fff",
+    removed: "#ff2e3f",
+  },
+  "pierre-dark-protanopia-deuteranopia": {
+    added: "#97c4ff",
+    modified: "#009fff",
+    removed: "#fe8c2c",
+  },
+  "pierre-dark-soft": {
+    added: "#60d199",
+    modified: "#69b1ff",
+    removed: "#ff6762",
+  },
+  "pierre-dark-tritanopia": {
+    added: "#92dde4",
+    modified: "#009fff",
+    removed: "#ff855e",
+  },
+  "pierre-dark-vibrant": {
+    added: "#00d07d",
+    modified: "#1ba7ff",
+    removed: "#ff1b37",
+  },
+  "pierre-light": {
+    added: "#18a46c",
+    modified: "#009fff",
+    removed: "#d52c36",
+  },
+  "pierre-light-protanopia-deuteranopia": {
+    added: "#216cab",
+    modified: "#009fff",
+    removed: "#ac6023",
+  },
+  "pierre-light-soft": {
+    added: "#07c480",
+    modified: "#009fff",
+    removed: "#ff2e3f",
+  },
+  "pierre-light-tritanopia": {
+    added: "#1e858e",
+    modified: "#009fff",
+    removed: "#d5512f",
+  },
+  "pierre-light-vibrant": {
+    added: "#00ad69",
+    modified: "#1ba7ff",
+    removed: "#e91e2e",
+  },
+};
+
+const BUNDLED_THEME_BACKGROUNDS: Record<BundledThemeId, string> = {
+  ...BUNDLED_SHIKI_THEME_BACKGROUNDS,
+  ...BUNDLED_PIERRE_THEME_BACKGROUNDS,
+};
+
+const BUNDLED_THEME_FOREGROUNDS: Partial<Record<BundledThemeId, string>> = {
+  ...BUNDLED_SHIKI_THEME_FOREGROUNDS,
+  ...BUNDLED_PIERRE_THEME_FOREGROUNDS,
+};
+
+const BUNDLED_THEME_DIFF_COLORS: Partial<
+  Record<BundledThemeId, BundledThemeDiffColors>
+> = {
+  ...BUNDLED_SHIKI_THEME_DIFF_COLORS,
+  ...BUNDLED_PIERRE_THEME_DIFF_COLORS,
+};
+
+/** Return the editor surface declared by a bundled theme, when codey knows it. */
+export function getBundledThemeBackground(themeId: string | undefined) {
+  return themeId && themeId in BUNDLED_THEME_BACKGROUNDS
+    ? BUNDLED_THEME_BACKGROUNDS[themeId as BundledThemeId]
     : undefined;
 }
 
-/** Return the editor foreground declared by a bundled Shiki theme, when Hunk knows it. */
-export function getBundledShikiThemeForeground(themeId: string | undefined) {
-  return themeId && themeId in BUNDLED_SHIKI_THEME_FOREGROUNDS
-    ? BUNDLED_SHIKI_THEME_FOREGROUNDS[themeId as BundledShikiThemeId]
+/** Return the editor foreground declared by a bundled theme, when codey knows it. */
+export function getBundledThemeForeground(themeId: string | undefined) {
+  return themeId && themeId in BUNDLED_THEME_FOREGROUNDS
+    ? BUNDLED_THEME_FOREGROUNDS[themeId as BundledThemeId]
     : undefined;
 }
 
-/** Return semantic diff colors declared by a bundled Shiki theme, when Hunk knows them. */
-export function getBundledShikiThemeDiffColors(themeId: string | undefined) {
-  return themeId && themeId in BUNDLED_SHIKI_THEME_DIFF_COLORS
-    ? BUNDLED_SHIKI_THEME_DIFF_COLORS[themeId as BundledShikiThemeId]
+/** Return semantic diff colors declared by a bundled theme, when codey knows them. */
+export function getBundledThemeDiffColors(themeId: string | undefined) {
+  return themeId && themeId in BUNDLED_THEME_DIFF_COLORS
+    ? BUNDLED_THEME_DIFF_COLORS[themeId as BundledThemeId]
     : undefined;
 }

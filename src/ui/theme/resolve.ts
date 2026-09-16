@@ -1,15 +1,19 @@
 import type { ThemeMode } from "@opentui/core";
+import {
+  resolveTheme as resolvePierreTheme,
+  type ThemeRegistrationResolved,
+} from "@pierre/diffs";
 
 import { blendHex, contrastRatio, relativeLuminance } from "../color-utils";
 import type { NamedCustomThemeConfig } from "../diff-viewer/render/types";
 import {
-  BUNDLED_SHIKI_THEME_IDS,
-  type BundledShikiThemeDiffColors,
-  type BundledShikiThemeId,
-  getBundledShikiThemeBackground,
-  getBundledShikiThemeDiffColors,
-  getBundledShikiThemeForeground,
-  resolveBundledShikiThemeId,
+  BUNDLED_THEME_IDS,
+  type BundledThemeDiffColors,
+  type BundledThemeId,
+  getBundledThemeBackground,
+  getBundledThemeDiffColors,
+  getBundledThemeForeground,
+  resolveBundledThemeId,
 } from "./catalog";
 import { CODEX_PALETTES, type CodeyThemeColors } from "./codey";
 import { LEGACY_CUSTOM_THEME_ID } from "./custom";
@@ -126,11 +130,23 @@ function readableChromeColor(
   return anchor;
 }
 
-/** Derive one complete Hunk theme from one bundled Shiki editor theme. */
-function buildShikiTheme(themeId: BundledShikiThemeId): AppTheme {
-  const editorBackground = getBundledShikiThemeBackground(themeId) ?? "#0d1117";
-  const editorForeground = getBundledShikiThemeForeground(themeId);
-  const diffColors = getBundledShikiThemeDiffColors(themeId);
+/** The editor colors one app theme derives all of its surfaces and tints from. */
+type ThemePaletteInput = {
+  background: string;
+  diffColors: BundledThemeDiffColors | undefined;
+  foreground: string | undefined;
+  id: string;
+};
+
+/** Derive one complete codey theme from an editor palette. */
+function buildThemeFromPalette({
+  background,
+  diffColors,
+  foreground,
+  id,
+}: ThemePaletteInput): AppTheme {
+  const editorBackground = background;
+  const editorForeground = foreground;
   const isLightSurface = relativeLuminance(editorBackground) > 0.45;
   const fallbackDiffColors =
     FALLBACK_DIFF_COLORS[isLightSurface ? "light" : "dark"];
@@ -248,8 +264,8 @@ function buildShikiTheme(themeId: BundledShikiThemeId): AppTheme {
     fileNew: badgeAdded,
     fileRenamed: badgeModified,
     fileUntracked: badgeAdded,
-    id: themeId,
-    label: themeId,
+    id,
+    label: id,
     lineNumberBg: editorBackground,
     lineNumberFg: lineNumberForeground,
     movedAddedBg: movedBg,
@@ -265,15 +281,25 @@ function buildShikiTheme(themeId: BundledShikiThemeId): AppTheme {
     removedContentBg,
     removedSignColor,
     selectedHunk: blendHex(modifiedColor, editorBackground, selectedTint),
-    syntaxTheme: themeId,
+    syntaxTheme: id,
     text: textForeground,
   };
 
   return { ...themeBase, syntaxColors };
 }
 
-export const THEMES: AppTheme[] = BUNDLED_SHIKI_THEME_IDS.map((themeId) => {
-  const theme = buildShikiTheme(themeId);
+/** Derive one complete codey theme from one bundled Shiki or Pierre editor theme. */
+function buildBundledTheme(themeId: BundledThemeId): AppTheme {
+  return buildThemeFromPalette({
+    background: getBundledThemeBackground(themeId) ?? "#0d1117",
+    diffColors: getBundledThemeDiffColors(themeId),
+    foreground: getBundledThemeForeground(themeId),
+    id: themeId,
+  });
+}
+
+export const THEMES: AppTheme[] = BUNDLED_THEME_IDS.map((themeId) => {
+  const theme = buildBundledTheme(themeId);
   const palette = CODEX_PALETTES[themeId];
   return palette ? applyCodeyPalette(theme, palette) : theme;
 });
@@ -317,9 +343,91 @@ function applyCodeyPalette(
   };
 }
 
+/**
+ * Themes loaded on demand from the Shiki/Pierre collection for ids codey's
+ * static catalog does not name. Populated by `resolveThemeAsync` at boot so the
+ * synchronous render paths can find the result.
+ */
+const RESOLVED_THEME_CACHE = new Map<string, AppTheme>();
+
+const hexColorPattern = /^#[0-9a-f]{6}$/i;
+
+/** Return the first candidate that is a usable #rrggbb color. */
+function firstHexColor(...candidates: Array<string | undefined>) {
+  for (const candidate of candidates) {
+    if (candidate && hexColorPattern.test(candidate)) {
+      return candidate;
+    }
+  }
+}
+
+/** Derive a codey theme from the colors a resolved Shiki/Pierre theme declares. */
+function buildThemeFromResolvedTheme(
+  id: string,
+  resolved: ThemeRegistrationResolved,
+) {
+  const colors = resolved.colors ?? {};
+  return buildThemeFromPalette({
+    background:
+      firstHexColor(resolved.bg, colors["editor.background"]) ?? "#0d1117",
+    diffColors: {
+      added: firstHexColor(
+        colors["gitDecoration.addedResourceForeground"],
+        colors["terminal.ansiGreen"],
+      ),
+      modified: firstHexColor(
+        colors["gitDecoration.modifiedResourceForeground"],
+        colors["terminal.ansiBlue"],
+      ),
+      removed: firstHexColor(
+        colors["gitDecoration.deletedResourceForeground"],
+        colors["terminal.ansiRed"],
+      ),
+    },
+    foreground: firstHexColor(resolved.fg, colors["editor.foreground"]),
+    id,
+  });
+}
+
+/**
+ * Resolve a theme id that the bundled catalog may not name by loading the
+ * Shiki/Pierre theme itself and deriving every chrome and diff color from it.
+ * Falls back to the standard resolution when the id is unknown to Shiki too.
+ */
+export async function resolveThemeAsync(
+  requested: string | undefined,
+  themeMode: ThemeMode | null,
+  customThemes: readonly NamedCustomThemeConfig[] = [],
+) {
+  const isKnown =
+    !requested ||
+    requested === "auto" ||
+    Boolean(builtInThemeById(requested)) ||
+    customThemes.some((theme) => theme.id === requested);
+
+  if (!isKnown && requested && !RESOLVED_THEME_CACHE.has(requested)) {
+    try {
+      const resolved = await resolvePierreTheme(requested);
+      RESOLVED_THEME_CACHE.set(
+        requested,
+        buildThemeFromResolvedTheme(requested, resolved),
+      );
+    } catch {
+      // Unknown theme ids flow through to resolveTheme's default fallback.
+    }
+  }
+
+  return resolveTheme(requested, themeMode, customThemes);
+}
+
 /** Return the built-in theme by id so config-defined themes can inherit from it. */
 function builtInThemeById(themeId: string | undefined) {
-  const resolvedThemeId = resolveBundledShikiThemeId(themeId);
+  const cached = themeId ? RESOLVED_THEME_CACHE.get(themeId) : undefined;
+  if (cached) {
+    return cached;
+  }
+
+  const resolvedThemeId = resolveBundledThemeId(themeId);
   return THEMES.find((theme) => theme.id === resolvedThemeId);
 }
 
@@ -492,8 +600,11 @@ export function availableThemeIds(
   customThemes: readonly NamedCustomThemeConfig[] = [],
 ): string[] {
   return [
-    ...THEMES.map((theme) => theme.id),
-    ...customThemes.map((theme) => theme.id),
+    ...new Set([
+      ...THEMES.map((theme) => theme.id),
+      ...RESOLVED_THEME_CACHE.keys(),
+      ...customThemes.map((theme) => theme.id),
+    ]),
   ];
 }
 
@@ -506,12 +617,13 @@ export function availableThemeIds(
 export function availableThemes(
   customThemes: readonly NamedCustomThemeConfig[] = [],
 ): AppTheme[] {
+  const builtIn = [...THEMES, ...RESOLVED_THEME_CACHE.values()];
   return customThemes.length > 0
     ? [
-        ...THEMES,
+        ...builtIn,
         ...customThemes.map((customTheme) => buildCustomTheme(customTheme)),
       ]
-    : THEMES;
+    : builtIn;
 }
 
 /**
@@ -544,11 +656,11 @@ export function resolveTheme(
   return fallbackTheme(themeMode);
 }
 
-/** Return known semantic diff colors for a bundled Shiki-backed theme. */
+/** Return known semantic diff colors for a bundled Shiki- or Pierre-backed theme. */
 export function bundledThemeDiffColors(
   themeId: string,
-): BundledShikiThemeDiffColors | undefined {
-  return getBundledShikiThemeDiffColors(themeId);
+): BundledThemeDiffColors | undefined {
+  return getBundledThemeDiffColors(themeId);
 }
 
 /**
