@@ -124,7 +124,7 @@ All keybindings are customizable in `~/.config/codey/config.toml` under `[keybin
 
 Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, the file editor, and custom keybindings live in `~/.config/codey/config.toml`.
 
-Set `theme` to any bundled theme id, or leave it at `auto` to follow the terminal background. See [Themes](docs/themes.md) for the list.
+Set `theme` to any bundled theme id, or leave it at `auto` for the default theme. See [Themes](docs/themes.md) for the list.
 
 ```toml
 # ~/.config/codey/config.toml
