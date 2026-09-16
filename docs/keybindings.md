@@ -27,6 +27,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `<`     | sidebar-shrink   | Make the sidebar narrower                                |
 | `>`     | sidebar-grow     | Make the sidebar wider                                   |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
+| `E`     | edit-file        | Open the selected file in `$EDITOR` (same terminal)      |
 | `shift+a` | stage-all      | Stage all changed files                                  |
 | `u`     | unstage-file     | Unstage selected file (`git restore --staged <file>`); discards working-tree changes in the changes scope |
 | `shift+u` | unstage-all   | Unstage all staged files; discards all working-tree changes in the changes scope |
@@ -47,6 +48,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `v`      | visual-select          | Start line/range selection for comments                  |
 | `c`      | add-comment            | Add a transient comment on the selected line/range; in the commit log, open a commit input |
 | `e`      | edit-comment           | Edit the comment on the current line                     |
+| `E`      | edit-file              | Open the shown file in `$EDITOR` (same terminal)         |
 | `d`      | delete-comment         | Delete the comment on the current line                   |
 | `n`      | next-comment           | Jump to next comment                                     |
 | `N`      | prev-comment           | Jump to previous comment                                 |
@@ -71,6 +73,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `1`      | focus-sidebar    | Focus the changes pane (re-shows the sidebar)            |
 | `2`      | focus-commits    | Focus the commit log (re-shows the sidebar)              |
 | `g`      | git-edit         | Edit selected commit (squash/fixup/drop/amend/reword/reset) |
+| `E`      | edit-file        | Open the file row under the cursor in `$EDITOR`           |
 | `p`      | git-pull         | Pull from the remote (commit pane only)                  |
 | `P`      | git-push         | Push to the remote (commit pane only)                    |
 | `alt+j`  | commit-move-down | Move selected commit down in history (interactive rebase)|
@@ -167,6 +170,18 @@ there. Pressing `1` or `2` re-shows the sidebar and focuses the changes or commi
 log; `0` focuses the diff without re-showing it. Reopening with `b` focuses the
 pane the currently-shown file comes from: a commit diff returns to the commit
 log, otherwise the changes pane.
+
+## Opening files in an editor
+
+`E` (`edit-file`) suspends codey and opens the focused file in the same terminal,
+then resumes and refreshes when the editor exits. The program is taken from
+`editor` in `~/.config/codey/config.toml` if set, otherwise `$VISUAL`, then
+`$EDITOR`, then `vi`.
+
+```toml
+# ~/.config/codey/config.toml
+editor = "nvim"
+```
 
 ## Remapping example
 
