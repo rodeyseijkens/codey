@@ -11,7 +11,11 @@ import { registerAppLayers } from "./keymap/layers";
 import { validateKeybindings } from "./keymap/validation";
 import { buildRuntime, type Runtime } from "./runtime";
 import { refresh } from "./state/actions/core";
-import { setQuitHandler, setRestartHandler } from "./state/lifecycle";
+import {
+  setEditorHandlers,
+  setQuitHandler,
+  setRestartHandler,
+} from "./state/lifecycle";
 import { AppStore, getStore, setStore } from "./state/store";
 import type { LoaderMode } from "./types";
 import { parseDiffMode, parseSidebarView } from "./types";
@@ -87,6 +91,7 @@ async function startSession(opts: RunOptions): Promise<void> {
   disposeLayers = registerAppLayers(keymap, store, config.keybindings);
 
   store.set({
+    editor: config.editor?.trim() || null,
     gutterSign: config.gutterSign,
     ignoreFiles: config.ignoreFiles,
     layoutMode: parseDiffMode(opts.flags.mode) ?? config.mode,
@@ -173,6 +178,14 @@ async function boot(opts: RunOptions): Promise<void> {
   }
 
   renderer = await createCliRenderer(rendererConfig);
+  setEditorHandlers({
+    resume: () => {
+      renderer?.resume();
+    },
+    suspend: () => {
+      renderer?.suspend();
+    },
+  });
   setQuitHandler(() => {
     if (stopWatcher) {
       stopWatcher();

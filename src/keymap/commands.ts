@@ -63,6 +63,12 @@ export const COMMAND_DEFS = {
     description: "Edit the comment on the current line",
     section: "diff",
   },
+  "edit-file": {
+    defaultKey: "shift+e",
+    description:
+      "Open the focused file in $EDITOR (changes, diff, or commit file rows)",
+    section: "changes",
+  },
   "focus-commits": {
     defaultKey: "2",
     description: "Focus the commit log",

@@ -123,6 +123,8 @@ export type AppState = {
   cursorRow: number;
   diffSearch: DiffSearch | null;
   draftClearTick: number;
+  editor: string | null;
+  editorBusy: boolean;
   fatalError: string | null;
   focus: FocusPane;
   gutterSign: boolean;
@@ -176,6 +178,8 @@ export function initialState(): AppState {
     cursorRow: 0,
     diffSearch: null,
     draftClearTick: 0,
+    editor: null,
+    editorBusy: false,
     fatalError: null,
     focus: "sidebar",
     gutterSign: false,
