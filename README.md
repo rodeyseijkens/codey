@@ -74,6 +74,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `t`       | Toggle sidebar view (tree / list)                    |
 | `<` / `>` | Shrink / grow sidebar                                |
 | `a` / `A` | Stage file / Stage all files                         |
+| `E`       | Open the selected file in `$EDITOR` (same terminal)  |
 | `u` / `U` | Unstage staged file / Unstage all staged files; discard working-tree changes from the changes scope |
 | `r`       | Refresh (reload from git)                            |
 | `m`       | Cycle layout (split / stack / auto)                  |
@@ -89,6 +90,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `v`                 | Start line/range selection for comments                       |
 | `c`                 | Add transient comment; in the commit log, open a commit input |
 | `d` / `e`           | Delete / edit comment on current line                         |
+| `E`                 | Open the shown file in `$EDITOR` (same terminal)              |
 | `n` / `N`           | Next / previous comment                                       |
 | `s`                 | Send comments (standalone: copy to clipboard)                 |
 | `y`                 | Copy selection to clipboard                                   |
@@ -103,6 +105,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `c`           | Open commit input                                             |
 | `p` / `P`     | Pull / push to the remote                                     |
 | `g`           | Edit selected commit (squash/fixup/drop/amend/reword/reset) |
+| `E`           | Open the file row under the cursor in `$EDITOR`             |
 | `Alt+j` / `Alt+k` | Reorder commit up / down in history (interactive rebase)  |
 
 #### Global
@@ -119,7 +122,14 @@ All keybindings are customizable in `~/.config/codey/config.toml` under `[keybin
 
 ### Configuration
 
-Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, and custom keybindings live in `~/.config/codey/config.toml`.
+Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, the file editor, and custom keybindings live in `~/.config/codey/config.toml`.
+
+`E` opens the focused file in the same terminal. Set `editor` to pick the program; otherwise codey uses `$VISUAL`, then `$EDITOR`, then `vi`.
+
+```toml
+# ~/.config/codey/config.toml
+editor = "nvim"
+```
 
 ### Ignoring files in the diff
 
