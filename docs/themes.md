@@ -23,9 +23,9 @@ The default is `theme = "auto"`.
 
 ## Automatic mode
 
-`auto` follows the terminal background. When the terminal reports a light
-background codey uses `github-light-default`; otherwise it uses
-`github-dark-default`.
+`auto` uses codey's default theme, `github-dark-default`. codey does not detect
+the terminal background, so a light terminal keeps the dark default until a
+light theme is set explicitly.
 
 ## Any Shiki theme id
 
