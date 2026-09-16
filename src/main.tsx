@@ -20,6 +20,7 @@ import { AppStore, getStore, setStore } from "./state/store";
 import type { LoaderMode } from "./types";
 import { parseDiffMode, parseSidebarView } from "./types";
 import { App } from "./ui/app";
+import { resolveThemeAsync } from "./ui/theme/resolve";
 import { startWatcher } from "./watch";
 
 const VERSION = "0.1.4"; // x-release-please-version
@@ -90,6 +91,11 @@ async function startSession(opts: RunOptions): Promise<void> {
   }
   disposeLayers = registerAppLayers(keymap, store, config.keybindings);
 
+  const themeId = opts.flags.theme ?? config.theme;
+  // Any Shiki theme id is loadable, not just the ones in codey's catalog, so
+  // resolve the requested theme before the first render reads the colors.
+  await resolveThemeAsync(themeId, null);
+
   store.set({
     editor: config.editor?.trim() || null,
     gutterSign: config.gutterSign,
@@ -101,7 +107,7 @@ async function startSession(opts: RunOptions): Promise<void> {
     tabWidth: opts.flags.tabWidth
       ? Number.parseInt(opts.flags.tabWidth, 10)
       : config.tabWidth,
-    theme: opts.flags.theme ?? config.theme,
+    theme: themeId,
   });
 
   let runtime: Runtime;
@@ -222,7 +228,7 @@ function addCommonFlags(cmd: Command): Command {
   return cmd
     .option("--watch", "watch git index and working tree for changes")
     .option("--mode <mode>", "layout mode: split | stack | auto")
-    .option("--theme <theme>", "color theme (see themes list, or auto)")
+    .option("--theme <theme>", "color theme id or auto (see docs/themes.md)")
     .option("--tab-width <n>", "tab width for diff rendering")
     .option("--view <view>", "sidebar view: tree | list");
 }
