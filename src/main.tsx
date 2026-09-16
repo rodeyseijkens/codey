@@ -216,7 +216,7 @@ program
   .description(
     "review-first git TUI: staged + changes viewer with transient comments",
   )
-  .version(VERSION);
+  .version(VERSION, "-v, --version");
 
 function addCommonFlags(cmd: Command): Command {
   return cmd
