@@ -140,6 +140,42 @@ describe("async theme resolution", () => {
     expect(getThemeColors("codey-test-shiki").ui.bg).toBe("#101820");
     expect(resolveTheme("codey-test-shiki", null).id).toBe("codey-test-shiki");
   });
+
+  test("p3 and alpha hex colors from a resolved theme are normalized", async () => {
+    registerCustomTheme("codey-test-p3", () =>
+      Promise.resolve({
+        colors: {
+          "editor.background": "color(display-p3 1 1 1)",
+          "editor.foreground": "color(display-p3 0.039216 0.039216 0.039216)",
+          "gitDecoration.addedResourceForeground":
+            "color(display-p3 0.266455 0.667541 0.435918)",
+        },
+        name: "codey-test-p3",
+        settings: [],
+        type: "light",
+      }),
+    );
+    registerCustomTheme("codey-test-alpha", () =>
+      Promise.resolve({
+        colors: {
+          "editor.background": "#fff",
+          "editor.foreground": "#12345678",
+          "gitDecoration.deletedResourceForeground": "#64d389fd",
+        },
+        name: "codey-test-alpha",
+        settings: [],
+        type: "dark",
+      }),
+    );
+
+    const p3 = await resolveThemeAsync("codey-test-p3", null);
+    expect(p3.background).toBe("#ffffff");
+    expect(p3.appearance).toBe("light");
+
+    const alpha = await resolveThemeAsync("codey-test-alpha", null);
+    expect(alpha.background).toBe("#ffffff");
+    expect(alpha.appearance).toBe("light");
+  });
 });
 
 describe("css color conversion", () => {
