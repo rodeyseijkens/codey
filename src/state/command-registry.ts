@@ -22,6 +22,7 @@ import {
   openCommitDraft,
   openRewordDraft,
 } from "./actions/drafts";
+import { editFocusedFile } from "./actions/editor";
 import {
   copySelection,
   cycleLayout,
@@ -203,6 +204,7 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
     guard: (state) => !commitFileShown(state),
     run: () => openEditCommentDraft(),
   });
+  r.set("edit-file", { run: () => void editFocusedFile() });
   r.set("delete-comment", {
     guard: (state) => !commitFileShown(state),
     run: () => deleteCommentAtCursor(),
