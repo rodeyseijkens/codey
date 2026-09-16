@@ -14,7 +14,7 @@ import {
   reviewTrailingGap,
 } from "../../../patch/gap";
 import { formatHunkHeader } from "../../../patch/hunk-header";
-import { blendHex, hexColorDistance } from "../../color-utils";
+import { blendHex, cssColorToHex, hexColorDistance } from "../../color-utils";
 import { type AppTheme, TRANSPARENT_BACKGROUND } from "../../theme/resolve";
 import { expandDiffTabs } from "./codeColumns";
 import {
@@ -170,7 +170,9 @@ function parseStyleValue(styleValue: unknown) {
     }
 
     const key = segment.slice(0, separator).trim();
-    const value = segment.slice(separator + 1).trim();
+    // Normalize Display-P3 token colors from the Pierre themes into sRGB hex so
+    // the terminal renderer and the hex color math downstream both understand them.
+    const value = cssColorToHex(segment.slice(separator + 1).trim());
     if (key && value) {
       styles.set(key, value);
     }
