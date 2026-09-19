@@ -1,3 +1,4 @@
+import type { DiffMode } from "../types";
 import type { IconColorKey } from "./colors";
 
 type IconDef = {
@@ -359,6 +360,25 @@ export function folderColor(path: string): IconColorKey {
 
 export const CHEVRON_DOWN = "\u{eab4}";
 export const CHEVRON_RIGHT = "\u{eab6}";
+
+export const TREE_VIEW_ICON = "\u{f453}";
+export const LIST_VIEW_ICON = "\u{f44e}";
+export const COLLAPSE_FOLDERS_ICON = "\u{eac5}";
+export const REFRESH_ICON = "\u{f46a}";
+
+export const LAYOUT_SPLIT_ICON = "\u{f4b4}";
+export const LAYOUT_STACK_ICON = "\u{f50b}";
+export const LAYOUT_AUTO_ICON = "\u{f51d}";
+
+const LAYOUT_MODE_ICONS: Record<DiffMode, string> = {
+  auto: LAYOUT_AUTO_ICON,
+  split: LAYOUT_SPLIT_ICON,
+  stack: LAYOUT_STACK_ICON,
+};
+
+export function layoutModeIcon(mode: DiffMode): string {
+  return LAYOUT_MODE_ICONS[mode];
+}
 
 export const GIT_PUSH_ICON = "\u{f431}";
 export const GIT_PULL_ICON = "\u{f433}";
