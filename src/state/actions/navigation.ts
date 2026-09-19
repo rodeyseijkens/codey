@@ -1,7 +1,7 @@
 import { sendToAgent } from "../../herdr/agent";
 import { isHerdrPlugin } from "../../herdr/env";
 import { copyText, formatCommentsAsMarkdown } from "../../lib/clipboard";
-import { treeKey } from "../../lib/tree";
+import { buildFileTree, type TreeNode, treeKey } from "../../lib/tree";
 import type { Scope, SidebarView } from "../../types";
 import { DIFF_MODES, SIDEBAR_VIEWS, TOAST_KINDS } from "../../types";
 import { type AppState, getStore, rowKey } from "../store";
@@ -152,6 +152,37 @@ export function toggleSidebarView(): void {
       ? SIDEBAR_VIEWS.list
       : SIDEBAR_VIEWS.tree;
   store.set({ sidebarView: next });
+  repairSelection(store);
+}
+
+export function toggleAllTreeFolders(): void {
+  const store = getStore();
+  const { changesets, collapsedTree } = store.getState();
+  const hasExpandedFolder = changesets.some((cs) => {
+    const walk = (nodes: TreeNode[]): boolean =>
+      nodes.some(
+        (node) =>
+          node.type === "dir" &&
+          (!collapsedTree[treeKey(cs.id, node.path)] ||
+            walk(node.children ?? [])),
+      );
+    return walk(buildFileTree(cs.files));
+  });
+  const next: Record<string, boolean> = {};
+  if (hasExpandedFolder) {
+    for (const cs of changesets) {
+      const collect = (nodes: TreeNode[]): void => {
+        for (const node of nodes) {
+          if (node.type === "dir") {
+            next[treeKey(cs.id, node.path)] = true;
+            collect(node.children ?? []);
+          }
+        }
+      };
+      collect(buildFileTree(cs.files));
+    }
+  }
+  store.set({ collapsedTree: next });
   repairSelection(store);
 }
 
