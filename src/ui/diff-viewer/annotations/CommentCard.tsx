@@ -65,6 +65,10 @@ export function measureCommentCardHeight({
   width: number;
 }) {
   const { contentWidth } = agentNoteBoxLayout({ anchorSide, layout, width });
+  // Drafts render a fixed 1-row textarea instead of a wrapped body.
+  if (annotation.source === "user-draft") {
+    return 4;
+  }
   const lines = markupLines(annotation, contentWidth);
   const bodyLineCount = lines
     ? lines.length
@@ -72,7 +76,8 @@ export function measureCommentCardHeight({
       (annotation.rationale
         ? wrapNoteText(annotation.rationale, contentWidth).length
         : 0);
-  return 2 + bodyLineCount;
+  // Padding (2) + title row (1) + body rows.
+  return 3 + bodyLineCount;
 }
 
 function renderNoteBody(lines: (string | StmlLine)[], theme: AppTheme) {
