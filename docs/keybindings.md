@@ -34,6 +34,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
 | `w`     | wrap-text        | Toggle diff line wrapping                                |
+| —       | toggle-folders   | Collapse all tree folders (expand all when all collapsed); unbound by default |
 
 ### Diff Pane
 
@@ -113,6 +114,12 @@ or pass `--view list` / `--view tree` on the command line. Toggle at runtime wit
 Every row — the `Staged`/`Changes` headers, folders, and files — is selectable
 with `j`/`k` (or the arrow keys) or a mouse click. Press `space` on a header or
 folder to collapse/expand it. Files open in the diff pane when selected.
+
+The sidebar's top border hosts three clickable controls: a collapse-folders icon
+(tree view only), the current view icon (`t`), and a refresh icon (`r`). The
+collapse-folders control and the same action are also available as the
+`toggle-folders` command, which ships unbound — remap it via `[keybindings]`
+(see the remapping example below).
 
 ## Commit log pane
 
