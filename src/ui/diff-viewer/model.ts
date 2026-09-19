@@ -88,15 +88,26 @@ export function toInternalDiffFile(diff: DiffViewerFileInput): DiffFile {
   };
 }
 
-/** Parse unified diff text into Hunk's public OpenTUI file model. */
+/** Parse unified diff text into Hunk's public OpenTUI file model.
+ *  The most recent parse is memoized so repeat calls for the same patch
+ *  (DiffPane render, row counts, clamping) share one parse per open. */
+let lastFilesFromPatch:
+  | { cacheKey: string; files: DiffViewerFile[] }
+  | undefined;
+
 export function createDiffViewerFilesFromPatch(
   patchText: string,
   sourceId = "patch",
 ) {
+  const cacheKey = `${sourceId}\u0000${patchText}`;
+  if (lastFilesFromPatch?.cacheKey === cacheKey) {
+    return lastFilesFromPatch.files;
+  }
+
   const normalizedPatch = normalizePatch(patchText);
   const chunks = splitPatchIntoFileChunks(normalizedPatch.text);
 
-  return parsePatchFiles(normalizedPatch.text, sourceId, true)
+  const files = parsePatchFiles(normalizedPatch.text, sourceId, true)
     .flatMap((entry) => entry.files)
     .map((metadata, index) => {
       const decodedPaths = normalizedPatch.filePaths[index];
@@ -117,14 +128,17 @@ export function createDiffViewerFilesFromPatch(
         Boolean(decodedPaths),
       );
     });
+
+  lastFilesFromPatch = { cacheKey, files };
+  return files;
 }
 
-/** Build canonical diff rows from a public OpenTUI file input. */
+/** Build canonical diff rows from a public OpenTUI file input, reusing the cached rows. */
 export function buildCanonicalDiffRows(
   input: DiffViewerFileInput,
 ): CanonicalDiffRow[] {
-  const { metadata } = toInternalDiffFile(input);
-  return buildRowsFromMetadata(metadata);
+  const normalized = resolveDiffViewerFile(input);
+  return normalized.canonicalRows ?? [];
 }
 
 /** Adapt a list of public OpenTUI files into Hunk's internal review file model. */
