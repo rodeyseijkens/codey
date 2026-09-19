@@ -401,6 +401,8 @@ export const SPINNER_FRAMES = [
   "⠏",
 ] as const;
 
+export const SPINNER_INTERVAL = 100;
+
 export const STATUS_ADDED = "\u{f457}";
 export const STATUS_MODIFIED = "\u{f459}";
 export const STATUS_RENAMED = "\u{f45a}";

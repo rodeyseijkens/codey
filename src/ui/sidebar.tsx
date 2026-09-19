@@ -56,6 +56,7 @@ import {
   LIST_VIEW_ICON,
   REFRESH_ICON,
   SPINNER_FRAMES,
+  SPINNER_INTERVAL,
   STATUS_UNTRACKED,
   THIN_SPACE,
   TREE_VIEW_ICON,
@@ -580,8 +581,6 @@ function CommitLoadMoreRow(props: {
     </box>
   );
 }
-
-const SPINNER_INTERVAL = 100;
 
 function scrollToCursor(
   cursorRowIndex: number,
