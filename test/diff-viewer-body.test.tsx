@@ -161,8 +161,8 @@ describe("DiffBody extension", () => {
       await act(async () => {
         await setup.renderOnce();
       });
-      // Rows above the cursor: header (1) + card (top/body/bottom = 3) + context (1).
-      expect(resolved.at(-1)).toBe(5);
+      // Rows above the cursor: header (1) + card (padding 2 + title 1 + body 1 = 4) + context (1).
+      expect(resolved.at(-1)).toBe(6);
     } finally {
       act(() => {
         setup.renderer.destroy();

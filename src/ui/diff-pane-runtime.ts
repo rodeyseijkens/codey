@@ -23,6 +23,12 @@ function get(): DiffPaneHandle | null {
   return currentHandle;
 }
 
+/** Canonical rows currently registered by the diff pane, so state consumers
+ *  search and clamp against the exact list the pane renders. */
+export function currentDiffRows(): readonly CanonicalDiffRow[] {
+  return currentHandle?.getRows() ?? [];
+}
+
 function isChange(row: CanonicalDiffRow | undefined): boolean {
   return !!row && (row.kind === "add" || row.kind === "del");
 }
