@@ -39,6 +39,14 @@ export function TopBar() {
         <text style={{ fg: C.dim }}> [{state.loaderMode}]</text>
       )}
       {state.watchActive ? <text style={{ fg: C.green }}> watch</text> : null}
+      <text style={{ flexGrow: 1 }}> </text>
+      {state.toast ? (
+        <text
+          style={{ fg: toastColor(state.toast.kind, C), overflow: "hidden" }}
+        >
+          {state.toast.message}
+        </text>
+      ) : null}
     </box>
   );
 }
@@ -51,12 +59,6 @@ function bottomBarContent(
     return {
       color: C.yellow,
       content: `press stage key again to confirm (${state.pendingStage.commentCount} comment(s) will be cleared) — Esc to cancel`,
-    };
-  }
-  if (state.toast) {
-    return {
-      color: toastColor(state.toast.kind, C),
-      content: state.toast.message,
     };
   }
   if (state.loading) {
