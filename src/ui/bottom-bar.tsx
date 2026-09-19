@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
+
 import { useAppState } from "../state/store";
 import type { ToastKind } from "../types";
 import { TOAST_KINDS } from "../types";
 import { useColors } from "./color-context";
+import { SPINNER_FRAMES, SPINNER_INTERVAL } from "./icons";
 
 function toastColor(
   kind: ToastKind,
@@ -22,6 +25,20 @@ function toastColor(
 export function TopBar() {
   const state = useAppState();
   const { ui: C } = useColors();
+  const [spinnerFrame, setSpinnerFrame] = useState(0);
+
+  useEffect(() => {
+    if (!state.loading) {
+      setSpinnerFrame(0);
+      return;
+    }
+    const timer = setInterval(
+      () => setSpinnerFrame((frame) => (frame + 1) % SPINNER_FRAMES.length),
+      SPINNER_INTERVAL,
+    );
+    return () => clearInterval(timer);
+  }, [state.loading]);
+
   return (
     <box
       style={{
@@ -40,6 +57,11 @@ export function TopBar() {
       )}
       {state.watchActive ? <text style={{ fg: C.green }}> watch</text> : null}
       <text style={{ flexGrow: 1 }}> </text>
+      {state.loading ? (
+        <text style={{ fg: C.dim }}>
+          {`${SPINNER_FRAMES[spinnerFrame]} refreshing `}
+        </text>
+      ) : null}
       {state.toast ? (
         <text
           style={{ fg: toastColor(state.toast.kind, C), overflow: "hidden" }}
