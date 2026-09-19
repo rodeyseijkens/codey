@@ -99,4 +99,24 @@ describe("toggleAllTreeFolders", () => {
       "changes:a/b/c": true,
     });
   });
+
+  test("expands all when visible folders are collapsed but nested ones are not", () => {
+    const store = new AppStore({
+      changesets: [
+        {
+          ...changeset("changes", [
+            "src/components/Button.tsx",
+            "src/a.ts",
+            "README.md",
+          ]),
+        },
+      ],
+      collapsedTree: { "changes:src": true },
+    });
+    setStore(store);
+
+    toggleAllTreeFolders();
+
+    expect(store.getState().collapsedTree).toEqual({});
+  });
 });
