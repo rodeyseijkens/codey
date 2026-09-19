@@ -46,6 +46,9 @@ const SPLIT_VIEW_MIN_WIDTH = 160;
 /** Minimum lines of context kept above/below the cursor when scrolling. */
 const SCROLLOFF = 5;
 
+/** Fixed chrome rows (top border + title bar) subtracted from terminal height for the first-paint viewport estimate. */
+const FIRST_PAINT_CHROME_ROWS = 2;
+
 /** Build whole-line paint marks for one comment's canonical row range. */
 function commentMarksForRange(
   rows: readonly CanonicalDiffRow[],
@@ -244,6 +247,10 @@ export function DiffPane() {
   const { ui: C } = useColors();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const [cursorOffset, setCursorOffset] = useState(0);
+  const [scrollMetrics, setScrollMetrics] = useState({
+    scrollTop: 0,
+    viewportHeight: 0,
+  });
   const [forceScrollToTop, setForceScrollToTop] = useState(false);
   const [pendingFirstChange, setPendingFirstChange] = useState<number | null>(
     null,
@@ -278,6 +285,7 @@ export function DiffPane() {
     [file?.diff, file?.path],
   );
   const [hunkFile] = hunkFiles;
+  const hasDiffContent = hunkFile !== undefined;
   const internalFile = useMemo(
     () => (hunkFile ? toInternalDiffFile(hunkFile) : undefined),
     [hunkFile],
@@ -361,6 +369,31 @@ export function DiffPane() {
     });
     return off;
   }, [rows]);
+
+  useEffect(() => {
+    const scroll = scrollRef.current;
+    if (!(hasDiffContent && scroll !== null)) {
+      return;
+    }
+    const { viewport } = scroll;
+    const { slider } = scroll.verticalScrollBar;
+    const sync = () => {
+      const { height } = viewport;
+      const { scrollTop } = scroll;
+      setScrollMetrics((prev) =>
+        prev.scrollTop === scrollTop && prev.viewportHeight === height
+          ? prev
+          : { scrollTop, viewportHeight: height },
+      );
+    };
+    sync();
+    slider.on("change", sync);
+    viewport.on("resize", sync);
+    return () => {
+      slider.off("change", sync);
+      viewport.off("resize", sync);
+    };
+  }, [hasDiffContent]);
 
   useEffect(() => {
     if (file?.path !== prevFilePathRef.current) {
@@ -571,6 +604,7 @@ export function DiffPane() {
           cursorRow={state.cursorRow}
           file={hunkFile}
           gutterSign={state.gutterSign}
+          internalFile={internalFile}
           layout={viewMode}
           lineHighlights={lineHighlights}
           notes={notes}
@@ -584,10 +618,16 @@ export function DiffPane() {
           onRowMouseDown={(index) => {
             getStore().set({ cursorRow: index });
           }}
+          scrollTop={scrollMetrics.scrollTop}
           showHunkHeaders={false}
           showLineNumbers={state.lineNumbers}
           tabWidth={state.tabWidth}
           theme={state.theme}
+          viewportHeight={
+            scrollMetrics.viewportHeight > 0
+              ? scrollMetrics.viewportHeight
+              : Math.max(1, dims.height - FIRST_PAINT_CHROME_ROWS)
+          }
           width={contentWidth}
           wrapLines={state.wrapLines}
         />

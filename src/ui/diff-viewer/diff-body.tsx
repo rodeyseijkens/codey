@@ -28,7 +28,12 @@ import { DEFAULT_TAB_WIDTH } from "./render/tabWidth";
 import type { AgentAnnotation } from "./render/types";
 import { useHighlightedDiff } from "./render/useHighlightedDiff";
 import type { DiffBodyProps, DiffNote } from "./types";
-import { buildRowOffsets, type RowOffsets } from "./window";
+import {
+  buildRowOffsets,
+  computeRowWindow,
+  DEFAULT_WINDOW_OVERSCAN,
+  type RowOffsets,
+} from "./window";
 
 const EMPTY_ROWS: DiffRow[] = [];
 const EMPTY_PLAN: DiffRowPlan = {
@@ -211,6 +216,9 @@ export function DiffBody({
   onCursorOffsetResolved,
   onRowMouseDown,
   notes = [],
+  scrollTop = 0,
+  viewportHeight,
+  overscan = DEFAULT_WINDOW_OVERSCAN,
 }: DiffBodyProps) {
   const resolvedTheme = resolveTheme(theme, null);
   const internalFile = useMemo(
@@ -353,6 +361,23 @@ export function DiffBody({
     }
   }, [cursorOffset, onCursorOffsetResolved]);
 
+  const rowWindow = useMemo(() => {
+    if ((viewportHeight ?? 0) <= 0) {
+      return;
+    }
+    return computeRowWindow(
+      layoutMetrics.offsets.prefix,
+      scrollTop,
+      viewportHeight ?? 0,
+      overscan,
+      cursorPlannedIndex,
+    );
+  }, [layoutMetrics, scrollTop, viewportHeight, overscan, cursorPlannedIndex]);
+
+  const visiblePlannedRows = rowWindow
+    ? plannedRows.slice(rowWindow.start, rowWindow.end)
+    : plannedRows;
+
   const cursorHighlight: CursorHighlight | undefined = useMemo(
     () =>
       cursor && resolvedCursorRow >= 0
@@ -394,7 +419,10 @@ export function DiffBody({
 
   return (
     <box style={{ flexDirection: "column", width: "100%" }}>
-      {plannedRows.map((planned) => {
+      {rowWindow && rowWindow.topOffset > 0 ? (
+        <box style={{ height: rowWindow.topOffset, width: "100%" }} />
+      ) : null}
+      {visiblePlannedRows.map((planned) => {
         if (planned.kind === "note") {
           return (
             <CommentCard
@@ -459,6 +487,9 @@ export function DiffBody({
           </box>
         );
       })}
+      {rowWindow && rowWindow.bottomSpacer > 0 ? (
+        <box style={{ height: rowWindow.bottomSpacer, width: "100%" }} />
+      ) : null}
     </box>
   );
 }
