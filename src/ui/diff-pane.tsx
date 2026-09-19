@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ScrollBoxRenderable } from "@opentui/core";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
 import { useTerminalDimensions } from "@opentui/react";
 import { getFiletypeFromFileName } from "@pierre/diffs";
 
-import { focusDiff } from "../state/actions/navigation";
+import { cycleLayout, focusDiff } from "../state/actions/navigation";
 import {
   cancelCommentDraft,
   deleteComment,
@@ -23,6 +23,7 @@ import {
 } from "./diff-viewer/model";
 import { buildLineHighlightPaintIndex } from "./diff-viewer/render/lineHighlightPaint";
 import type { DiffNote } from "./diff-viewer/types";
+import { EM_SPACE, layoutModeIcon } from "./icons";
 
 function resolveViewMode(
   layoutMode: string,
@@ -189,6 +190,52 @@ function diffSearchCounter(
   return null;
 }
 
+function DiffPaneChrome(props: {
+  children: ReactNode;
+  focused: boolean;
+  titleLeft: string;
+  titleRight?: ReactNode;
+}) {
+  const { ui: C } = useColors();
+  return (
+    <box
+      onMouseDown={(e) => {
+        if (e.button === 0) {
+          focusDiff();
+        }
+      }}
+      style={{
+        backgroundColor: C.bg,
+        border: ["top"],
+        borderColor: props.focused ? C.accent : C.bg,
+        borderStyle: "single",
+        flexDirection: "column",
+      }}
+    >
+      <box
+        style={{
+          flexDirection: "row",
+          left: 0,
+          paddingLeft: 1,
+          paddingRight: 1,
+          position: "absolute",
+          right: 0,
+          top: -1,
+        }}
+      >
+        <text
+          selectable={false}
+          style={{ fg: C.accent, flexGrow: 1, overflow: "hidden" }}
+        >
+          {props.titleLeft}
+        </text>
+        {props.titleRight ?? null}
+      </box>
+      {props.children}
+    </box>
+  );
+}
+
 export function DiffPane() {
   const state = useAppState();
   const { diffSearch } = state;
@@ -205,6 +252,20 @@ export function DiffPane() {
 
   const sel = store.selectedFile();
   const file = sel?.file;
+
+  function cycleMode(e: MouseEvent) {
+    if (e.button === 0) {
+      cycleLayout();
+    }
+  }
+
+  const modeIconNode = (
+    <box onMouseDown={cycleMode}>
+      <text selectable={false} style={{ fg: C.faint }}>
+        {`${EM_SPACE}${layoutModeIcon(state.layoutMode)}${EM_SPACE}`}
+      </text>
+    </box>
+  );
 
   const hunkFiles = useMemo(
     () =>
@@ -349,139 +410,152 @@ export function DiffPane() {
 
   if (!(sel && file)) {
     return (
-      <box
-        style={{
-          alignItems: "center",
-          backgroundColor: C.bg,
-          flexDirection: "column",
-          flexGrow: 1,
-          gap: 1,
-          justifyContent: "center",
-        }}
-      >
-        <ascii-font
-          color={C.faint}
-          font="block"
-          selectable={false}
-          text="CODEY"
-        />
-        <text style={{ fg: C.faint }}>No file selected — j/k to navigate</text>
-      </box>
+      <DiffPaneChrome focused={state.focus === "diff"} titleLeft="">
+        <box
+          style={{
+            alignItems: "center",
+            flexDirection: "column",
+            flexGrow: 1,
+            gap: 1,
+            justifyContent: "center",
+          }}
+        >
+          <ascii-font
+            color={C.faint}
+            font="block"
+            selectable={false}
+            text="CODEY"
+          />
+          <text style={{ fg: C.faint }}>
+            No file selected — j/k to navigate
+          </text>
+        </box>
+      </DiffPaneChrome>
     );
   }
 
   if (file.ignored) {
     return (
-      <box
-        style={{
-          alignItems: "center",
-          backgroundColor: C.bg,
-          flexGrow: 1,
-          justifyContent: "center",
-        }}
+      <DiffPaneChrome
+        focused={state.focus === "diff"}
+        titleLeft={file.path}
+        titleRight={modeIconNode}
       >
-        <text style={{ fg: C.faint }}>Ignored file — no diff loaded</text>
-      </box>
+        <box
+          style={{
+            alignItems: "center",
+            flexGrow: 1,
+            justifyContent: "center",
+          }}
+        >
+          <text style={{ fg: C.faint }}>Ignored file — no diff loaded</text>
+        </box>
+      </DiffPaneChrome>
     );
   }
 
   if (file.isBinary) {
     return (
-      <box
-        style={{
-          alignItems: "center",
-          backgroundColor: C.bg,
-          flexGrow: 1,
-          justifyContent: "center",
-        }}
+      <DiffPaneChrome
+        focused={state.focus === "diff"}
+        titleLeft={file.path}
+        titleRight={modeIconNode}
       >
-        <text style={{ fg: C.faint }}>Binary file — no diff</text>
-      </box>
+        <box
+          style={{
+            alignItems: "center",
+            flexGrow: 1,
+            justifyContent: "center",
+          }}
+        >
+          <text style={{ fg: C.faint }}>Binary file — no diff</text>
+        </box>
+      </DiffPaneChrome>
     );
   }
 
   if (file.tooLarge) {
     return (
-      <box
-        style={{
-          alignItems: "center",
-          backgroundColor: C.bg,
-          flexGrow: 1,
-          justifyContent: "center",
-        }}
+      <DiffPaneChrome
+        focused={state.focus === "diff"}
+        titleLeft={file.path}
+        titleRight={modeIconNode}
       >
-        <text style={{ fg: C.yellow }}>
-          File too large to diff (&gt;2 MB or 50k lines)
-        </text>
-      </box>
+        <box
+          style={{
+            alignItems: "center",
+            flexGrow: 1,
+            justifyContent: "center",
+          }}
+        >
+          <text style={{ fg: C.yellow }}>
+            File too large to diff (&gt;2 MB or 50k lines)
+          </text>
+        </box>
+      </DiffPaneChrome>
     );
   }
 
   if (file.notice === "directory") {
     return (
-      <box
-        style={{
-          alignItems: "center",
-          backgroundColor: C.bg,
-          flexGrow: 1,
-          justifyContent: "center",
-        }}
+      <DiffPaneChrome
+        focused={state.focus === "diff"}
+        titleLeft={file.path}
+        titleRight={modeIconNode}
       >
-        <text style={{ fg: C.faint }}>
-          Directory — select a file to view its diff
-        </text>
-      </box>
+        <box
+          style={{
+            alignItems: "center",
+            flexGrow: 1,
+            justifyContent: "center",
+          }}
+        >
+          <text style={{ fg: C.faint }}>
+            Directory — select a file to view its diff
+          </text>
+        </box>
+      </DiffPaneChrome>
     );
   }
 
   if (!(file.diff && hunkFile)) {
     return (
-      <box
-        style={{
-          alignItems: "center",
-          backgroundColor: C.bg,
-          flexGrow: 1,
-          justifyContent: "center",
-        }}
+      <DiffPaneChrome
+        focused={state.focus === "diff"}
+        titleLeft={file.path}
+        titleRight={modeIconNode}
       >
-        <text style={{ fg: C.faint }}>No diff content</text>
-      </box>
+        <box
+          style={{
+            alignItems: "center",
+            flexGrow: 1,
+            justifyContent: "center",
+          }}
+        >
+          <text style={{ fg: C.faint }}>No diff content</text>
+        </box>
+      </DiffPaneChrome>
     );
   }
 
   return (
-    <box
-      onMouseDown={(e) => {
-        if (e.button === 0) {
-          focusDiff();
-        }
-      }}
-      style={{
-        backgroundColor: C.bg,
-        border: ["top"],
-        borderColor: state.focus === "diff" ? C.accent : C.bg,
-        borderStyle: "single",
-        flexDirection: "column",
-      }}
+    <DiffPaneChrome
+      focused={state.focus === "diff"}
+      titleLeft={
+        file.oldPath && file.oldPath !== file.path
+          ? `${file.oldPath} -> ${file.path}`
+          : file.path
+      }
+      titleRight={
+        <>
+          <text
+            selectable={false}
+            style={{ fg: C.faint, marginLeft: 1 }}
+          >{`${rows.length} lines`}</text>
+          {modeIconNode}
+        </>
+      }
     >
-      <box
-        style={{
-          backgroundColor: C.panel,
-          flexDirection: "row",
-          height: 1,
-          paddingLeft: 2,
-          paddingRight: 2,
-        }}
-      >
-        <text style={{ fg: C.accent, flexGrow: 1, overflow: "hidden" }}>
-          {file.oldPath && file.oldPath !== file.path
-            ? `${file.oldPath} -> ${file.path}`
-            : file.path}
-        </text>
-        <text style={{ fg: C.faint, marginLeft: 1 }}>
-          {rows.length} lines · {viewMode}
-        </text>
-      </box>
       <scrollbox
         focused={false}
         height="100%"
@@ -528,7 +602,7 @@ export function DiffPane() {
             paddingRight: 1,
             position: "absolute",
             right: 0,
-            top: 0,
+            top: -1,
           }}
         >
           <box style={{ flexDirection: "row", overflow: "hidden" }}>
@@ -539,6 +613,6 @@ export function DiffPane() {
           </box>
         </box>
       ) : null}
-    </box>
+    </DiffPaneChrome>
   );
 }
