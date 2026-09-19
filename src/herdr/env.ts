@@ -35,6 +35,9 @@ export async function runHerdr(args: string[]): Promise<HerdrResult> {
 
 export function isHerdrPlugin(): boolean {
   const e = process.env;
+  if (e.HERDR_PLUGIN_ID && e.HERDR_PLUGIN_EVENT && e.HERDR_SOCKET_PATH) {
+    return true;
+  }
   const paneEnv = Boolean(
     e.HERDR_SOCKET_PATH && e.HERDR_PANE_ID && e.HERDR_WORKSPACE_ID,
   );
@@ -47,19 +50,44 @@ export function currentWorkspaceId(): string | undefined {
   if (fromEnv) {
     return fromEnv;
   }
+  const ctx = asRecord(parseJson(process.env.HERDR_PLUGIN_CONTEXT_JSON));
+  const ctxWorkspace = asString(ctx?.workspace_id);
+  if (ctxWorkspace) {
+    return ctxWorkspace;
+  }
   const event = asRecord(parseJson(process.env.HERDR_PLUGIN_EVENT_JSON));
   const data = asRecord(event?.data);
   const workspace = asRecord(data?.workspace);
-  return asString(workspace?.workspace_id) ?? undefined;
+  const workspaceId = asString(workspace?.workspace_id);
+  if (workspaceId) {
+    return workspaceId;
+  }
+  return asString(data?.workspace_id) ?? undefined;
 }
 
 export type HerdrContext = {
+  focusedPaneCwd?: string;
   focusedPaneId?: string;
+  tabId?: string;
+  workspaceCwd?: string;
+  workspaceId?: string;
+  worktreeCheckout?: string;
 };
 
 export function parseContext(): HerdrContext {
   const ctx = asRecord(parseJson(process.env.HERDR_PLUGIN_CONTEXT_JSON));
-  return { focusedPaneId: asString(ctx?.focused_pane_id) ?? undefined };
+  if (!ctx) {
+    return {};
+  }
+  const worktree = asRecord(ctx?.worktree);
+  return {
+    focusedPaneCwd: asString(ctx?.focused_pane_cwd) ?? undefined,
+    focusedPaneId: asString(ctx?.focused_pane_id) ?? undefined,
+    tabId: asString(ctx?.tab_id) ?? undefined,
+    workspaceCwd: asString(ctx?.workspace_cwd) ?? undefined,
+    workspaceId: asString(ctx?.workspace_id) ?? undefined,
+    worktreeCheckout: asString(worktree?.checkout_path) ?? undefined,
+  };
 }
 
 export function stateDir(): string {
@@ -88,8 +116,8 @@ async function tryGetRepoRoot(candidate: string): Promise<string | null> {
 
 function repoCandidates(): string[] {
   const candidates: string[] = [];
-  collectContextCandidates(candidates);
   collectEventCandidates(candidates);
+  collectContextCandidates(candidates);
   candidates.push(process.cwd());
   return candidates;
 }
@@ -99,7 +127,7 @@ function collectContextCandidates(candidates: string[]): void {
   const worktree = asRecord(ctx?.worktree);
   candidates.push(
     ...toStrings([
-      worktree?.repo_root,
+      ctx?.workspace_cwd,
       worktree?.checkout_path,
       ctx?.focused_pane_cwd,
     ]),
@@ -109,19 +137,19 @@ function collectContextCandidates(candidates: string[]): void {
 function collectEventCandidates(candidates: string[]): void {
   const event = asRecord(parseJson(process.env.HERDR_PLUGIN_EVENT_JSON));
   const data = asRecord(event?.data);
-  const checkoutPaths: unknown[] = [];
-  const worktree = asRecord(data?.worktree);
-  if (worktree) {
-    checkoutPaths.push(worktree.checkout_path);
+  const paths: unknown[] = [];
+  const topWorktree = asRecord(data?.worktree);
+  if (topWorktree) {
+    paths.push(topWorktree.path, topWorktree.checkout_path);
   }
   const workspace = asRecord(data?.workspace);
   if (workspace) {
     const ww = asRecord(workspace.worktree);
     if (ww) {
-      checkoutPaths.push(ww.checkout_path);
+      paths.push(ww.checkout_path, ww.path);
     }
   }
-  candidates.push(...toStrings(checkoutPaths));
+  candidates.push(...toStrings(paths));
 }
 
 function toStrings(values: unknown[]): string[] {

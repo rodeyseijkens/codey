@@ -29,12 +29,12 @@ export async function openPane(opts: OpenPaneOptions = {}): Promise<void> {
   if ((await findPluginPanes()).length > 0) {
     return;
   }
+  const workspace = currentWorkspaceId();
   const root = await resolveRepoRoot();
   if (!root) {
     throw new HerdrError("open codey pane requires a git repository");
   }
-  const targetPane =
-    parseContext().focusedPaneId ?? (await firstPaneInWorkspace());
+  const targetPane = await resolveTargetPane(workspace);
   if (!targetPane) {
     throw new HerdrError("no target pane to split");
   }
@@ -56,11 +56,33 @@ export async function openPane(opts: OpenPaneOptions = {}): Promise<void> {
   ];
   if (placement === "split") {
     args.push("--direction", opts.direction ?? "right");
+  } else if (workspace) {
+    args.push("--workspace", workspace);
   }
   const res = await runHerdr(args);
   if (res.exitCode !== 0) {
     throw new HerdrError(`open codey pane failed: ${res.stderr.trim()}`);
   }
+}
+
+async function resolveTargetPane(
+  workspace: string | undefined,
+): Promise<string | null> {
+  const focused = parseContext().focusedPaneId;
+  if (focused && workspace) {
+    const panes = await listPanes(workspace);
+    const match = panes.find(
+      (p) => p.paneId === focused && p.workspaceId === workspace,
+    );
+    if (match) {
+      return focused;
+    }
+    return panes[0]?.paneId ?? null;
+  }
+  if (focused) {
+    return focused;
+  }
+  return firstPaneInWorkspace();
 }
 
 export async function closePanes(): Promise<void> {
@@ -106,7 +128,7 @@ export async function findPluginPanes(): Promise<string[]> {
   if (!workspace) {
     return [];
   }
-  const panes = await listPanes();
+  const panes = await listPanes(workspace);
   const inWorkspace = panes.filter((p) => p.workspaceId === workspace);
   const results = await Promise.all(
     inWorkspace.map(async (pane) => ({
@@ -117,8 +139,11 @@ export async function findPluginPanes(): Promise<string[]> {
   return results.filter((r) => r.runsCodey).map((r) => r.paneId);
 }
 
-async function listPanes(): Promise<HerdrPaneInfo[]> {
-  const res = await runHerdr(["pane", "list"]);
+async function listPanes(workspace?: string): Promise<HerdrPaneInfo[]> {
+  const args = workspace
+    ? ["pane", "list", "--workspace", workspace]
+    : ["pane", "list"];
+  const res = await runHerdr(args);
   if (res.exitCode !== 0) {
     return [];
   }
@@ -148,8 +173,31 @@ async function firstPaneInWorkspace(): Promise<string | null> {
     return null;
   }
   return (
-    (await listPanes()).find((p) => p.workspaceId === workspace)?.paneId ?? null
+    (await listPanes(workspace)).find((p) => p.workspaceId === workspace)
+      ?.paneId ?? null
   );
+}
+
+function paneRunsCodeyProcess(record: Record<string, unknown>): boolean {
+  const parts: string[] = [];
+  const argv = asArray(record.argv);
+  if (argv) {
+    for (const entry of argv) {
+      if (typeof entry === "string") {
+        parts.push(entry);
+      }
+    }
+  }
+  for (const key of ["argv0", "cmdline", "name"] as const) {
+    const value = record[key];
+    if (typeof value === "string") {
+      parts.push(value);
+    }
+  }
+  return parts.some((part) => {
+    const base = part.split("/").pop()?.split(" ").at(0) ?? "";
+    return base === "codey" || part.includes("codey");
+  });
 }
 
 async function paneRunsCodey(paneId: string): Promise<boolean> {
@@ -169,11 +217,7 @@ async function paneRunsCodey(paneId: string): Promise<boolean> {
     if (!record) {
       return false;
     }
-    const base =
-      String(record.argv0 ?? "")
-        .split("/")
-        .pop() ?? "";
-    return base === "codey";
+    return paneRunsCodeyProcess(record);
   });
 }
 
