@@ -143,6 +143,70 @@ export type DiffRow =
       expandedGapKey?: string;
     };
 
+/** A built layout row stream plus its canonical ↔ layout index mapping. */
+export type DiffRowPlan = {
+  rows: DiffRow[];
+  /** Canonical row index → rendered layout row index. */
+  canonicalToLayout: number[];
+  /** Rendered layout row index → canonical row index. */
+  layoutToCanonical: number[];
+};
+
+/**
+ * Collects layout rows while recording the canonical ↔ layout index mapping in the
+ * same walk that emits the rows, so consumers translate between the two lists with
+ * O(1) lookups instead of rescanning the stream.
+ */
+class DiffRowPlanCollector {
+  readonly rows: DiffRow[] = [];
+  readonly canonicalToLayout: number[] = [];
+  readonly layoutToCanonical: number[] = [];
+  private canonicalIndex = 0;
+
+  /** Push one layout row that renders exactly one canonical row. */
+  push(row: DiffRow): void {
+    this.canonicalToLayout[this.canonicalIndex] = this.rows.length;
+    this.layoutToCanonical[this.rows.length] = this.canonicalIndex;
+    this.canonicalIndex += 1;
+    this.rows.push(row);
+  }
+
+  /** Push one layout row whose canonical mapping is recorded later. */
+  pushUnmapped(row: DiffRow): void {
+    this.rows.push(row);
+  }
+
+  /**
+   * Record `deletions` canonical deletions followed by `additions` canonical additions
+   * against the `layoutStart + offset` change rows they pair with. Later canonical rows
+   * win the reverse map, so a paired split row resolves to its addition side.
+   */
+  recordPaired(
+    deletions: number,
+    additions: number,
+    layoutStart: number,
+  ): void {
+    for (let offset = 0; offset < deletions; offset += 1) {
+      this.canonicalToLayout[this.canonicalIndex] = layoutStart + offset;
+      this.layoutToCanonical[layoutStart + offset] = this.canonicalIndex;
+      this.canonicalIndex += 1;
+    }
+    for (let offset = 0; offset < additions; offset += 1) {
+      this.canonicalToLayout[this.canonicalIndex] = layoutStart + offset;
+      this.layoutToCanonical[layoutStart + offset] = this.canonicalIndex;
+      this.canonicalIndex += 1;
+    }
+  }
+
+  plan(): DiffRowPlan {
+    return {
+      canonicalToLayout: this.canonicalToLayout,
+      layoutToCanonical: this.layoutToCanonical,
+      rows: this.rows,
+    };
+  }
+}
+
 /** Expand source tabs before terminal rendering so downstream geometry stays predictable. */
 function tabify(text: string, tabWidth: number, initialColumn = 0) {
   return expandDiffTabs(sanitizeTerminalLine(text), tabWidth, initialColumn);
@@ -624,12 +688,12 @@ export async function loadHighlightedDiff(
 
 function appendTrailingGapRow(
   file: DiffFile,
-  rows: DiffRow[],
+  collector: DiffRowPlanCollector,
   keyPrefix: string,
 ) {
   const trailingGap = reviewTrailingGap(file.metadata);
   if (trailingGap) {
-    rows.push(collapsedGapRow(file, trailingGap, keyPrefix));
+    collector.push(collapsedGapRow(file, trailingGap, keyPrefix));
   }
 }
 
@@ -642,7 +706,7 @@ function processSplitHunkContent(
   additionLines: readonly (HastNode | undefined)[],
   theme: AppTheme,
   tabWidth: number,
-  rows: DiffRow[],
+  collector: DiffRowPlanCollector,
 ) {
   let {
     deletionLineIndex,
@@ -650,11 +714,12 @@ function processSplitHunkContent(
     deletionStart: deletionLineNumber,
     additionStart: additionLineNumber,
   } = hunk;
+  const { rows } = collector;
 
   for (const content of hunk.hunkContent) {
     if (content.type === "context") {
       for (let offset = 0; offset < content.lines; offset += 1) {
-        rows.push({
+        collector.push({
           fileId: file.id,
           hunkIndex,
           key: `${file.id}:split:${hunkIndex}:context:${deletionLineIndex + offset}:${additionLineIndex + offset}`,
@@ -686,11 +751,12 @@ function processSplitHunkContent(
     }
 
     const pairedLines = Math.max(content.deletions, content.additions);
+    const changeRowStart = rows.length;
     for (let offset = 0; offset < pairedLines; offset += 1) {
       const hasDeletion = offset < content.deletions;
       const hasAddition = offset < content.additions;
 
-      rows.push({
+      collector.pushUnmapped({
         fileId: file.id,
         hunkIndex,
         key: `${file.id}:split:${hunkIndex}:change:${deletionLineIndex + offset}:${additionLineIndex + offset}`,
@@ -733,6 +799,11 @@ function processSplitHunkContent(
         type: "split-line",
       });
     }
+    collector.recordPaired(
+      content.deletions,
+      content.additions,
+      changeRowStart,
+    );
 
     deletionLineIndex += content.deletions;
     additionLineIndex += content.additions;
@@ -741,24 +812,24 @@ function processSplitHunkContent(
   }
 }
 
-/** Expand Pierre metadata into the flat split-view row stream consumed by the renderer. */
+/** Expand Pierre metadata into the flat split-view row plan consumed by the renderer. */
 export function buildSplitRows(
   file: DiffFile,
   highlighted: HighlightedDiffCode | null,
   theme: AppTheme,
   tabWidth = DEFAULT_TAB_WIDTH,
-): DiffRow[] {
-  const rows: DiffRow[] = [];
+): DiffRowPlan {
+  const collector = new DiffRowPlanCollector();
   const deletionLines = highlighted?.deletionLines ?? [];
   const additionLines = highlighted?.additionLines ?? [];
 
   for (const [hunkIndex, hunk] of file.metadata.hunks.entries()) {
     const leadingGap = reviewLeadingGap(file.metadata, hunkIndex);
     if (leadingGap) {
-      rows.push(collapsedGapRow(file, leadingGap, "collapsed:"));
+      collector.push(collapsedGapRow(file, leadingGap, "collapsed:"));
     }
 
-    rows.push({
+    collector.push({
       fileId: file.id,
       hunkIndex,
       key: `${file.id}:header:${hunkIndex}`,
@@ -774,12 +845,12 @@ export function buildSplitRows(
       additionLines,
       theme,
       tabWidth,
-      rows,
+      collector,
     );
   }
 
-  appendTrailingGapRow(file, rows, "collapsed:");
-  return rows;
+  appendTrailingGapRow(file, collector, "collapsed:");
+  return collector.plan();
 }
 
 /** Walk one hunk's content in stack view, pushing rows in shared index-tracked order. */
@@ -791,7 +862,7 @@ function processStackHunkContent(
   additionLines: readonly (HastNode | undefined)[],
   theme: AppTheme,
   tabWidth: number,
-  rows: DiffRow[],
+  collector: DiffRowPlanCollector,
 ) {
   let {
     deletionLineIndex,
@@ -803,7 +874,7 @@ function processStackHunkContent(
   for (const content of hunk.hunkContent) {
     if (content.type === "context") {
       for (let offset = 0; offset < content.lines; offset += 1) {
-        rows.push({
+        collector.push({
           cell: makeStackCell(
             "context",
             deletionLineNumber + offset,
@@ -828,7 +899,7 @@ function processStackHunkContent(
     }
 
     for (let offset = 0; offset < content.deletions; offset += 1) {
-      rows.push({
+      collector.push({
         cell: makeStackCell(
           "deletion",
           deletionLineNumber + offset,
@@ -847,7 +918,7 @@ function processStackHunkContent(
     }
 
     for (let offset = 0; offset < content.additions; offset += 1) {
-      rows.push({
+      collector.push({
         cell: makeStackCell(
           "addition",
           undefined,
@@ -872,24 +943,24 @@ function processStackHunkContent(
   }
 }
 
-/** Expand Pierre metadata into the flat stack-view row stream consumed by the renderer. */
+/** Expand Pierre metadata into the flat stack-view row plan consumed by the renderer. */
 export function buildStackRows(
   file: DiffFile,
   highlighted: HighlightedDiffCode | null,
   theme: AppTheme,
   tabWidth = DEFAULT_TAB_WIDTH,
-): DiffRow[] {
-  const rows: DiffRow[] = [];
+): DiffRowPlan {
+  const collector = new DiffRowPlanCollector();
   const deletionLines = highlighted?.deletionLines ?? [];
   const additionLines = highlighted?.additionLines ?? [];
 
   for (const [hunkIndex, hunk] of file.metadata.hunks.entries()) {
     const leadingGap = reviewLeadingGap(file.metadata, hunkIndex);
     if (leadingGap) {
-      rows.push(collapsedGapRow(file, leadingGap, "stack:collapsed:"));
+      collector.push(collapsedGapRow(file, leadingGap, "stack:collapsed:"));
     }
 
-    rows.push({
+    collector.push({
       fileId: file.id,
       hunkIndex,
       key: `${file.id}:stack:header:${hunkIndex}`,
@@ -905,10 +976,10 @@ export function buildStackRows(
       additionLines,
       theme,
       tabWidth,
-      rows,
+      collector,
     );
   }
 
-  appendTrailingGapRow(file, rows, "stack:collapsed:");
-  return rows;
+  appendTrailingGapRow(file, collector, "stack:collapsed:");
+  return collector.plan();
 }

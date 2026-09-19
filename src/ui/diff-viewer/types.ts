@@ -2,6 +2,7 @@ import type { FileDiffMetadata } from "@pierre/diffs";
 
 import type { CanonicalDiffRow } from "../../patch/rows";
 import type { LineHighlightPaintIndex } from "./render/lineHighlightPaint";
+import type { DiffFile } from "./render/types";
 
 export type DiffLayout = "split" | "stack";
 
@@ -68,6 +69,8 @@ export type DiffBodyProps = {
   gutterSign?: boolean;
   highlight?: boolean;
   horizontalOffset?: number;
+  /** Pre-resolved internal file; skips re-deriving one from `file` when provided. */
+  internalFile?: DiffFile;
   layout?: DiffLayout;
   /** Source-line marks painted as backgrounds, keyed by `lineHighlightPaintKey`. */
   lineHighlights?: LineHighlightPaintIndex;

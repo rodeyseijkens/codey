@@ -11,7 +11,12 @@ import {
   toInternalDiffFile,
 } from "./model";
 import { findMaxLineNumber } from "./render/codeColumns";
-import { buildSplitRows, buildStackRows } from "./render/pierre";
+import {
+  buildSplitRows,
+  buildStackRows,
+  type DiffRow,
+  type DiffRowPlan,
+} from "./render/pierre";
 import {
   type CursorHighlight,
   DiffRowView,
@@ -23,102 +28,17 @@ import { DEFAULT_TAB_WIDTH } from "./render/tabWidth";
 import type { AgentAnnotation } from "./render/types";
 import { useHighlightedDiff } from "./render/useHighlightedDiff";
 import type { DiffBodyProps, DiffNote } from "./types";
+import { buildRowOffsets, type RowOffsets } from "./window";
+
+const EMPTY_ROWS: DiffRow[] = [];
+const EMPTY_PLAN: DiffRowPlan = {
+  canonicalToLayout: [],
+  layoutToCanonical: [],
+  rows: [],
+};
 
 function cursorSideFor(cursor: CanonicalDiffRow): "old" | "new" {
   return cursor.kind === "add" ? "new" : "old";
-}
-
-function splitLineMatchesCursor(
-  row: Extract<
-    ReturnType<typeof buildSplitRows>[number],
-    { type: "split-line" }
-  >,
-  cursor: CanonicalDiffRow,
-): boolean {
-  if (cursor.kind === "add") {
-    return row.right.lineNumber === cursor.newLine;
-  }
-  if (cursor.kind === "del") {
-    return row.left.lineNumber === cursor.oldLine;
-  }
-  return (
-    row.left.lineNumber === cursor.oldLine ||
-    row.right.lineNumber === cursor.newLine
-  );
-}
-
-function stackLineMatchesCursor(
-  row: Extract<
-    ReturnType<typeof buildStackRows>[number],
-    { type: "stack-line" }
-  >,
-  cursor: CanonicalDiffRow,
-): boolean {
-  if (cursor.kind === "add") {
-    return row.cell.newLineNumber === cursor.newLine;
-  }
-  if (cursor.kind === "del") {
-    return row.cell.oldLineNumber === cursor.oldLine;
-  }
-  return (
-    row.cell.oldLineNumber === cursor.oldLine ||
-    row.cell.newLineNumber === cursor.newLine
-  );
-}
-
-/** Resolve one canonical row to its rendered layout row index. */
-function resolveLayoutRow(
-  cursor: CanonicalDiffRow,
-  canonicalRows: readonly CanonicalDiffRow[],
-  canonicalIndex: number,
-  rows: ReturnType<typeof buildStackRows>,
-): number {
-  if (cursor.kind === "header") {
-    return rows.findIndex(
-      (row) => row.type === "hunk-header" && row.hunkIndex === cursor.hunkIndex,
-    );
-  }
-  if (cursor.kind === "gap") {
-    // Gap rows are 1:1 with the canonical list in the same order.
-    let ordinal = 0;
-    for (let i = 0; i < canonicalIndex; i += 1) {
-      const row = canonicalRows[i];
-      if (row?.kind === "gap") {
-        ordinal += 1;
-      }
-    }
-    let seen = 0;
-    return rows.findIndex((row) => {
-      if (row.type !== "collapsed") {
-        return false;
-      }
-      if (seen === ordinal) {
-        return true;
-      }
-      seen += 1;
-      return false;
-    });
-  }
-
-  const headerIndex = rows.findIndex(
-    (row) => row.type === "hunk-header" && row.hunkIndex === cursor.hunkIndex,
-  );
-  if (headerIndex < 0) {
-    return -1;
-  }
-  for (let index = headerIndex; index < rows.length; index += 1) {
-    const row = rows[index];
-    if (row === undefined || row.hunkIndex !== cursor.hunkIndex) {
-      break;
-    }
-    if (row.type === "split-line" && splitLineMatchesCursor(row, cursor)) {
-      return index;
-    }
-    if (row.type === "stack-line" && stackLineMatchesCursor(row, cursor)) {
-      return index;
-    }
-  }
-  return -1;
 }
 
 function buildRowsForLayout(
@@ -127,7 +47,7 @@ function buildRowsForLayout(
   highlighted: ReturnType<typeof useHighlightedDiff>,
   theme: ReturnType<typeof resolveTheme>,
   tabWidth: number,
-): ReturnType<typeof buildStackRows> {
+): DiffRowPlan {
   if (layout === "split") {
     return buildSplitRows(internalFile, highlighted, theme, tabWidth);
   }
@@ -135,7 +55,7 @@ function buildRowsForLayout(
 }
 
 type PlannedBodyRow =
-  | { kind: "diff"; row: ReturnType<typeof buildStackRows>[number] }
+  | { kind: "diff"; row: DiffRow; layoutIndex: number }
   | {
       kind: "note";
       note: DiffNote;
@@ -145,22 +65,18 @@ type PlannedBodyRow =
 
 /** Anchor notes to layout rows and interleave them after their anchored diff row. */
 function buildPlannedRows(
-  rows: ReturnType<typeof buildStackRows>,
+  plan: DiffRowPlan,
   canonicalRows: readonly CanonicalDiffRow[],
   notes: readonly DiffNote[],
 ): PlannedBodyRow[] {
+  const { canonicalToLayout, rows } = plan;
   const notesByLayoutIndex = new Map<number, DiffNote[]>();
   for (const note of notes) {
     const canonical = canonicalRows[note.anchorRow];
     if (!canonical) {
       continue;
     }
-    const layoutIndex = resolveLayoutRow(
-      canonical,
-      canonicalRows,
-      note.anchorRow,
-      rows,
-    );
+    const layoutIndex = canonicalToLayout[note.anchorRow] ?? -1;
     if (layoutIndex < 0) {
       continue;
     }
@@ -171,7 +87,7 @@ function buildPlannedRows(
 
   const planned: PlannedBodyRow[] = [];
   rows.forEach((row, index) => {
-    planned.push({ kind: "diff", row });
+    planned.push({ kind: "diff", layoutIndex: index, row });
     const group = notesByLayoutIndex.get(index);
     group?.forEach((note, noteIndex) => {
       planned.push({ kind: "note", note, noteCount: group.length, noteIndex });
@@ -182,7 +98,7 @@ function buildPlannedRows(
 
 /** Guide side for each layout row covered by a note range (excluding anchors). */
 function buildGuideSideByLayoutRow(
-  rows: ReturnType<typeof buildStackRows>,
+  plan: DiffRowPlan,
   canonicalRows: readonly CanonicalDiffRow[],
   notes: readonly DiffNote[],
 ): Map<number, "old" | "new"> {
@@ -194,12 +110,7 @@ function buildGuideSideByLayoutRow(
       if (!canonical) {
         continue;
       }
-      const layoutIndex = resolveLayoutRow(
-        canonical,
-        canonicalRows,
-        index,
-        rows,
-      );
+      const layoutIndex = plan.canonicalToLayout[index] ?? -1;
       if (layoutIndex < 0 || map.has(layoutIndex)) {
         continue;
       }
@@ -211,7 +122,7 @@ function buildGuideSideByLayoutRow(
 
 /** Set of layout row indices that fall inside a note range (including the anchor). */
 function buildCommentMarkedLayoutRows(
-  rows: ReturnType<typeof buildStackRows>,
+  plan: DiffRowPlan,
   canonicalRows: readonly CanonicalDiffRow[],
   notes: readonly DiffNote[],
 ): Set<number> {
@@ -223,12 +134,7 @@ function buildCommentMarkedLayoutRows(
       if (!canonical) {
         continue;
       }
-      const layoutIndex = resolveLayoutRow(
-        canonical,
-        canonicalRows,
-        index,
-        rows,
-      );
+      const layoutIndex = plan.canonicalToLayout[index] ?? -1;
       if (layoutIndex >= 0) {
         set.add(layoutIndex);
       }
@@ -287,6 +193,7 @@ function noteAnchorSide(
 /** Render one diff file body with inline notes, without owning navigation or app chrome. */
 export function DiffBody({
   file,
+  internalFile: internalFileProp,
   layout = "split",
   width,
   theme = "github-dark-default",
@@ -307,15 +214,15 @@ export function DiffBody({
 }: DiffBodyProps) {
   const resolvedTheme = resolveTheme(theme, null);
   const internalFile = useMemo(
-    () => (file ? toInternalDiffFile(file) : undefined),
-    [file],
+    () => internalFileProp ?? (file ? toInternalDiffFile(file) : undefined),
+    [internalFileProp, file],
   );
   const resolvedHighlighted = useHighlightedDiff({
     file: internalFile,
     shouldLoadHighlight: highlight,
     theme: resolvedTheme,
   });
-  const rows = useMemo(
+  const plan = useMemo(
     () =>
       internalFile
         ? buildRowsForLayout(
@@ -325,11 +232,12 @@ export function DiffBody({
             resolvedTheme,
             tabWidth,
           )
-        : [],
+        : EMPTY_PLAN,
     [internalFile, layout, resolvedHighlighted, resolvedTheme, tabWidth],
   );
+  const rows = plan.rows.length > 0 ? plan.rows : EMPTY_ROWS;
   const canonicalRows = useMemo(
-    () => (file ? buildCanonicalDiffRows(file) : []),
+    () => (file ? (file.canonicalRows ?? buildCanonicalDiffRows(file)) : []),
     [file],
   );
   const cursor = useMemo(
@@ -338,21 +246,13 @@ export function DiffBody({
   );
   const resolvedCursorRow = useMemo(
     () =>
-      cursor && cursorRow !== undefined
-        ? resolveLayoutRow(cursor, canonicalRows, cursorRow, rows)
-        : -1,
-    [cursor, cursorRow, canonicalRows, rows],
-  );
-  const anchor = useMemo(
-    () => (anchorRow === undefined ? undefined : canonicalRows[anchorRow]),
-    [anchorRow, canonicalRows],
+      cursorRow === undefined ? -1 : (plan.canonicalToLayout[cursorRow] ?? -1),
+    [cursorRow, plan],
   );
   const resolvedAnchorRow = useMemo(
     () =>
-      anchor !== undefined && anchorRow !== undefined
-        ? resolveLayoutRow(anchor, canonicalRows, anchorRow, rows)
-        : -1,
-    [anchor, anchorRow, canonicalRows, rows],
+      anchorRow === undefined ? -1 : (plan.canonicalToLayout[anchorRow] ?? -1),
+    [anchorRow, plan],
   );
   const visualSelectLayoutRows = useMemo(() => {
     if (resolvedAnchorRow < 0 || resolvedCursorRow < 0) {
@@ -367,73 +267,63 @@ export function DiffBody({
     return set;
   }, [resolvedAnchorRow, resolvedCursorRow]);
   const plannedRows = useMemo(
-    () => buildPlannedRows(rows, canonicalRows, notes),
-    [rows, canonicalRows, notes],
+    () => buildPlannedRows(plan, canonicalRows, notes),
+    [plan, canonicalRows, notes],
   );
   const guideSideByLayoutRow = useMemo(
-    () => buildGuideSideByLayoutRow(rows, canonicalRows, notes),
-    [rows, canonicalRows, notes],
+    () => buildGuideSideByLayoutRow(plan, canonicalRows, notes),
+    [plan, canonicalRows, notes],
   );
   const commentMarkedLayoutRows = useMemo(
-    () => buildCommentMarkedLayoutRows(rows, canonicalRows, notes),
-    [rows, canonicalRows, notes],
+    () => buildCommentMarkedLayoutRows(plan, canonicalRows, notes),
+    [plan, canonicalRows, notes],
   );
-
-  const layoutToCanonical = useMemo(() => {
-    const map = new Map<number, number>();
-    for (let i = 0; i < canonicalRows.length; i += 1) {
-      const cr = canonicalRows[i];
-      if (!cr) {
-        continue;
-      }
-      const layoutIndex = resolveLayoutRow(cr, canonicalRows, i, rows);
-      if (layoutIndex >= 0) {
-        map.set(layoutIndex, i);
-      }
-    }
-    return map;
-  }, [canonicalRows, rows]);
 
   const lineNumberDigits = useMemo(
     () => String(internalFile ? findMaxLineNumber(internalFile) : 1).length,
     [internalFile],
   );
 
-  const cursorOffset = useMemo(() => {
-    if (resolvedCursorRow < 0) {
-      return;
-    }
-    let offset = 0;
-    for (const planned of plannedRows) {
+  /**
+   * Measure every planned row once per row-plan/geometry change. The offsets double as
+   * exact cursor offsets and window slice bounds, so the walk stays O(rows) with cheap
+   * constant work per row while only the visible window is mounted.
+   */
+  const layoutMetrics = useMemo(() => {
+    const heights: number[] = [];
+    const plannedIndexOfLayout = new Map<number, number>();
+    plannedRows.forEach((planned, plannedIndex) => {
       if (planned.kind === "diff") {
-        const { row } = planned;
-        if (row === rows[resolvedCursorRow]) {
-          return offset;
-        }
-        offset += measureRenderedRowHeight(
-          row,
-          width,
-          lineNumberDigits,
-          showLineNumbers,
-          showHunkHeaders,
-          wrapLines,
-          resolvedTheme,
-          gutterSign,
+        heights.push(
+          measureRenderedRowHeight(
+            planned.row,
+            width,
+            lineNumberDigits,
+            showLineNumbers,
+            showHunkHeaders,
+            wrapLines,
+            resolvedTheme,
+            gutterSign,
+          ),
         );
+        if (!plannedIndexOfLayout.has(planned.layoutIndex)) {
+          plannedIndexOfLayout.set(planned.layoutIndex, plannedIndex);
+        }
       } else {
-        offset += measureCommentCardHeight({
-          anchorSide: noteAnchorSide(planned.note, canonicalRows),
-          annotation: noteToAnnotation(planned.note, canonicalRows),
-          layout,
-          width,
-        });
+        heights.push(
+          measureCommentCardHeight({
+            anchorSide: noteAnchorSide(planned.note, canonicalRows),
+            annotation: noteToAnnotation(planned.note, canonicalRows),
+            layout,
+            width,
+          }),
+        );
       }
-    }
-    return offset;
+    });
+    const offsets: RowOffsets = buildRowOffsets(heights);
+    return { offsets, plannedIndexOfLayout };
   }, [
     plannedRows,
-    resolvedCursorRow,
-    rows,
     width,
     lineNumberDigits,
     showLineNumbers,
@@ -444,6 +334,18 @@ export function DiffBody({
     layout,
     gutterSign,
   ]);
+
+  const cursorPlannedIndex =
+    resolvedCursorRow >= 0
+      ? layoutMetrics.plannedIndexOfLayout.get(resolvedCursorRow)
+      : undefined;
+
+  const cursorOffset = useMemo(() => {
+    if (cursorPlannedIndex === undefined) {
+      return;
+    }
+    return layoutMetrics.offsets.prefix[cursorPlannedIndex];
+  }, [layoutMetrics, cursorPlannedIndex]);
 
   useEffect(() => {
     if (cursorOffset !== undefined) {
@@ -520,13 +422,12 @@ export function DiffBody({
             />
           );
         }
-        const { row } = planned;
-        const rowIndex = rows.indexOf(row);
+        const { layoutIndex, row } = planned;
         return (
           <box
             key={row.key}
             onMouseDown={() => {
-              const ci = layoutToCanonical.get(rowIndex);
+              const ci = plan.layoutToCanonical[layoutIndex];
               if (ci !== undefined) {
                 onRowMouseDown?.(ci);
               }
@@ -535,23 +436,23 @@ export function DiffBody({
           >
             <DiffRowView
               codeHorizontalOffset={horizontalOffset}
-              commentMarked={commentMarkedLayoutRows.has(rowIndex)}
+              commentMarked={commentMarkedLayoutRows.has(layoutIndex)}
               cursorHighlight={
-                rowIndex === resolvedCursorRow ? cursorHighlight : undefined
+                layoutIndex === resolvedCursorRow ? cursorHighlight : undefined
               }
               lineHighlights={lineHighlights}
               lineNumberDigits={lineNumberDigits}
-              noteGuideSide={guideSideByLayoutRow.get(rowIndex)}
+              noteGuideSide={guideSideByLayoutRow.get(layoutIndex)}
               row={row}
               selected={
                 row.hunkIndex === selectedHunkIndex ||
-                rowIndex === resolvedCursorRow
+                layoutIndex === resolvedCursorRow
               }
               showHunkHeaders={showHunkHeaders}
               showLineNumbers={showLineNumbers}
               showSign={gutterSign}
               theme={resolvedTheme}
-              visualSelect={visualSelectLayoutRows.has(rowIndex)}
+              visualSelect={visualSelectLayoutRows.has(layoutIndex)}
               width={width}
               wrapLines={wrapLines}
             />
