@@ -1,6 +1,8 @@
+import { currentDiffRows } from "../ui/diff-pane-runtime";
 import {
   acceptSearch,
   computeMatches,
+  computeMatchesInRows,
   createOpenSearch,
   stepSearch,
   updateSearch,
@@ -22,7 +24,11 @@ export function setDiffSearchQuery(query: string): void {
     return;
   }
   const sel = store.selectedFile();
-  const matches = computeMatches(sel?.file.diff ?? "", query);
+  const registered = currentDiffRows();
+  const matches =
+    registered.length > 0
+      ? computeMatchesInRows(registered, query)
+      : computeMatches(sel?.file.diff ?? "", query);
   store.set({ diffSearch: updateSearch(current, query, matches) });
 }
 

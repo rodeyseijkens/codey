@@ -1,15 +1,19 @@
 import { diffRowsFromPatch } from "../patch/from-patch";
+import type { CanonicalDiffRow } from "../patch/rows";
 import type { DiffSearch } from "./store";
 
 export function createOpenSearch(): DiffSearch {
   return { index: 0, matches: [], open: true, query: "" };
 }
 
-export function computeMatches(diff: string, query: string): number[] {
-  if (!(diff && query)) {
+/** Match canonical rows against the query; the pane's registered rows skip a re-parse. */
+export function computeMatchesInRows(
+  rows: readonly CanonicalDiffRow[],
+  query: string,
+): number[] {
+  if (!(rows.length > 0 && query)) {
     return [];
   }
-  const rows = diffRowsFromPatch(diff);
   const lower = query.toLowerCase();
   const out: number[] = [];
   for (let i = 0; i < rows.length; i += 1) {
@@ -18,6 +22,13 @@ export function computeMatches(diff: string, query: string): number[] {
     }
   }
   return out;
+}
+
+export function computeMatches(diff: string, query: string): number[] {
+  if (!(diff && query)) {
+    return [];
+  }
+  return computeMatchesInRows(diffRowsFromPatch(diff), query);
 }
 
 export function updateSearch(
