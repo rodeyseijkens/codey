@@ -312,6 +312,7 @@ export function DiffBody({
             wrapLines,
             resolvedTheme,
             gutterSign,
+            guideSideByLayoutRow.get(planned.layoutIndex),
           ),
         );
         if (!plannedIndexOfLayout.has(planned.layoutIndex)) {
@@ -340,6 +341,7 @@ export function DiffBody({
     resolvedTheme,
     canonicalRows,
     layout,
+    guideSideByLayoutRow,
     gutterSign,
   ]);
 

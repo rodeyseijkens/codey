@@ -1294,6 +1294,7 @@ export function measureRenderedRowHeight(
   wrapLines: boolean,
   _theme: AppTheme,
   showSign = false,
+  noteGuideSide?: "old" | "new",
 ) {
   if (row.type === "hunk-header") {
     return showHunkHeaders ? 1 : 0;
@@ -1302,6 +1303,10 @@ export function measureRenderedRowHeight(
   if (row.type === "collapsed") {
     return 1;
   }
+
+  // The renderer reserves one column for note guides on the new side, narrowing
+  // the wrapped content; mirror that here so measured heights match rendering.
+  const guideOnNewSide = noteGuideSide === "new";
 
   if (row.type === "split-line") {
     if (!wrapLines) {
@@ -1318,7 +1323,7 @@ export function measureRenderedRowHeight(
       showSign,
     );
     const rightGeometry = resolveSplitCellGeometry(
-      rightWidth,
+      rightWidth - (guideOnNewSide ? 1 : 0),
       lineNumberDigits,
       showLineNumbers,
       markerWidth,
@@ -1340,7 +1345,7 @@ export function measureRenderedRowHeight(
   }
 
   const cellGeometry = resolveStackCellGeometry(
-    width,
+    width - (guideOnNewSide ? 1 : 0),
     lineNumberDigits,
     showLineNumbers,
     marker().length,
