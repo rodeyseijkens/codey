@@ -11,13 +11,16 @@ import {
   selectCommitFile,
   toggleCommitExpand,
 } from "../state/actions/commits";
+import { refresh } from "../state/actions/core";
 import {
   focusCommits,
   focusSidebar,
   selectDir,
   selectFile,
   selectSection,
+  toggleAllTreeFolders,
   toggleCollapse,
+  toggleSidebarView,
   toggleTreeFolder,
 } from "../state/actions/navigation";
 import {
@@ -40,6 +43,8 @@ import { statusColor, statusIcon } from "./colors";
 import {
   CHEVRON_DOWN,
   CHEVRON_RIGHT,
+  COLLAPSE_FOLDERS_ICON,
+  EM_SPACE,
   fileColor,
   fileIcon,
   folderColor,
@@ -48,9 +53,12 @@ import {
   GIT_PULL_ICON,
   GIT_PUSH_ICON,
   GIT_UNDO_ICON,
+  LIST_VIEW_ICON,
+  REFRESH_ICON,
   SPINNER_FRAMES,
   STATUS_UNTRACKED,
   THIN_SPACE,
+  TREE_VIEW_ICON,
 } from "./icons";
 
 function truncatePath(path: string, max: number): string {
@@ -781,6 +789,67 @@ function CommitLog(props: { width: number }) {
   );
 }
 
+function SidebarControls(props: { treeView: boolean }) {
+  const { ui: C } = useColors();
+
+  function toggleView(e: MouseEvent) {
+    if (e.button === 0) {
+      focusSidebar();
+      toggleSidebarView();
+    }
+  }
+
+  function collapseFolders(e: MouseEvent) {
+    if (e.button === 0) {
+      focusSidebar();
+      toggleAllTreeFolders();
+    }
+  }
+
+  function refreshChangesets(e: MouseEvent) {
+    if (e.button === 0) {
+      focusSidebar();
+      void refresh();
+    }
+  }
+
+  return (
+    <box
+      style={{
+        backgroundColor: C.bg,
+        flexDirection: "row",
+        position: "absolute",
+        right: 0,
+        top: -1,
+      }}
+    >
+      {props.treeView ? (
+        <box onMouseDown={collapseFolders}>
+          <text
+            selectable={false}
+            style={{ fg: C.dim }}
+          >{`${EM_SPACE}${COLLAPSE_FOLDERS_ICON}`}</text>
+        </box>
+      ) : null}
+      <box onMouseDown={toggleView}>
+        <text
+          selectable={false}
+          style={{ fg: C.dim }}
+        >{`${EM_SPACE}${props.treeView ? TREE_VIEW_ICON : LIST_VIEW_ICON}`}</text>
+      </box>
+      <box onMouseDown={refreshChangesets}>
+        <text
+          selectable={false}
+          style={{ fg: C.dim }}
+        >{`${EM_SPACE}${REFRESH_ICON}`}</text>
+      </box>
+      <text selectable={false} style={{ fg: C.dim }}>
+        {EM_SPACE}
+      </text>
+    </box>
+  );
+}
+
 export function Sidebar() {
   const state = useAppState();
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
@@ -821,6 +890,7 @@ export function Sidebar() {
         ))}
       </scrollbox>
       <CommitLog width={state.sidebarWidth} />
+      <SidebarControls treeView={state.sidebarView === SIDEBAR_VIEWS.tree} />
     </box>
   );
 }
