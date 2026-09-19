@@ -25,6 +25,7 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "prepare": "husky",
+    "screenshots": "bash scripts/screenshots.sh",
     "start": "bun run src/main.tsx",
     "test": "bun test",
     "type-check": "tsc --noEmit"

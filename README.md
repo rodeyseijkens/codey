@@ -8,6 +8,12 @@ A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged
 
 `codey` sits beside your agent while it writes code. Review the diff it just produced, comment on lines, stage the parts you want, and hand the notes back. It runs standalone in any terminal and as a [herdr](https://herdr.dev) plugin pane.
 
+## Screenshots
+
+![codey feature tour: diff search, line comments, staging, line wrap, layouts, commit log, commit creation, rebase and push overlays, help, and theme switching](.github/assets/screenshots/hero.gif)
+
+codey ships 57+ bundled themes. See [Themes](docs/themes.md) for the full list.
+
 ---
 
 ## Installation
@@ -113,7 +119,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | Key                 | Action                                     |
 | ------------------- | ------------------------------------------ |
 | `Tab` / `Shift+Tab` | Cycle focus: changes ↔ diff ↔ commit log   |
-| `0` / `1` / `2`     | Focus changes / diff / commit log directly |
+| `0` / `1` / `2`     | Focus diff / changes / commit log directly |
 | `?`                 | Show help overlay                          |
 | `q`                 | Quit                                       |
 | `Esc`               | Cancel overlay                             |
