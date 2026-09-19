@@ -53,6 +53,35 @@ describe("computeRowWindow", () => {
     expect(win.start).toBeLessThanOrEqual(900 - 10);
     expect(win.end).toBeGreaterThan(900);
   });
+
+  test("a distant cursor recenters a bounded window instead of spanning to it", () => {
+    // A programmatic jump renders with the new cursor before scrollTop catches
+    // up; stretching the slice to cover both would mount every row in between.
+    const win = computeRowWindow(prefix, 0, 30, 10, 900);
+    expect(win.end - win.start).toBeLessThanOrEqual(30 + 2 * 10);
+    expect(win.start).toBe(890);
+    expect(win.end).toBe(911);
+  });
+
+  test("a cursor inside the overscan band keeps the viewport mounted", () => {
+    const win = computeRowWindow(prefix, 100, 30, 10, 135);
+    expect(win.start).toBeLessThanOrEqual(100);
+    expect(win.end).toBeGreaterThanOrEqual(130);
+    expect(win.end).toBeGreaterThan(135);
+  });
+
+  test("clamps a distant cursor at the row list end", () => {
+    const win = computeRowWindow(prefix, 0, 30, 10, 5000);
+    expect(win.end).toBe(1000);
+    expect(win.start).toBe(989);
+    expect(win.bottomSpacer).toBe(0);
+  });
+
+  test("spacers stay consistent for a recentered distant cursor", () => {
+    const win = computeRowWindow(prefix, 0, 30, 10, 900);
+    const sliceHeight = (prefix[win.end] ?? 0) - (prefix[win.start] ?? 0);
+    expect(win.topOffset + sliceHeight + win.bottomSpacer).toBe(1000);
+  });
 });
 
 describe("computeRowWindow spacers", () => {
