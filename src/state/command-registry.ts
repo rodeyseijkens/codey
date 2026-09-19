@@ -1,4 +1,5 @@
 import type { CommandId } from "../keymap/commands";
+import { SIDEBAR_VIEWS } from "../types";
 import {
   halfPageScroll,
   jumpHunk,
@@ -34,6 +35,7 @@ import {
   selectNext,
   selectPrev,
   sendComments,
+  toggleAllTreeFolders,
   toggleFocus,
   toggleSelectedRow,
   toggleSidebar,
@@ -238,6 +240,10 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
   r.set("refresh", { run: () => void refresh() });
   r.set("toggle-layout", { run: () => cycleLayout() });
   r.set("toggle-view", { run: () => toggleSidebarView() });
+  r.set("toggle-folders", {
+    guard: (state) => state.sidebarView === SIDEBAR_VIEWS.tree,
+    run: () => toggleAllTreeFolders(),
+  });
   r.set("wrap-text", {
     run: (store, state) => store.set({ wrapLines: !state.wrapLines }),
   });

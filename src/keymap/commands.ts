@@ -264,6 +264,12 @@ export const COMMAND_DEFS = {
     description: "Stage selected file (git add)",
     section: "changes",
   },
+  "toggle-folders": {
+    defaultKey: [],
+    description:
+      "Collapse all tree folders, or expand all when every folder is collapsed",
+    section: "changes",
+  },
   "toggle-layout": {
     defaultKey: "m",
     description: "Cycle layout mode split / stack / auto",
