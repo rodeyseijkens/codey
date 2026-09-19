@@ -80,6 +80,10 @@ export type DiffBodyProps = {
   onCursorOffsetResolved?: (offset: number) => void;
   /** Called when a diff row is clicked, with the canonical row index. */
   onRowMouseDown?: (canonicalRowIndex: number) => void;
+  /** Rows rendered beyond the visible window on each side when windowing is active. */
+  overscan?: number;
+  /** Vertical scroll position of the owning scrollbox; pairs with `viewportHeight`. */
+  scrollTop?: number;
   selectedHunkIndex?: number;
   showHunkHeaders?: boolean;
   showLineNumbers?: boolean;
@@ -88,4 +92,10 @@ export type DiffBodyProps = {
   theme?: string;
   width: number;
   wrapLines?: boolean;
+  /**
+   * Visible height of the owning scrollbox. When greater than 0, only the visible
+   * window plus overscan mounts, padded with spacer boxes; when absent or 0 every
+   * row mounts.
+   */
+  viewportHeight?: number;
 };
