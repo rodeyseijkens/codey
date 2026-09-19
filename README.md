@@ -8,6 +8,15 @@ A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged
 
 `codey` sits beside your agent while it writes code. Review the diff it just produced, comment on lines, stage the parts you want, and hand the notes back. It runs standalone in any terminal and as a [herdr](https://herdr.dev) plugin pane.
 
+## Screenshots
+
+| Diff review with a transient comment | Split diff view | Commit log with rebase actions | Help overlay |
+| --- | --- | --- | --- |
+| ![Diff review with a transient comment in the gruvbox-dark-hard theme](.github/assets/screenshots/1.png) | ![Split diff view in the gruvbox-dark-hard theme](.github/assets/screenshots/4.png) | ![Commit log with rebase actions in the kanagawa-wave theme](.github/assets/screenshots/2.png) | ![Help overlay in the catppuccin-frappe theme](.github/assets/screenshots/3.png) |
+| *gruvbox-dark-hard* | *gruvbox-dark-hard* | *kanagawa-wave* | *catppuccin-frappe* |
+
+codey ships 57+ bundled themes. See [Themes](docs/themes.md) for the full list.
+
 ---
 
 ## Installation
