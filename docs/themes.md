@@ -1,7 +1,7 @@
 # codey themes
 
 A theme in codey is one id that colors the whole app: the sidebar, overlays and
-status bar, the diff row tints and `+`/`-` sign colors, and the syntax
+bottom bar, the diff row tints and `+`/`-` sign colors, and the syntax
 highlighting of the code itself. There is no separate UI vs. code theme.
 
 ## Setting a theme
