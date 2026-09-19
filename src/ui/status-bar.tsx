@@ -1,6 +1,6 @@
 import { useAppState } from "../state/store";
 import type { ToastKind } from "../types";
-import { SIDEBAR_VIEWS, TOAST_KINDS } from "../types";
+import { TOAST_KINDS } from "../types";
 import { useColors } from "./color-context";
 
 function toastColor(
@@ -32,19 +32,13 @@ export function TopBar() {
         paddingRight: 1,
       }}
     >
-      <text style={{ fg: C.accent }}>codey</text>
       {state.branch ? (
-        <text style={{ fg: C.purple }}> {state.branch}</text>
+        <text style={{ fg: C.purple }}>{state.branch}</text>
       ) : null}
-      <text style={{ fg: C.dim }}> [{state.loaderMode}]</text>
-      {state.watchActive ? <text style={{ fg: C.green }}> watch</text> : null}
-      <text style={{ fg: C.dim }}> layout:{state.layoutMode}</text>
-      <text style={{ flexGrow: 1 }}> </text>
-      {state.sidebarView === SIDEBAR_VIEWS.tree ? (
-        <text style={{ fg: C.dim }}>tree</text>
-      ) : (
-        <text style={{ fg: C.dim }}>list</text>
+      {state.loaderMode === "diff" ? null : (
+        <text style={{ fg: C.dim }}> [{state.loaderMode}]</text>
       )}
+      {state.watchActive ? <text style={{ fg: C.green }}> watch</text> : null}
     </box>
   );
 }
