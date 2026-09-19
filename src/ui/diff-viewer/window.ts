@@ -62,7 +62,10 @@ function firstRowAtLeast(prefix: readonly number[], y: number): number {
  * Slice the visible row window for a scroll position, padding each side with
  * `overscan` rows. Row heights come as prefix sums so the slice is a binary
  * search regardless of file size. When `mustInclude` is given, that row is
- * always pulled into the window so the cursor never renders outside it.
+ * always inside the window so the cursor never renders outside it: a cursor
+ * that already sits near the viewport widens the slice, while a distant one
+ * recenters the slice on itself so a programmatic jump cannot mount every row
+ * in between while the scroll position is still one render behind.
  */
 export function computeRowWindow(
   prefix: readonly number[],
@@ -89,8 +92,15 @@ export function computeRowWindow(
   let end = Math.min(count, endVisible + overscan);
 
   if (mustInclude !== undefined && mustInclude >= 0) {
-    start = Math.max(0, Math.min(start, mustInclude - overscan));
-    end = Math.max(end, Math.min(count, mustInclude + overscan + 1));
+    const cursor = Math.min(count - 1, mustInclude);
+    const insideWindow = cursor >= start && cursor < end;
+    if (insideWindow) {
+      start = Math.max(0, Math.min(start, cursor - overscan));
+      end = Math.max(end, Math.min(count, cursor + overscan + 1));
+    } else {
+      start = Math.max(0, Math.min(count, cursor - overscan));
+      end = Math.min(count, Math.max(start + 1, cursor + overscan + 1));
+    }
   }
 
   const topOffset = prefix[start] ?? 0;
