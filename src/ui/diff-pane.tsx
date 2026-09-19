@@ -596,12 +596,12 @@ export function DiffPane() {
         <box
           style={{
             backgroundColor: C.selection,
+            left: 0,
             minWidth: 30,
             overflow: "hidden",
             paddingLeft: 1,
             paddingRight: 1,
             position: "absolute",
-            right: 0,
             top: -1,
           }}
         >
