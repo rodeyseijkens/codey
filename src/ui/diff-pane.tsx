@@ -213,6 +213,7 @@ function DiffPaneChrome(props: {
         borderColor: props.focused ? C.accent : C.bg,
         borderStyle: "single",
         flexDirection: "column",
+        width: "100%",
       }}
     >
       <box
