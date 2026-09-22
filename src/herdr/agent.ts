@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { formatLineRangeLabel } from "../patch/line-range";
 import type { Comment } from "../types";
 import { git } from "../vcs/git";
 import {
@@ -159,12 +160,9 @@ const BRACKETED_PASTE_END = "\u001b[201~";
 function formatComments(comments: Comment[]): string {
   const lines: string[] = [];
   for (const comment of comments) {
-    lines.push(
-      [
-        `${comment.path}:${comment.startRow}-${comment.endRow}`,
-        comment.text,
-      ].join("\n"),
-    );
+    const location =
+      formatLineRangeLabel(comment.oldRange, comment.newRange) || "hunk";
+    lines.push([`${comment.path} ${location}`, comment.text].join("\n"));
   }
   const body = lines.join("\n\n").replaceAll(BRACKETED_PASTE_END, "");
   return `${BRACKETED_PASTE_START}${body}${BRACKETED_PASTE_END}`;
@@ -173,6 +171,8 @@ function formatComments(comments: Comment[]): string {
 function serializeComment(comment: Comment) {
   return {
     endRow: comment.endRow,
+    location:
+      formatLineRangeLabel(comment.oldRange, comment.newRange) || "hunk",
     path: comment.path,
     startRow: comment.startRow,
     text: comment.text,

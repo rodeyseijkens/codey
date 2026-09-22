@@ -1,3 +1,4 @@
+import { formatLineRangeLabel } from "../patch/line-range";
 import { commentKey, type Scope } from "../types";
 
 export type ClipboardResult = {
@@ -82,6 +83,8 @@ export function formatCommentsAsMarkdown(
     path: string;
     startRow: number;
     endRow: number;
+    newRange?: [number, number];
+    oldRange?: [number, number];
     context: string;
     text: string;
   }[],
@@ -98,9 +101,10 @@ export function formatCommentsAsMarkdown(
     lines.push(`## ${key}`, "");
     for (const c of list) {
       const range =
-        c.startRow === c.endRow
+        formatLineRangeLabel(c.oldRange, c.newRange) ||
+        (c.startRow === c.endRow
           ? `line ${c.startRow}`
-          : `lines ${c.startRow}-${c.endRow}`;
+          : `lines ${c.startRow}-${c.endRow}`);
       lines.push(`- **${range}**${c.context ? ` (\`${c.context}\`)` : ""}`);
       lines.push(`  ${c.text}`, "");
     }
