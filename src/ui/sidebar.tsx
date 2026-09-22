@@ -61,6 +61,7 @@ import {
   THIN_SPACE,
   TREE_VIEW_ICON,
 } from "./icons";
+import { useMinimumVisible } from "./use-minimum-visible";
 
 function truncatePath(path: string, max: number): string {
   if (max <= 1) {
@@ -615,10 +616,11 @@ function CommitLog(props: { width: number }) {
   const hasBehind = commitBehind > 0;
   const hasBusy = remoteBusy !== null;
   const hasCommitLoading = commitLoading;
+  const showSpinner = useMinimumVisible(hasBusy || hasCommitLoading);
   const [spinnerFrame, setSpinnerFrame] = useState(0);
 
   useEffect(() => {
-    if (!(hasBusy || hasCommitLoading)) {
+    if (!showSpinner) {
       setSpinnerFrame(0);
       return;
     }
@@ -627,7 +629,7 @@ function CommitLog(props: { width: number }) {
       SPINNER_INTERVAL,
     );
     return () => clearInterval(timer);
-  }, [hasBusy, hasCommitLoading]);
+  }, [showSpinner]);
 
   useEffect(() => {
     if (repoRoot && commitEntries.length === 0 && !commitLoading) {
@@ -679,26 +681,25 @@ function CommitLog(props: { width: number }) {
     loadMoreCommits(true);
   }
 
-  const headerStatus: ReactNode =
-    hasCommitLoading || hasBusy ? (
-      <text style={{ fg: hasCommitLoading ? C.dim : icons.yellow }}>
-        {SPINNER_FRAMES[spinnerFrame]}
-      </text>
-    ) : (
-      <>
-        {hasAhead ? (
-          <text style={{ fg: C.green }}>
-            {GIT_PUSH_ICON} {commitAhead}
-          </text>
-        ) : null}
-        {hasAhead && hasBehind ? <text> </text> : null}
-        {hasBehind ? (
-          <text style={{ fg: icons.orange }}>
-            {GIT_PULL_ICON} {commitBehind}
-          </text>
-        ) : null}
-      </>
-    );
+  const headerStatus: ReactNode = showSpinner ? (
+    <text style={{ fg: hasCommitLoading ? C.dim : icons.yellow }}>
+      {SPINNER_FRAMES[spinnerFrame]}
+    </text>
+  ) : (
+    <>
+      {hasAhead ? (
+        <text style={{ fg: C.green }}>
+          {GIT_PUSH_ICON} {commitAhead}
+        </text>
+      ) : null}
+      {hasAhead && hasBehind ? <text> </text> : null}
+      {hasBehind ? (
+        <text style={{ fg: icons.orange }}>
+          {GIT_PULL_ICON} {commitBehind}
+        </text>
+      ) : null}
+    </>
+  );
 
   const body: ReactNode =
     commitEntries.length === 0 && !commitLoading ? (
