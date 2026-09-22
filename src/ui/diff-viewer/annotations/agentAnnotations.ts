@@ -1,3 +1,4 @@
+import { formatLineRangeLabel } from "../../../patch/line-range";
 import { normalizeDiffPath } from "../render/diffPaths";
 import { formatTerminalPath } from "../render/terminalText";
 import type {
@@ -16,12 +17,6 @@ export function reviewNoteSource(
     return "agent";
   }
   return "ai";
-}
-
-function formatGithubStyleRange(prefix: "L" | "R", range: [number, number]) {
-  return range[0] === range[1]
-    ? `${prefix}${range[0]}`
-    : `${prefix}${range[0]}–${prefix}${range[1]}`;
 }
 
 function fileLabel(file: DiffFile | undefined) {
@@ -43,13 +38,7 @@ export function annotationRangeLabel(
   annotation: AgentAnnotation,
   file?: DiffFile,
 ) {
-  const locationParts: string[] = [];
-  if (annotation.oldRange) {
-    locationParts.push(formatGithubStyleRange("L", annotation.oldRange));
-  }
-  if (annotation.newRange) {
-    locationParts.push(formatGithubStyleRange("R", annotation.newRange));
-  }
-  const location = locationParts.join(" → ") || "hunk";
+  const location =
+    formatLineRangeLabel(annotation.oldRange, annotation.newRange) || "hunk";
   return file ? `${fileLabel(file)} ${location}` : location;
 }
