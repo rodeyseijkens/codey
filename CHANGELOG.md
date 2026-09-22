@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/rodeyseijkens/codey/compare/v0.3.0...v0.4.0) (2026-09-22)
+
+
+### Features
+
+* add line ranges to comment models ([2f72e3c](https://github.com/rodeyseijkens/codey/commit/2f72e3ced68ae9cb6757082cd5c5bc8140943bde))
+* collapse the diff's trailing unchanged lines ([b2c1084](https://github.com/rodeyseijkens/codey/commit/b2c1084b9352f00561cd59c2b54c0d59a784ef9c))
+* comment on commit diffs from the commits pane ([6b8ae42](https://github.com/rodeyseijkens/codey/commit/6b8ae42a15da31d02bbbd18f91ccb89bbe3327ab))
+* fold single-directory chains in the tree view ([8fd1f26](https://github.com/rodeyseijkens/codey/commit/8fd1f26613feb9a94611e5c65b15ea4bd1eee9bb))
+* move refresh and comment status into the top bar ([444355c](https://github.com/rodeyseijkens/codey/commit/444355cb1ef947a7ffaca51e69b56878b7c68460))
+* populate line ranges when creating comments ([f0970ff](https://github.com/rodeyseijkens/codey/commit/f0970ffd2c123b6906dac5df3ec82f534a9f81d8))
+
+
+### Bug Fixes
+
+* reword the selected commit instead of HEAD ([7e35727](https://github.com/rodeyseijkens/codey/commit/7e357275349881d98a164daa53c436b7d2017f48))
+* show inactive border on diff and changes panes ([38390c0](https://github.com/rodeyseijkens/codey/commit/38390c0a92efa012c42186d70b47b1f97839357b))
+* use line range labels in sent comments ([303d54a](https://github.com/rodeyseijkens/codey/commit/303d54a984f7a9addeebefe07f9ca591a5bdc593))
+
 ## [0.3.0](https://github.com/rodeyseijkens/codey/compare/v0.2.0...v0.3.0) (2026-09-21)
 
 
