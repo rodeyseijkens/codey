@@ -1,4 +1,5 @@
 import { diffRowsFromPatch } from "../patch/from-patch";
+import { lineRangeForRows } from "../patch/line-range";
 import { type CanonicalDiffRow, canonicalRowLabel } from "../patch/rows";
 import { type Comment, TOAST_KINDS } from "../types";
 import { getStore } from "./store";
@@ -57,6 +58,8 @@ export function openAddCommentDraft(): void {
       context: contextForRange(rows, startRow, endRow),
       endRow,
       mode: "add",
+      newRange: lineRangeForRows(rows, startRow, endRow, "new"),
+      oldRange: lineRangeForRows(rows, startRow, endRow, "old"),
       path: sel.file.path,
       scope: sel.scope,
       startRow,
@@ -82,6 +85,8 @@ export function openEditCommentDraft(): void {
       context: comment.context,
       endRow: comment.endRow,
       mode: "edit",
+      newRange: comment.newRange,
+      oldRange: comment.oldRange,
       path: comment.path,
       scope: comment.scope,
       startRow: comment.startRow,
@@ -160,6 +165,8 @@ export function saveCommentDraft(text: string): void {
         createdAt: now,
         endRow: commentDraft.endRow,
         id: crypto.randomUUID(),
+        newRange: commentDraft.newRange,
+        oldRange: commentDraft.oldRange,
         path: commentDraft.path,
         scope: commentDraft.scope,
         startRow: commentDraft.startRow,
