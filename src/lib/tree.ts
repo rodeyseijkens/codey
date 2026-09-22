@@ -29,6 +29,24 @@ function sortNodes(nodes: TreeNode[]): void {
   }
 }
 
+/**
+ * Folds directory chains that have a single directory child into a single node
+ * so the tree reads `src/ui` instead of nesting each segment.
+ */
+function compactChains(nodes: TreeNode[]): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.type !== "dir" || !node.children) {
+      return node;
+    }
+    const children = compactChains(node.children);
+    const [only] = children;
+    if (children.length === 1 && only?.type === "dir") {
+      return { ...only, name: `${node.name}/${only.name}` };
+    }
+    return { ...node, children };
+  });
+}
+
 export function buildFileTree(files: FileDiff[]): TreeNode[] {
   const root: TreeNode[] = [];
   for (const [i, file] of files.entries()) {
@@ -87,7 +105,7 @@ export function buildFileTree(files: FileDiff[]): TreeNode[] {
   }
   aggregate(root);
   sortNodes(root);
-  return root;
+  return compactChains(root);
 }
 
 export type VisibleNode = {

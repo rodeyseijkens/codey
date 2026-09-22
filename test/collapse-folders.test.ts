@@ -87,16 +87,16 @@ describe("toggleAllTreeFolders", () => {
 
   test("collapses nested folders, not just top-level", () => {
     const store = new AppStore({
-      changesets: [{ ...changeset("changes", ["a/b/c/x.ts"]) }],
+      changesets: [{ ...changeset("changes", ["a/b/c/x.ts", "a/b/d/y.ts"]) }],
     });
     setStore(store);
 
     toggleAllTreeFolders();
 
     expect(store.getState().collapsedTree).toEqual({
-      "changes:a": true,
       "changes:a/b": true,
       "changes:a/b/c": true,
+      "changes:a/b/d": true,
     });
   });
 
