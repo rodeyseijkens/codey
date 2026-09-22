@@ -96,6 +96,8 @@ export type CommentDraft = {
   context: string;
   endRow: number;
   mode: "add" | "edit";
+  newRange?: [number, number];
+  oldRange?: [number, number];
   path: string;
   scope: Scope;
   startRow: number;
