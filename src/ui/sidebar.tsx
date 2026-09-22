@@ -866,7 +866,7 @@ export function Sidebar() {
       style={{
         backgroundColor: C.bg,
         border: ["top"],
-        borderColor: state.focus === "sidebar" ? C.accent : C.bg,
+        borderColor: state.focus === "sidebar" ? C.accent : C.border,
         borderStyle: "single",
         flexDirection: "column",
         height: "100%",
