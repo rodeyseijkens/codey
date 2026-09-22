@@ -1,3 +1,5 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 export type GitResult = {
@@ -188,11 +190,13 @@ async function rebaseWithSequenceEditor(
   root: string,
   base: string,
   sequenceEditor: string,
+  extraEnv: Record<string, string> = {},
 ): Promise<void> {
   const proc = Bun.spawn(["git", "rebase", "-i", base], {
     cwd: root,
     env: {
       ...process.env,
+      ...extraEnv,
       GIT_SEQUENCE_EDITOR: sequenceEditor,
       GIT_TERMINAL_PROMPT: "0",
     },
@@ -218,16 +222,27 @@ export async function reorderCommit(
   root: string,
   olderHash: string,
 ): Promise<void> {
+  await withRebaseStash(root, "reorder", () =>
+    rebaseWithSequenceEditor(root, `${olderHash}^`, `sed -i '1{h;d};2{G}'`),
+  );
+}
+
+/**
+ * Run a history-rewriting rebase with the working tree stashed, restoring it
+ * afterwards. Keeps uncommitted review changes from blocking the rebase.
+ */
+async function withRebaseStash(
+  root: string,
+  op: "reorder" | "reword",
+  fn: () => Promise<void>,
+): Promise<void> {
+  const label = `${op}-rebase-stash`;
   const stashesBefore = await gitThrow(["stash", "list"], root);
-  await gitThrow(["stash", "push", "-m", "reorder-rebase-stash"], root);
+  await gitThrow(["stash", "push", "-m", label], root);
   const stashesAfter = await gitThrow(["stash", "list"], root);
   const stashed = stashesAfter !== stashesBefore;
   try {
-    await rebaseWithSequenceEditor(
-      root,
-      `${olderHash}^`,
-      `sed -i '1{h;d};2{G}'`,
-    );
+    await fn();
   } catch (e) {
     if (stashed) {
       try {
@@ -235,7 +250,7 @@ export async function reorderCommit(
       } catch (applyErr) {
         gitThrow(["stash", "drop"], root).catch(() => undefined);
         throw new GitError(
-          "reorder rebase failed and stash apply conflicted — stash preserved as 'reorder-rebase-stash'",
+          `${op} rebase failed and stash apply conflicted — stash preserved as '${label}'`,
           "",
           1,
           { cause: applyErr },
@@ -251,7 +266,7 @@ export async function reorderCommit(
       await gitThrow(["stash", "drop"], root);
     } catch (applyErr) {
       throw new GitError(
-        "reorder rebase succeeded but stash apply conflicted — stash preserved as 'reorder-rebase-stash'",
+        `${op} rebase succeeded but stash apply conflicted — stash preserved as '${label}'`,
         "",
         1,
         { cause: applyErr },
@@ -262,10 +277,49 @@ export async function reorderCommit(
 
 export async function rewordCommit(
   root: string,
-  _hash: string,
+  hash: string,
   message: string,
 ): Promise<void> {
-  await gitThrow(["commit", "--amend", "-m", message], root);
+  const head = (await gitThrow(["rev-parse", "HEAD"], root)).trim();
+  if (hash === head) {
+    await gitThrow(["commit", "--amend", "--only", "-m", message], root);
+    return;
+  }
+  await rewordCommitInHistory(root, hash, message);
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+/**
+ * Reword a non-HEAD commit by replaying `hash^..HEAD` with the target marked
+ * `reword`. The commit message is supplied through a temp file so arbitrary
+ * text (quotes, newlines) survives shell interpolation.
+ */
+async function rewordCommitInHistory(
+  root: string,
+  hash: string,
+  message: string,
+): Promise<void> {
+  const dir = mkdtempSync(join(tmpdir(), "codey-reword-"));
+  const messagePath = join(dir, "message");
+  writeFileSync(messagePath, message, "utf8");
+  const base = (await hasParent(root, hash)) ? `${hash}^` : "--root";
+  try {
+    await withRebaseStash(root, "reword", () =>
+      rebaseWithSequenceEditor(root, base, "sed -i '1s/^pick/reword/'", {
+        GIT_EDITOR: `cp ${shellQuote(messagePath)}`,
+      }),
+    );
+  } finally {
+    rmSync(dir, { force: true, recursive: true });
+  }
+}
+
+async function hasParent(root: string, hash: string): Promise<boolean> {
+  const res = await git(["rev-parse", "--verify", `${hash}^`], root);
+  return res.exitCode === 0;
 }
 
 export async function undoCommit(root: string, hash: string): Promise<void> {
