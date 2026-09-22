@@ -1,77 +1,5 @@
-import { useEffect, useState } from "react";
-
 import { useAppState } from "../state/store";
-import type { ToastKind } from "../types";
-import { TOAST_KINDS } from "../types";
 import { useColors } from "./color-context";
-import { SPINNER_FRAMES, SPINNER_INTERVAL } from "./icons";
-
-function toastColor(
-  kind: ToastKind,
-  C: ReturnType<typeof useColors>["ui"],
-): string {
-  switch (kind) {
-    case TOAST_KINDS.error:
-      return C.red;
-    case TOAST_KINDS.success:
-      return C.green;
-    case TOAST_KINDS.warn:
-      return C.yellow;
-    default:
-      return C.fg;
-  }
-}
-
-export function TopBar() {
-  const state = useAppState();
-  const { ui: C } = useColors();
-  const [spinnerFrame, setSpinnerFrame] = useState(0);
-
-  useEffect(() => {
-    if (!state.loading) {
-      setSpinnerFrame(0);
-      return;
-    }
-    const timer = setInterval(
-      () => setSpinnerFrame((frame) => (frame + 1) % SPINNER_FRAMES.length),
-      SPINNER_INTERVAL,
-    );
-    return () => clearInterval(timer);
-  }, [state.loading]);
-
-  return (
-    <box
-      style={{
-        backgroundColor: C.panel,
-        flexDirection: "row",
-        height: 1,
-        paddingLeft: 1,
-        paddingRight: 1,
-      }}
-    >
-      {state.branch ? (
-        <text style={{ fg: C.purple }}>{state.branch}</text>
-      ) : null}
-      {state.loaderMode === "diff" ? null : (
-        <text style={{ fg: C.dim }}> [{state.loaderMode}]</text>
-      )}
-      {state.watchActive ? <text style={{ fg: C.green }}> watch</text> : null}
-      <text style={{ flexGrow: 1 }}> </text>
-      {state.loading ? (
-        <text style={{ fg: C.dim }}>
-          {`${SPINNER_FRAMES[spinnerFrame]} refreshing `}
-        </text>
-      ) : null}
-      {state.toast ? (
-        <text
-          style={{ fg: toastColor(state.toast.kind, C), overflow: "hidden" }}
-        >
-          {state.toast.message}
-        </text>
-      ) : null}
-    </box>
-  );
-}
 
 function bottomBarContent(
   state: ReturnType<typeof useAppState>,
@@ -82,9 +10,6 @@ function bottomBarContent(
       color: C.yellow,
       content: `press stage key again to confirm (${state.pendingStage.commentCount} comment(s) will be cleared) — Esc to cancel`,
     };
-  }
-  if (state.loading) {
-    return { color: C.dim, content: "loading..." };
   }
   if (!state.stagingEnabled) {
     return {
@@ -141,12 +66,6 @@ export function BottomBar() {
     >
       <text style={{ fg: color, overflow: "hidden" }}>{content}</text>
       <text style={{ flexGrow: 1 }}> </text>
-      {state.comments.length > 0 ? (
-        <text style={{ fg: C.commentFg }}>
-          {" "}
-          {state.comments.length} pending
-        </text>
-      ) : null}
     </box>
   );
 }

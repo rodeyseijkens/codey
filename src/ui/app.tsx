@@ -6,12 +6,13 @@ import { useKeyboard } from "@opentui/react";
 import { handleCtrlC } from "../state/ctrl-c";
 import { restart } from "../state/lifecycle";
 import { getStore, useAppState } from "../state/store";
-import { BottomBar, TopBar } from "./bottom-bar";
+import { BottomBar } from "./bottom-bar";
 import { ColorProvider } from "./color-context";
 import { getThemeColors } from "./colors";
 import { DiffPane } from "./diff-pane";
 import { Overlays } from "./overlays";
 import { Sidebar } from "./sidebar";
+import { TopBar } from "./top-bar";
 
 function isCtrlC(e: KeyEvent): boolean {
   return Boolean(e.ctrl) && !e.meta && !e.shift && e.name.toLowerCase() === "c";
