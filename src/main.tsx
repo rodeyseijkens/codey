@@ -23,7 +23,7 @@ import { App } from "./ui/app";
 import { resolveThemeAsync } from "./ui/theme/resolve";
 import { startWatcher } from "./watch";
 
-const VERSION = "0.3.0"; // x-release-please-version
+const VERSION = "0.4.0"; // x-release-please-version
 const EXIT_DELAY_MS = 50;
 
 type CliFlags = {
