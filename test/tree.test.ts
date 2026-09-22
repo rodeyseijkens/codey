@@ -45,18 +45,27 @@ describe("buildFileTree", () => {
     expect(a.children?.map((n) => n.name)).toEqual(["b", "b.ts", "c.ts"]);
   });
 
-  test("nested directories appear as children", () => {
-    const tree = buildFileTree([file("src/foo/bar.ts")]);
+  test("folds single directory chains into one node", () => {
+    const tree = buildFileTree([file("src/ui/bottom-bar.tsx")]);
     const [src] = tree;
     if (!src) {
       throw new Error("expected dir node");
     }
-    expect(src).toMatchObject({ name: "src", type: "dir" });
+    expect(src).toMatchObject({ name: "src/ui", path: "src/ui", type: "dir" });
     expect(src.children?.[0]).toMatchObject({
-      name: "foo",
-      path: "src/foo",
-      type: "dir",
+      name: "bottom-bar.tsx",
+      type: "file",
     });
+  });
+
+  test("keeps sibling folders nested when a directory branches", () => {
+    const tree = buildFileTree([file("src/ui/a.ts"), file("src/lib/b.ts")]);
+    const [src] = tree;
+    if (!src) {
+      throw new Error("expected dir node");
+    }
+    expect(src).toMatchObject({ name: "src", path: "src", type: "dir" });
+    expect(src.children?.map((n) => n.name)).toEqual(["lib", "ui"]);
   });
 
   test("aggregates additions, deletions and file counts", () => {

@@ -40,7 +40,6 @@ describe("toggle-folders command", () => {
     dispatchCommand("toggle-folders");
 
     expect(store.getState().collapsedTree).toEqual({
-      "changes:src": true,
       "changes:src/components": true,
     });
   });
@@ -48,7 +47,7 @@ describe("toggle-folders command", () => {
   test("dispatch expands all when every folder is collapsed", () => {
     const store = new AppStore({
       changesets: [changeset()],
-      collapsedTree: { "changes:src": true, "changes:src/components": true },
+      collapsedTree: { "changes:src/components": true },
     });
     setStore(store);
 
