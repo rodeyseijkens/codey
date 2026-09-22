@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 
+import { lineRangeForRows } from "../../patch/line-range";
 import { resolveTheme } from "../theme/resolve";
 import {
   CommentCard,
@@ -148,27 +149,6 @@ function buildCommentMarkedLayoutRows(
   return set;
 }
 
-function lineRangeForRows(
-  rows: readonly CanonicalDiffRow[],
-  startRow: number,
-  endRow: number,
-  side: "old" | "new",
-): [number, number] | undefined {
-  const lines: number[] = [];
-  const last = Math.min(endRow, rows.length - 1);
-  for (let index = Math.max(0, startRow); index <= last; index += 1) {
-    const row = rows[index];
-    const line = side === "old" ? row?.oldLine : row?.newLine;
-    if (line !== undefined) {
-      lines.push(line);
-    }
-  }
-  if (lines.length === 0) {
-    return;
-  }
-  return [Math.min(...lines), Math.max(...lines)];
-}
-
 function noteToAnnotation(
   note: DiffNote,
   rows: readonly CanonicalDiffRow[],
@@ -177,8 +157,10 @@ function noteToAnnotation(
   return {
     editable: true,
     id: note.id,
-    newRange: lineRangeForRows(rows, start, note.anchorRow, "new"),
-    oldRange: lineRangeForRows(rows, start, note.anchorRow, "old"),
+    newRange:
+      note.newRange ?? lineRangeForRows(rows, start, note.anchorRow, "new"),
+    oldRange:
+      note.oldRange ?? lineRangeForRows(rows, start, note.anchorRow, "old"),
     source: note.editing ? "user-draft" : "user",
     summary: note.text,
   };
