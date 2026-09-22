@@ -79,6 +79,7 @@ export async function copyText(
 export function formatCommentsAsMarkdown(
   title: string,
   comments: {
+    commitHash?: string;
     scope: Scope;
     path: string;
     startRow: number;
@@ -92,7 +93,9 @@ export function formatCommentsAsMarkdown(
   const lines: string[] = [`# ${title}`, ""];
   const byFile = new Map<string, typeof comments>();
   for (const c of comments) {
-    const key = commentKey(c.scope, c.path);
+    const key = c.commitHash
+      ? `${commentKey(c.scope, c.path)} @ ${c.commitHash.slice(0, 7)}`
+      : commentKey(c.scope, c.path);
     const arr = byFile.get(key) ?? [];
     arr.push(c);
     byFile.set(key, arr);

@@ -1,7 +1,7 @@
 import { diffRowsFromPatch } from "../patch/from-patch";
 import { lineRangeForRows } from "../patch/line-range";
 import { type CanonicalDiffRow, canonicalRowLabel } from "../patch/rows";
-import { type Comment, TOAST_KINDS } from "../types";
+import { type Comment, type Scope, TOAST_KINDS } from "../types";
 import { getStore } from "./store";
 
 function rowsOfSelectedFile() {
@@ -15,6 +15,13 @@ function rowsOfSelectedFile() {
     return null;
   }
   return { rows, sel };
+}
+
+/** Commit hash for a commit-file view, or undefined for working-tree files. */
+function commitHashFor(scope: Scope): string | undefined {
+  return scope === "single"
+    ? getStore().getState().commitView?.hash
+    : undefined;
 }
 
 /** Context snippet for one canonical row range, used by the agent payload. */
@@ -55,6 +62,7 @@ export function openAddCommentDraft(): void {
   store.set({
     anchorRow: null,
     commentDraft: {
+      commitHash: commitHashFor(sel.scope),
       context: contextForRange(rows, startRow, endRow),
       endRow,
       mode: "add",
@@ -82,6 +90,7 @@ export function openEditCommentDraft(): void {
   store.set({
     commentDraft: {
       commentId: comment.id,
+      commitHash: comment.commitHash,
       context: comment.context,
       endRow: comment.endRow,
       mode: "edit",
@@ -161,6 +170,7 @@ export function saveCommentDraft(text: string): void {
     comments: [
       ...store.getState().comments,
       {
+        commitHash: commentDraft.commitHash,
         context: commentDraft.context,
         createdAt: now,
         endRow: commentDraft.endRow,
@@ -202,7 +212,7 @@ function findCommentAtCursor(): {
   }
   const cursor = store.getState().cursorRow;
   const comment = store
-    .commentsFor(sel.scope, sel.file.path)
+    .commentsFor(sel.scope, sel.file.path, commitHashFor(sel.scope))
     .find((c) => cursor >= c.startRow && cursor <= c.endRow);
   if (!comment) {
     return null;
@@ -217,7 +227,7 @@ export function jumpToComment(dir: 1 | -1): void {
     return;
   }
   const comments = store
-    .commentsFor(sel.scope, sel.file.path)
+    .commentsFor(sel.scope, sel.file.path, commitHashFor(sel.scope))
     .sort((a, b) => a.startRow - b.startRow);
   if (comments.length === 0) {
     store.showToast(TOAST_KINDS.info, "no comments on this file");

@@ -300,10 +300,15 @@ export function DiffPane() {
     if (!sel) {
       return [];
     }
+    const commitHash =
+      sel.scope === "single" ? state.commitView?.hash : undefined;
     return state.comments.filter(
-      (c) => c.scope === sel.scope && c.path === sel.file.path,
+      (c) =>
+        c.scope === sel.scope &&
+        c.path === sel.file.path &&
+        (commitHash === undefined || c.commitHash === commitHash),
     );
-  }, [state.comments, sel]);
+  }, [state.comments, state.commitView, sel]);
 
   const notes = useMemo(() => {
     const draft = state.commentDraft;

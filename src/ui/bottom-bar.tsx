@@ -112,8 +112,8 @@ function bottomBarContent(
     return {
       color: C.dim,
       content: state.wrapLines
-        ? "j/k move · ]/[ hunk · w unwrap · ? help"
-        : "j/k move · ]/[ hunk · w wrap · ? help",
+        ? "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · y copy · s send · w unwrap · ? help"
+        : "j/k move · ]/[ hunk · v select · c comment · e/d edit/del · n/N jump · y copy · s send · w wrap · ? help",
     };
   }
   return {

@@ -93,6 +93,7 @@ export type DiffSearch = {
 /** An in-progress inline comment being typed into the diff body. */
 export type CommentDraft = {
   commentId?: string;
+  commitHash?: string;
   context: string;
   endRow: number;
   mode: "add" | "edit";
@@ -355,9 +356,12 @@ export class AppStore implements Store {
     return null;
   }
 
-  commentsFor(scope: Scope, path: string): Comment[] {
+  commentsFor(scope: Scope, path: string, commitHash?: string): Comment[] {
     return this.state.comments.filter(
-      (c) => c.scope === scope && c.path === path,
+      (c) =>
+        c.scope === scope &&
+        c.path === path &&
+        (commitHash === undefined || c.commitHash === commitHash),
     );
   }
 
@@ -381,7 +385,7 @@ export class AppStore implements Store {
 export type Store = {
   changeset: (scope: Scope) => Changeset | undefined;
   clearCommentsFor: (scope: Scope, paths: string[]) => void;
-  commentsFor: (scope: Scope, path: string) => Comment[];
+  commentsFor: (scope: Scope, path: string, commitHash?: string) => Comment[];
   commitCursorRow: () => CommitRow | null;
   commitRows: () => CommitRow[];
   getState: () => AppState;

@@ -35,6 +35,7 @@ export type Changeset = {
 };
 
 export type Comment = {
+  commitHash?: string;
   context: string;
   createdAt: number;
   endRow: number;

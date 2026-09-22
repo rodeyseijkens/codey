@@ -187,7 +187,6 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
   r.set("sidebar-shrink", { run: () => resizeSidebar(-SIDEBAR_RESIZE_STEP) });
   r.set("sidebar-grow", { run: () => resizeSidebar(SIDEBAR_RESIZE_STEP) });
   r.set("visual-select", {
-    guard: (state) => !commitFileShown(state),
     run: () => visualSelect(),
   });
   r.set("add-comment", {
@@ -196,27 +195,20 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
         openCommitDraft();
         return;
       }
-      if (commitFileShown(state)) {
-        return;
-      }
       openAddCommentDraft();
     },
   });
   r.set("edit-comment", {
-    guard: (state) => !commitFileShown(state),
     run: () => openEditCommentDraft(),
   });
   r.set("edit-file", { run: () => void editFocusedFile() });
   r.set("delete-comment", {
-    guard: (state) => !commitFileShown(state),
     run: () => deleteCommentAtCursor(),
   });
   r.set("next-comment", {
-    guard: (state) => !commitFileShown(state),
     run: () => jumpToComment(1),
   });
   r.set("prev-comment", {
-    guard: (state) => !commitFileShown(state),
     run: () => jumpToComment(-1),
   });
   r.set("send-comments", { run: () => void sendComments() });
