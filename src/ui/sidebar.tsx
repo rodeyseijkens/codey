@@ -44,6 +44,7 @@ import {
   CHEVRON_DOWN,
   CHEVRON_RIGHT,
   COLLAPSE_FOLDERS_ICON,
+  COMMENT_ICON,
   EM_SPACE,
   fileColor,
   fileIcon,
@@ -189,7 +190,9 @@ function FileRow(props: {
         ) : null}
       </box>
       {commentCount > 0 ? (
-        <text style={{ fg: C.commentFg, width: 4 }}> ◆{commentCount}</text>
+        <text style={{ fg: C.commentFg, width: 4 }}>
+          {` ${COMMENT_ICON}${commentCount}`}
+        </text>
       ) : null}
       <text style={{ width: 2 }}> </text>
       <text
