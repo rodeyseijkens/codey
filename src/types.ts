@@ -39,6 +39,8 @@ export type Comment = {
   createdAt: number;
   endRow: number;
   id: string;
+  newRange?: [number, number];
+  oldRange?: [number, number];
   path: string;
   scope: Scope;
   startRow: number;

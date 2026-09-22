@@ -43,6 +43,10 @@ export type DiffNote = {
   /** First canonical row of the anchored range; rows before the anchor get a guide. */
   guideStartRow?: number;
   id: string;
+  /** Source line range on the new side, shown in the note title. */
+  newRange?: [number, number];
+  /** Source line range on the old side, shown in the note title. */
+  oldRange?: [number, number];
   /** Called when the draft is cancelled (Esc or empty save). */
   onCancel?: () => void;
   /** Called when the trash icon is clicked on a saved note. */
