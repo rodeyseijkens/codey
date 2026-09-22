@@ -162,7 +162,10 @@ function formatComments(comments: Comment[]): string {
   for (const comment of comments) {
     const location =
       formatLineRangeLabel(comment.oldRange, comment.newRange) || "hunk";
-    lines.push([`${comment.path} ${location}`, comment.text].join("\n"));
+    const path = comment.commitHash
+      ? `${comment.path}@${comment.commitHash.slice(0, 7)}`
+      : comment.path;
+    lines.push([`${path} ${location}`, comment.text].join("\n"));
   }
   const body = lines.join("\n\n").replaceAll(BRACKETED_PASTE_END, "");
   return `${BRACKETED_PASTE_START}${body}${BRACKETED_PASTE_END}`;
@@ -170,6 +173,7 @@ function formatComments(comments: Comment[]): string {
 
 function serializeComment(comment: Comment) {
   return {
+    commitHash: comment.commitHash,
     endRow: comment.endRow,
     location:
       formatLineRangeLabel(comment.oldRange, comment.newRange) || "hunk",
