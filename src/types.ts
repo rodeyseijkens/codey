@@ -14,6 +14,7 @@ export type FileDiff = {
   diff: string;
   ignored?: boolean;
   isBinary: boolean;
+  newLineCount?: number;
   notice?: string;
   oldPath?: string;
   path: string;

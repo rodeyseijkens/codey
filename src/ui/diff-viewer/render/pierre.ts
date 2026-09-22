@@ -691,7 +691,7 @@ function appendTrailingGapRow(
   collector: DiffRowPlanCollector,
   keyPrefix: string,
 ) {
-  const trailingGap = reviewTrailingGap(file.metadata);
+  const trailingGap = reviewTrailingGap(file.metadata, file.newLineCount);
   if (trailingGap) {
     collector.push(collapsedGapRow(file, trailingGap, keyPrefix));
   }

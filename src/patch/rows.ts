@@ -125,6 +125,7 @@ function appendHunkRows(
 
 export function buildCanonicalDiffRows(
   metadata: FileDiffMetadata,
+  newLineCount?: number,
 ): CanonicalDiffRow[] {
   const rows: CanonicalDiffRow[] = [];
   const gapSource = toGapSource(metadata);
@@ -133,7 +134,7 @@ export function buildCanonicalDiffRows(
     appendHunkRows(rows, metadata, hunkIndex, hunk);
   }
 
-  const trailingGap = reviewTrailingGap(gapSource);
+  const trailingGap = reviewTrailingGap(gapSource, newLineCount);
   if (trailingGap) {
     rows.push({
       hunkIndex: Math.max(0, metadata.hunks.length - 1),

@@ -278,12 +278,16 @@ export function DiffPane() {
   const hunkFiles = useMemo(
     () =>
       file?.diff
-        ? createDiffViewerFilesFromPatch(file.diff, file.path).map((f) => ({
+        ? createDiffViewerFilesFromPatch(
+            file.diff,
+            file.path,
+            file.newLineCount,
+          ).map((f) => ({
             ...f,
             language: getFiletypeFromFileName(file.path),
           }))
         : [],
-    [file?.diff, file?.path],
+    [file?.diff, file?.newLineCount, file?.path],
   );
   const [hunkFile] = hunkFiles;
   const hasDiffContent = hunkFile !== undefined;

@@ -248,7 +248,7 @@ function fileGapAddresses(file: DiffFile): ReviewGapAddress[] {
       gaps.push(leading);
     }
   }
-  const trailing = reviewTrailingGap(file.metadata);
+  const trailing = reviewTrailingGap(file.metadata, file.newLineCount);
   if (trailing) {
     gaps.push(trailing);
   }

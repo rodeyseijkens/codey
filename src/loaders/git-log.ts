@@ -226,3 +226,25 @@ export async function getCommitFileDiff(
   );
   return out;
 }
+
+function countTextLines(text: string): number {
+  if (text.length === 0) {
+    return 0;
+  }
+  const lines = text.split("\n");
+  return text.endsWith("\n") ? lines.length - 1 : lines.length;
+}
+
+/** Total line count of `path` at `hash`, used to collapse the diff's trailing context. */
+export async function getCommitFileLineCount(
+  cwd: string,
+  hash: string,
+  path: string,
+): Promise<number | undefined> {
+  try {
+    const content = await gitThrow(["show", `${hash}:${path}`], cwd);
+    return countTextLines(content);
+  } catch {
+    // A path that does not exist at this commit (added/deleted files) has no line count.
+  }
+}
