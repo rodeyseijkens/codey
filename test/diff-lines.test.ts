@@ -106,3 +106,22 @@ describe("canonicalHunkOffsets", () => {
     expect(canonicalHunkOffsets(rows)).toEqual([1, 6]);
   });
 });
+
+describe("trailing unchanged gap", () => {
+  test("appends a trailing gap when the new file line count is known", () => {
+    const [file] = createDiffViewerFilesFromPatch(DIFF, "test-trailing", 20);
+    if (!file) {
+      throw new Error("expected one file");
+    }
+    const rows = buildCanonicalDiffRows(file);
+    expect(rows.at(-1)).toMatchObject({
+      kind: "gap",
+      text: "9 unchanged lines",
+    });
+  });
+
+  test("omits the trailing gap for partial patches without a line count", () => {
+    const rows = rowsOf(DIFF);
+    expect(rows.at(-1)?.kind).toBe("context");
+  });
+});

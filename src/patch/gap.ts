@@ -65,10 +65,31 @@ export function reviewLeadingGap(
 
 export function reviewTrailingGap(
   source: ReviewGapSource,
+  newLineCount?: number,
 ): ReviewGapAddress | undefined {
   const hunkIndex = source.hunks.length - 1;
   const hunk = source.hunks[hunkIndex];
-  if (!hunk || source.isPartial) {
+  if (!hunk) {
+    return;
+  }
+
+  if (newLineCount !== undefined) {
+    const newStart = hunk.additionStart + hunk.additionCount;
+    const lineCount = newLineCount - newStart + 1;
+    if (lineCount <= 0) {
+      return;
+    }
+    const oldStart = hunk.deletionStart + hunk.deletionCount;
+    return {
+      hunkIndex,
+      lineCount,
+      newRange: [newStart, newLineCount],
+      oldRange: [oldStart, oldStart + lineCount - 1],
+      position: "trailing",
+    };
+  }
+
+  if (source.isPartial) {
     return;
   }
 

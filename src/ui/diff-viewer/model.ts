@@ -39,7 +39,9 @@ function buildDiffViewerFile(
     : (normalizeDiffPath(input.previousPath) ?? metadata.prevName);
   const normalized = {
     ...input,
-    canonicalRows: input.canonicalRows ?? buildRowsFromMetadata(metadata),
+    canonicalRows:
+      input.canonicalRows ??
+      buildRowsFromMetadata(metadata, input.newLineCount),
     id: input.id,
     metadata,
     path,
@@ -80,6 +82,7 @@ export function toInternalDiffFile(diff: DiffViewerFileInput): DiffFile {
     isUntracked: normalized.isUntracked,
     language: normalized.language,
     metadata: normalized.metadata,
+    newLineCount: normalized.newLineCount,
     patch,
     path: normalized.path ?? normalized.metadata.name,
     previousPath: normalized.previousPath,
@@ -98,8 +101,9 @@ let lastFilesFromPatch:
 export function createDiffViewerFilesFromPatch(
   patchText: string,
   sourceId = "patch",
+  newLineCount?: number,
 ) {
-  const cacheKey = `${sourceId}\u0000${patchText}`;
+  const cacheKey = `${sourceId}\u0000${newLineCount ?? ""}\u0000${patchText}`;
   if (lastFilesFromPatch?.cacheKey === cacheKey) {
     return lastFilesFromPatch.files;
   }
@@ -123,6 +127,7 @@ export function createDiffViewerFilesFromPatch(
         {
           id: `${sourceId}:${index}:${normalizedMetadata.name}`,
           metadata: normalizedMetadata,
+          newLineCount,
           patch: findPatchChunk(metadata, chunks, index),
         },
         Boolean(decodedPaths),

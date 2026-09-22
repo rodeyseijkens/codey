@@ -83,7 +83,11 @@ function selectedFileRowCount(store: Store, sel: Selection): number {
   if (!file) {
     return 0;
   }
-  const [hunk] = createDiffViewerFilesFromPatch(file.diff, file.path);
+  const [hunk] = createDiffViewerFilesFromPatch(
+    file.diff,
+    file.path,
+    file.newLineCount,
+  );
   return hunk?.canonicalRows?.length ?? 0;
 }
 

@@ -110,6 +110,8 @@ export type DiffFile = {
   language?: string;
   lineMoveKinds?: DiffLineMoveKinds;
   metadata: FileDiffMetadata;
+  /** Total line count of the new file, when the diff's trailing context is unknown. */
+  newLineCount?: number;
   patch: string;
   path: string;
   previousPath?: string;

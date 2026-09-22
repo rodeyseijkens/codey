@@ -1,5 +1,9 @@
 import { copyText } from "../../lib/clipboard";
-import { getCommitFileDiff, gitLog } from "../../loaders/git-log";
+import {
+  getCommitFileDiff,
+  getCommitFileLineCount,
+  gitLog,
+} from "../../loaders/git-log";
 import { compileIgnorePatterns } from "../../loaders/ignore";
 import type { FileDiff } from "../../types";
 import { TOAST_KINDS } from "../../types";
@@ -210,12 +214,17 @@ export async function selectCommitFile(
     }
   }
 
+  const newLineCount = ignored
+    ? undefined
+    : await getCommitFileLineCount(repoRoot, hash, filePath);
+
   const file: FileDiff = {
     additions: 0,
     deletions: 0,
     diff: ignored ? "" : (diff ?? ""),
     ignored,
     isBinary: false,
+    newLineCount,
     path: filePath,
     status: "modified",
     tooLarge: false,
