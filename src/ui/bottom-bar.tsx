@@ -7,12 +7,12 @@ import { useColors } from "./color-context";
 type KeymapApi = ReturnType<typeof useKeymap>;
 
 function commandKey(keymap: KeymapApi, cmd: CommandId): string {
-  const entries = keymap.getCommandBindings({
-    commands: [cmd],
-    visibility: "registered",
-  });
-  const stroke = entries.get(cmd)?.[0]?.sequence[0]?.stroke;
-  return stroke ? keymap.formatKey(stroke) : "";
+  const [binding] =
+    keymap
+      .getCommandBindings({ commands: [cmd], visibility: "registered" })
+      .get(cmd) ?? [];
+  const [part] = binding?.sequence ?? [];
+  return part?.stroke ? keymap.formatKey(part.stroke) : "";
 }
 
 function hint(keymap: KeymapApi, cmds: CommandId[], label: string): string {
@@ -34,10 +34,11 @@ function bottomBarContent(
 ): { color: string; content: string } {
   const help = hint(keymap, ["help"], "help");
   if (state.pendingStage) {
-    const cancelKey = commandKey(keymap, "cancel") || "esc";
+    const cancelHint = hint(keymap, ["cancel"], "to cancel");
+    const suffix = cancelHint ? ` — ${cancelHint}` : "";
     return {
       color: C.yellow,
-      content: `press stage key again to confirm (${state.pendingStage.commentCount} comment(s) will be cleared) — ${cancelKey} to cancel`,
+      content: `press stage key again to confirm (${state.pendingStage.commentCount} comment(s) will be cleared)${suffix}`,
     };
   }
   if (!state.stagingEnabled) {
