@@ -240,10 +240,12 @@ export async function unstageAll(): Promise<void> {
     store.showToast(TOAST_KINDS.warn, "staging is disabled in this mode");
     return;
   }
-  const changes = store.changeset("changes");
-  if (changes && changes.files.length > 0) {
-    store.set({ overlay: { kind: "confirm-discard-all" } });
-    return;
+  if (store.getState().selection?.scope !== "staged") {
+    const changes = store.changeset("changes");
+    if (changes && changes.files.length > 0) {
+      store.set({ overlay: { kind: "confirm-discard-all" } });
+      return;
+    }
   }
   const staged = store.changeset("staged");
   if (!staged || staged.files.length === 0) {
