@@ -68,7 +68,7 @@ function entry(hash: string, files: [string, FileStatus][]): CommitEntry {
 function commitFileEntry(hash: string, paths: string[]): CommitEntry {
   return entry(
     hash,
-    paths.map((p) => [p, "modified" as FileStatus]),
+    paths.map((p): [string, FileStatus] => [p, "modified"]),
   );
 }
 
