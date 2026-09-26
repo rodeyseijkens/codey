@@ -154,7 +154,7 @@ export async function refresh(): Promise<void> {
   }
 }
 
-function repairCommitCursor(store: Store, prev: string): void {
+export function repairCommitCursor(store: Store, prev: string): void {
   const rows = store.commitRows();
   if (!rows[0]) {
     store.set({ commitCursor: null });

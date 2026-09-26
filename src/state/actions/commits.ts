@@ -1,12 +1,20 @@
 import { copyText } from "../../lib/clipboard";
 import {
+  buildFileTree,
+  commitTreeKey,
+  commitTreeScope,
+  isCommitTreeKey,
+  type TreeNode,
+  visibleTreeNodes,
+} from "../../lib/tree";
+import {
   getCommitFileDiff,
   getCommitFileLineCount,
   gitLog,
 } from "../../loaders/git-log";
 import { compileIgnorePatterns } from "../../loaders/ignore";
 import type { FileDiff } from "../../types";
-import { TOAST_KINDS } from "../../types";
+import { SIDEBAR_VIEWS, TOAST_KINDS } from "../../types";
 import {
   editCommit,
   gitThrow,
@@ -16,7 +24,7 @@ import {
   undoCommit,
 } from "../../vcs/git";
 import { type CommitRow, commitRowKey, getStore, type Store } from "../store";
-import { refresh, toastError } from "./core";
+import { refresh, repairCommitCursor, toastError } from "./core";
 
 const COMMIT_PAGE_SIZE = 10;
 
@@ -75,6 +83,7 @@ export async function loadMoreCommits(followCursor = false): Promise<void> {
     if (followCursor && first) {
       store.set({
         commitCursor: commitRowKey({
+          depth: 0,
           hash: first.hash,
           index: before,
           kind: "header",
@@ -91,6 +100,79 @@ export function toggleCommitExpand(hash: string): void {
   const expanded = { ...store.getState().collapsed };
   expanded[hash] = !expanded[hash];
   store.set({ collapsed: expanded });
+  repairCommitCursorIfStale(store);
+}
+
+function repairCommitCursorIfStale(store: Store): void {
+  const { commitCursor } = store.getState();
+  if (commitCursor === null) {
+    return;
+  }
+  repairCommitCursor(store, commitCursor);
+}
+
+export function toggleCommitTreeFolder(hash: string, dirPath: string): void {
+  const store = getStore();
+  const key = commitTreeKey(hash, dirPath);
+  const collapsedTree = { ...store.getState().collapsedTree };
+  collapsedTree[key] = !collapsedTree[key];
+  store.set({ collapsedTree });
+  repairCommitCursorIfStale(store);
+}
+
+export function toggleCommitFileView(): void {
+  const store = getStore();
+  const next =
+    store.getState().commitFileView === SIDEBAR_VIEWS.tree
+      ? SIDEBAR_VIEWS.list
+      : SIDEBAR_VIEWS.tree;
+  store.set({ commitFileView: next });
+  repairCommitCursorIfStale(store);
+}
+
+export function toggleAllCommitFolders(): void {
+  const store = getStore();
+  const {
+    collapsed: expanded,
+    collapsedTree,
+    commitEntries,
+  } = store.getState();
+  const visible = commitEntries
+    .filter((entry) => expanded[entry.hash])
+    .map((entry) => {
+      const tree = buildFileTree(entry.files);
+      return {
+        hash: entry.hash,
+        tree,
+        visible: visibleTreeNodes(
+          commitTreeScope(entry.hash),
+          tree,
+          collapsedTree,
+        ),
+      };
+    });
+  const hasExpandedFolder = visible.some(({ visible: rows }) =>
+    rows.some((v) => v.node.type === "dir" && !v.collapsed),
+  );
+  const preserved = Object.fromEntries(
+    Object.entries(collapsedTree).filter(([key]) => !isCommitTreeKey(key)),
+  );
+  const next: Record<string, boolean> = { ...preserved };
+  if (hasExpandedFolder) {
+    const collect = (hash: string, nodes: TreeNode[]): void => {
+      for (const node of nodes) {
+        if (node.type === "dir") {
+          next[commitTreeKey(hash, node.path)] = true;
+          collect(hash, node.children ?? []);
+        }
+      }
+    };
+    for (const { hash, tree } of visible) {
+      collect(hash, tree);
+    }
+  }
+  store.set({ collapsedTree: next });
+  repairCommitCursorIfStale(store);
 }
 
 async function moveCommitCursor(store: Store, delta: -1 | 1): Promise<void> {
@@ -174,6 +256,8 @@ export async function commitToggleCursorRow(): Promise<void> {
   }
   if (row.kind === "header") {
     toggleCommitExpand(row.hash);
+  } else if (row.kind === "dir") {
+    toggleCommitTreeFolder(row.hash, row.path);
   } else if (row.kind === "load-more") {
     await loadMoreCommits(true);
   }

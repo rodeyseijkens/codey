@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { buildFileTree, visibleTreeNodes } from "../lib/tree";
+import { buildFileTree, commitTreeScope, visibleTreeNodes } from "../lib/tree";
 import type {
   Changeset,
   Comment,
@@ -20,14 +20,23 @@ import {
 export type FocusPane = "sidebar" | "diff" | "commits";
 
 export type CommitRow =
-  | { kind: "header"; hash: string; index: number }
-  | { kind: "file"; hash: string; fileIndex: number; path: string }
+  | { depth: number; hash: string; index: number; kind: "header" }
+  | { depth: number; hash: string; kind: "dir"; path: string }
+  | {
+      depth: number;
+      fileIndex: number;
+      hash: string;
+      kind: "file";
+      path: string;
+    }
   | { kind: "load-more" };
 
 export function commitRowKey(row: CommitRow): string {
   switch (row.kind) {
     case "header":
       return `commit:${row.hash}`;
+    case "dir":
+      return `commit-dir:${row.hash}:${row.path}`;
     case "file":
       return `commit-file:${row.hash}:${row.path}`;
     case "load-more":
@@ -118,6 +127,7 @@ export type AppState = {
   commitCursor: string | null;
   commitDraft: string | null;
   commitEntries: CommitEntry[];
+  commitFileView: SidebarView;
   commitHasMore: boolean;
   commitLoading: boolean;
   commitOffset: number;
@@ -173,6 +183,7 @@ export function initialState(): AppState {
     commitCursor: null,
     commitDraft: null,
     commitEntries: [],
+    commitFileView: SIDEBAR_VIEWS.tree,
     commitHasMore: true,
     commitLoading: false,
     commitOffset: 0,
@@ -287,16 +298,52 @@ export class AppStore implements Store {
     return out;
   }
 
+  private commitTreeRows(entry: CommitEntry): CommitRow[] {
+    const tree = buildFileTree(entry.files);
+    const visible = visibleTreeNodes(
+      commitTreeScope(entry.hash),
+      tree,
+      this.state.collapsedTree,
+    );
+    const rows: CommitRow[] = [];
+    for (const v of visible) {
+      if (v.node.type === "dir") {
+        rows.push({
+          depth: v.depth,
+          hash: entry.hash,
+          kind: "dir",
+          path: v.node.path,
+        });
+      } else if (v.node.fileIndex !== undefined) {
+        rows.push({
+          depth: v.depth,
+          fileIndex: v.node.fileIndex,
+          hash: entry.hash,
+          kind: "file",
+          path: v.node.path,
+        });
+      }
+    }
+    return rows;
+  }
+
   commitRows(): CommitRow[] {
     const out: CommitRow[] = [];
-    const { collapsed, commitEntries, commitHasMore } = this.state;
+    const { collapsed, commitEntries, commitFileView, commitHasMore } =
+      this.state;
     for (let index = 0; index < commitEntries.length; index += 1) {
       const entry = commitEntries[index];
       if (!entry) {
         continue;
       }
-      out.push({ hash: entry.hash, index, kind: "header" });
+      out.push({ depth: 0, hash: entry.hash, index, kind: "header" });
       if (!collapsed[entry.hash]) {
+        continue;
+      }
+      if (commitFileView === SIDEBAR_VIEWS.tree) {
+        for (const row of this.commitTreeRows(entry)) {
+          out.push(row);
+        }
         continue;
       }
       for (let fileIndex = 0; fileIndex < entry.files.length; fileIndex += 1) {
@@ -305,6 +352,7 @@ export class AppStore implements Store {
           continue;
         }
         out.push({
+          depth: 0,
           fileIndex,
           hash: entry.hash,
           kind: "file",

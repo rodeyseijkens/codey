@@ -1,7 +1,12 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
 
-import { buildFileTree, type TreeNode, visibleTreeNodes } from "../lib/tree";
+import {
+  buildFileTree,
+  commitTreeKey,
+  type TreeNode,
+  visibleTreeNodes,
+} from "../lib/tree";
 import {
   clearCommitView,
   commitRevert,
@@ -9,7 +14,10 @@ import {
   loadCommits,
   loadMoreCommits,
   selectCommitFile,
+  toggleAllCommitFolders,
   toggleCommitExpand,
+  toggleCommitFileView,
+  toggleCommitTreeFolder,
 } from "../state/actions/commits";
 import { refresh } from "../state/actions/core";
 import {
@@ -72,6 +80,11 @@ function truncatePath(path: string, max: number): string {
     return path;
   }
   return `${path.slice(0, max - 1)}…`;
+}
+
+function basename(path: string): string {
+  const idx = path.lastIndexOf("/");
+  return idx === -1 ? path : path.slice(idx + 1);
 }
 
 function splitPath(displayPath: string): [string, string] {
@@ -506,18 +519,18 @@ function CommitHeaderRow(props: {
   );
 }
 
-function CommitFileRow(props: {
-  file: CommitFile | undefined;
+function CommitDirRow(props: {
+  collapsed: boolean;
+  depth: number;
   id: string;
+  node: TreeNode;
   onMouseDown: (e: MouseEvent) => void;
-  path: string;
   selected: boolean;
   width: number;
 }) {
-  const { file, id, onMouseDown, path, selected, width } = props;
+  const { collapsed, depth, id, node, onMouseDown, selected, width } = props;
   const { icons, ui: C } = useColors();
-  const nameMax = Math.max(0, width - ROW_CHROME);
-  const nameChunks = truncateFilePath(path, nameMax);
+  const chevron = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;
   return (
     <box
       id={id}
@@ -526,7 +539,52 @@ function CommitFileRow(props: {
         backgroundColor: selected ? C.selection : C.bg,
         flexDirection: "row",
         height: 1,
-        paddingLeft: 1,
+        paddingLeft: 1 + depth,
+        paddingRight: 1,
+      }}
+    >
+      <text style={{ fg: C.accent, width: 2 }}>{chevron}</text>
+      <text style={{ fg: icons[folderColor(node.path)], width: 2 }}>
+        {folderIcon(node.path)}
+      </text>
+      <text
+        style={{
+          fg: selected ? C.fg : C.dim,
+          flexGrow: 1,
+          overflow: "hidden",
+        }}
+      >
+        {truncatePath(node.name, dirNameMax(width, depth))}
+      </text>
+      <text style={{ width: 1 }}> </text>
+      <text style={{ width: 2 }}> </text>
+    </box>
+  );
+}
+
+function CommitFileRow(props: {
+  depth: number;
+  file: CommitFile | undefined;
+  id: string;
+  name: string;
+  onMouseDown: (e: MouseEvent) => void;
+  path: string;
+  selected: boolean;
+  width: number;
+}) {
+  const { depth, file, id, name, onMouseDown, path, selected, width } = props;
+  const { icons, ui: C } = useColors();
+  const nameMax = Math.max(0, width - ROW_CHROME - depth);
+  const nameChunks = truncateFilePath(name, nameMax);
+  return (
+    <box
+      id={id}
+      onMouseDown={onMouseDown}
+      style={{
+        backgroundColor: selected ? C.selection : C.bg,
+        flexDirection: "row",
+        height: 1,
+        paddingLeft: 1 + depth,
         paddingRight: 1,
       }}
     >
@@ -606,14 +664,17 @@ function CommitLog(props: { width: number }) {
   const { icons, ui: C } = useColors();
   const store = getStore();
   const {
+    collapsedTree,
     commitAhead,
     commitBehind,
     commitEntries,
+    commitFileView,
     commitLoading,
     commitCursor,
     remoteBusy,
     repoRoot,
   } = state;
+  const treeView = commitFileView === SIDEBAR_VIEWS.tree;
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const hasAhead = commitAhead > 0;
   const hasBehind = commitBehind > 0;
@@ -678,6 +739,12 @@ function CommitLog(props: { width: number }) {
     selectCommitFile(row.hash, row.path);
   }
 
+  function handleDirMouseDown(row: Extract<CommitRow, { kind: "dir" }>) {
+    focusCommits();
+    store.set({ commitCursor: commitRowKey(row) });
+    toggleCommitTreeFolder(row.hash, row.path);
+  }
+
   function handleLoadMoreMouseDown() {
     focusCommits();
     store.set({ commitCursor: "commit-load-more" });
@@ -726,13 +793,38 @@ function CommitLog(props: { width: number }) {
             />
           );
         }
+        if (row.kind === "dir") {
+          return (
+            <CommitDirRow
+              collapsed={Boolean(
+                collapsedTree[commitTreeKey(row.hash, row.path)],
+              )}
+              depth={row.depth}
+              id={key}
+              key={key}
+              node={{
+                additions: 0,
+                deletions: 0,
+                fileCount: 0,
+                name: row.path,
+                path: row.path,
+                type: "dir",
+              }}
+              onMouseDown={() => handleDirMouseDown(row)}
+              selected={selected}
+              width={props.width}
+            />
+          );
+        }
         if (row.kind === "file") {
           const commit = byHash.get(row.hash);
           return (
             <CommitFileRow
+              depth={row.depth}
               file={commit?.files[row.fileIndex]}
               id={key}
               key={key}
+              name={treeView ? basename(row.path) : row.path}
               onMouseDown={() => handleFileMouseDown(row)}
               path={row.path}
               selected={selected}
@@ -767,6 +859,7 @@ function CommitLog(props: { width: number }) {
         height: 12,
       }}
     >
+      <CommitControls treeView={treeView} />
       <box
         style={{
           backgroundColor: C.panel,
@@ -788,6 +881,56 @@ function CommitLog(props: { width: number }) {
       >
         {body}
       </scrollbox>
+    </box>
+  );
+}
+
+function CommitControls(props: { treeView: boolean }) {
+  const { ui: C } = useColors();
+
+  function toggleView(e: MouseEvent) {
+    if (e.button === 0) {
+      e.stopPropagation();
+      focusCommits();
+      toggleCommitFileView();
+    }
+  }
+
+  function collapseFolders(e: MouseEvent) {
+    if (e.button === 0) {
+      e.stopPropagation();
+      focusCommits();
+      toggleAllCommitFolders();
+    }
+  }
+
+  return (
+    <box
+      style={{
+        backgroundColor: C.bg,
+        flexDirection: "row",
+        position: "absolute",
+        right: 0,
+        top: -1,
+      }}
+    >
+      {props.treeView ? (
+        <box onMouseDown={collapseFolders}>
+          <text
+            selectable={false}
+            style={{ fg: C.dim }}
+          >{`${EM_SPACE}${COLLAPSE_FOLDERS_ICON}`}</text>
+        </box>
+      ) : null}
+      <box onMouseDown={toggleView}>
+        <text
+          selectable={false}
+          style={{ fg: C.dim }}
+        >{`${EM_SPACE}${props.treeView ? TREE_VIEW_ICON : LIST_VIEW_ICON}`}</text>
+      </box>
+      <text selectable={false} style={{ fg: C.dim }}>
+        {EM_SPACE}
+      </text>
     </box>
   );
 }
