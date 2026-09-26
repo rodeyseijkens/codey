@@ -1,6 +1,6 @@
 import type { CommitEntry, FileStatus } from "../types";
-import { gitThrow } from "../vcs/git";
-import { statusFromCode } from "./shared";
+import { gitThrow, parseNameStatusLine } from "../vcs/git";
+import { resolveNumstatPath, statusFromCode } from "./shared";
 
 const LOG_FORMAT = "%H%n%s%n%an%n%ai%n";
 const WHITESPACE_RE = /\s+/;
@@ -177,7 +177,7 @@ async function getCommitFiles(
       const parts = line.split("\t");
       if (parts.length >= 3) {
         const [addStr, delStr, ...rest] = parts;
-        const path = rest.join("\t");
+        const path = resolveNumstatPath(rest.join("\t"));
         if (path) {
           numByPath.set(path, {
             additions: Number(addStr) || 0,
@@ -194,18 +194,16 @@ async function getCommitFiles(
       status: FileStatus;
     }> = [];
     for (const line of nameStatus.split("\n")) {
-      const parts = line.split("\t");
-      const [code, ...rest] = parts;
-      if (!code || rest.length === 0) {
+      const parsed = parseNameStatusLine(line);
+      if (!parsed) {
         continue;
       }
-      const path = rest.join("\t");
-      const status = statusFromCode(code);
-      const nums = numByPath.get(path);
+      const status = statusFromCode(parsed.status);
+      const nums = numByPath.get(parsed.to);
       files.push({
         additions: nums?.additions ?? 0,
         deletions: nums?.deletions ?? 0,
-        path,
+        path: parsed.to,
         status,
       });
     }
