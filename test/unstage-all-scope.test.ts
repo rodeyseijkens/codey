@@ -3,12 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { unstageAll } from "../src/state/actions/staging";
-import {
-  type AppState,
-  AppStore,
-  getStore,
-  setStore,
-} from "../src/state/store";
+import { type AppState, AppStore, setStore } from "../src/state/store";
 import type { Changeset } from "../src/types";
 import { gitThrow } from "../src/vcs/git";
 import { afterAll, describe, expect, test } from "bun:test";
@@ -97,22 +92,21 @@ describe("unstageAll cursor awareness", () => {
     expect(await stagedPaths(dir)).toEqual([]);
   });
 
-  test("cursor in changes opens the discard-all confirmation", () => {
+  test("cursor in changes opens the discard-all confirmation", async () => {
     const store = setupStore({
       changesets: [changeset("changes", ["b.txt"])],
       selection: { index: 0, kind: "file", scope: "changes" },
     });
-    void unstageAll();
+    await unstageAll();
     expect(store.getState().overlay).toEqual({ kind: "confirm-discard-all" });
   });
 
-  test("without a selection it opens the discard-all confirmation", () => {
-    setupStore({
+  test("without a selection it opens the discard-all confirmation", async () => {
+    const store = setupStore({
       changesets: [changeset("changes", ["b.txt"])],
       selection: null,
     });
-    void unstageAll();
-    const store = getStore();
+    await unstageAll();
     expect(store.getState().overlay).toEqual({ kind: "confirm-discard-all" });
   });
 
