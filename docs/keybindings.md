@@ -21,9 +21,9 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `k`     | select-prev      | Move selection up                                        |
 | `f`     | next-file        | Jump to next file (diff pane; commit log files)          |
 | `F`     | prev-file        | Jump to previous file (diff pane; commit log files)      |
-| `space` | collapse-section | Collapse/expand the selected row (section/folder/commit header, load more) |
+| `space` | collapse-section | Collapse/expand the selected row (section, folder, commit header/dir, load more) |
 | `b`     | toggle-sidebar   | Show/hide the sidebar                                    |
-| `t`     | toggle-view      | Toggle sidebar view: tree → list → tree                  |
+| `t`     | toggle-view      | Toggle tree/list view for the focused pane (changes or commits) |
 | `<`     | sidebar-shrink   | Make the sidebar narrower                                |
 | `>`     | sidebar-grow     | Make the sidebar wider                                   |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
@@ -34,7 +34,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
 | `w`     | wrap-text        | Toggle diff line wrapping                                |
-| —       | toggle-folders   | Collapse all tree folders (expand all when all collapsed); unbound by default |
+| —       | toggle-folders   | Collapse all tree folders in the focused pane (expand all when all collapsed); unbound by default |
 
 ### Diff Pane
 
@@ -63,11 +63,12 @@ Keys are grouped by the pane they act on, matching the help overlay.
 
 | Key      | Command          | Description                                              |
 | -------- | ---------------- | -------------------------------------------------------- |
-| `j`      | select-next      | Move cursor down (commit headers and file rows)          |
+| `j`      | select-next      | Move cursor down (commit headers, folders, and file rows) |
 | `k`      | select-prev      | Move cursor up                                           |
 | `f`      | next-file        | Jump cursor to next commit file row                      |
 | `F`      | prev-file        | Jump cursor to previous commit file row                  |
-| `space`  | collapse-section | Expand/collapse commit header (or load-more row)         |
+| `space`  | collapse-section | Expand/collapse commit header or folder (or load-more row) |
+| `t`      | toggle-view      | Toggle the commit file list between tree and list        |
 | `tab`    | focus-toggle     | Cycle focus: changes → diff → commits                    |
 | `shift+tab` | focus-prev    | Cycle focus the other way                                |
 | `0`      | focus-diff       | Focus the diff pane                                      |
@@ -119,23 +120,46 @@ The sidebar's top border hosts three clickable controls: a collapse-folders icon
 (tree view only), the current view icon (`t`), and a refresh icon (`r`). The
 collapse-folders control and the same action are also available as the
 `toggle-folders` command, which ships unbound — remap it via `[keybindings]`
-(see the remapping example below).
+(see the remapping example below). `toggle-view` and `toggle-folders` act on the
+focused pane: in the sidebar they manage the changes tree, in the commit log
+they manage the commit file trees.
 
 ## Commit log pane
 
 The commit log at the bottom of the sidebar is focusable with `tab` (or `2`).
 While the commit pane is focused:
 
-- `j`/`k` navigate a flat list of commit headers and (when expanded) their files.
-  The cursor stops at the top/bottom — it does not wrap around.
-- `space` on a commit header expands/collapses its file list; `space` on a file
-  row does nothing.
+- `j`/`k` navigate commit headers and, when a commit is expanded, its folder
+  rows (tree view) and file rows. The cursor stops at the top/bottom — it does
+  not wrap around.
+- `space` on a commit header expands/collapses its file list; `space` on a
+  folder row collapses/expands that folder; `space` on a file row does nothing.
 - Moving the cursor onto a file row opens its diff in the diff pane (focus stays
-  on the commit log). A cursor on a commit header keeps the last-shown diff.
+  on the commit log). A cursor on a commit header or folder keeps the
+  last-shown diff.
 - `f`/`F` jump the cursor between commit file rows (forward/backward), opening
   each diff; they stop at the first/last commit file.
 - The `load more` row loads the next page only when you explicitly press `space`
   (or click it); after loading, the cursor jumps to the first newly added commit.
+
+### Commit file views
+
+Each expanded commit shows its files either as a flat **list** or as a
+collapsible **tree** — the same grouping used by the sidebar, including
+single-directory chain folding (`src/ui` renders as one node). The default is
+the tree view, and each commit remembers its own collapsed folders
+independently.
+
+- Toggle with `t` (while the commit pane is focused) or the view icon on the
+  commit pane's top border.
+- Collapse every folder of the expanded commits with the border's
+  collapse-folders icon (tree view only), or bind the focus-aware
+  `toggle-folders` command.
+- Renamed and copied files are listed at their destination path with an `R`/`C`
+  status letter.
+
+The commit pane's top border hosts two clickable controls: a collapse-folders
+icon (tree view only) and the current view icon.
 
 ### Committing
 

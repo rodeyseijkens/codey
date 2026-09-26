@@ -4,7 +4,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-green.svg)](https://nodejs.org/)
 [![Built on OpenTUI](https://img.shields.io/badge/Built%20on-OpenTUI-orange.svg)](https://github.com/anomalyco/opentui)
 
-A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged diff viewer with transient line comments, real git staging, and a commit log sidebar with pull/push and commit creation. Built on [OpenTUI](https://github.com/anomalyco/opentui) and [hunk-diff](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff).
+A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged diff viewer with transient line comments, real git staging, and a commit log sidebar with per-commit file trees, pull/push, and commit creation. Built on [OpenTUI](https://github.com/anomalyco/opentui) and [hunk-diff](https://github.com/modem-dev/hunk/tree/main/packages/hunk-diff).
 
 `codey` sits beside your agent while it writes code. Review the diff it just produced, comment on lines, stage the parts you want, and hand the notes back. It runs standalone in any terminal and as a [herdr](https://herdr.dev) plugin pane.
 
@@ -75,9 +75,9 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | --------- | ---------------------------------------------------- |
 | `j` / `k` | Move selection down / up                             |
 | `f` / `F` | Next / previous file                                 |
-| `Space`   | Collapse/expand row (section, folder)                |
+| `Space`   | Collapse/expand row (section, folder, commit)        |
 | `b`       | Toggle sidebar                                       |
-| `t`       | Toggle sidebar view (tree / list)                    |
+| `t`       | Toggle tree / list view for the focused pane         |
 | `<` / `>` | Shrink / grow sidebar                                |
 | `a` / `A` | Stage file / Stage all files                         |
 | `E`       | Open the selected file in `$EDITOR` (same terminal)  |
@@ -107,7 +107,8 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | ------------- | ------------------------------------------------------------- |
 | `j` / `k`     | Move selection down / up                                      |
 | `f` / `F`     | Next / previous file                                          |
-| `Space`       | Expand/collapse commit                                        |
+| `Space`       | Expand/collapse commit or folder                              |
+| `t`           | Toggle tree / list view for the commit file list              |
 | `c`           | Open commit input                                             |
 | `p` / `P`     | Pull / push to the remote                                     |
 | `g`           | Edit selected commit (squash/fixup/drop/amend/reword/reset) |
