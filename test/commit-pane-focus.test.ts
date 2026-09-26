@@ -343,6 +343,7 @@ describe("commit pane with a real repo", () => {
     }
     store.set({
       commitCursor: commitRowKey({
+        depth: 0,
         hash: target.hash,
         index: 1,
         kind: "header",
@@ -387,7 +388,12 @@ describe("commit pane with a real repo", () => {
     }
     store.set({ collapsed: { [top.hash]: true } });
     store.set({
-      commitCursor: commitRowKey({ hash: top.hash, index: 0, kind: "header" }),
+      commitCursor: commitRowKey({
+        depth: 0,
+        hash: top.hash,
+        index: 0,
+        kind: "header",
+      }),
     });
 
     function fileKey(path: string, hash: string): string {
