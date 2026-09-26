@@ -246,12 +246,12 @@ export const COMMAND_DEFS = {
     section: "diff",
   },
   "sidebar-grow": {
-    defaultKey: ">",
+    defaultKey: [">", "shift+right", "shift+l"],
     description: "Make the sidebar wider",
     section: "changes",
   },
   "sidebar-shrink": {
-    defaultKey: "<",
+    defaultKey: ["<", "shift+left", "shift+h"],
     description: "Make the sidebar narrower",
     section: "changes",
   },

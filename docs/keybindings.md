@@ -24,8 +24,8 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `space` | collapse-section | Collapse/expand the selected row (section, folder, commit header/dir, load more) |
 | `b`     | toggle-sidebar   | Show/hide the sidebar                                    |
 | `t`     | toggle-view      | Toggle tree/list view for the focused pane (changes or commits) |
-| `<`     | sidebar-shrink   | Make the sidebar narrower                                |
-| `>`     | sidebar-grow     | Make the sidebar wider                                   |
+| `<`     | sidebar-shrink   | Make the sidebar narrower (also `shift+left` or `shift+h`) |
+| `>`     | sidebar-grow     | Make the sidebar wider (also `shift+right` or `shift+l`) |
 | `a`     | stage-file       | Stage selected file (`git add <file>`)                   |
 | `E`     | edit-file        | Open the selected file in `$EDITOR` (same terminal)      |
 | `shift+a` | stage-all      | Stage all changed files                                  |
