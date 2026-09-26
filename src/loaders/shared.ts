@@ -56,7 +56,7 @@ export type NumstatEntry = {
   path: string;
 };
 
-function resolveNumstatPath(path: string): string {
+export function resolveNumstatPath(path: string): string {
   const sep = path.indexOf(" => ");
   return sep >= 0 ? path.slice(sep + 4) : path;
 }
