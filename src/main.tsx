@@ -97,6 +97,7 @@ async function startSession(opts: RunOptions): Promise<void> {
   await resolveThemeAsync(themeId, null);
 
   store.set({
+    commitHeight: config.commitHeight,
     editor: config.editor?.trim() || null,
     gutterSign: config.gutterSign,
     ignoreFiles: config.ignoreFiles,

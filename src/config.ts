@@ -7,6 +7,7 @@ export const CONFIG_DIR = `${process.env.HOME ?? "~"}/.config/codey`;
 export const CONFIG_PATH = `${CONFIG_DIR}/config.toml`;
 
 export const ConfigSchema = z.strictObject({
+  commitHeight: z.number().int().min(4).max(40).default(12),
   editor: z.string().optional(),
   gutterSign: z.boolean().default(false),
   ignoreFiles: z.array(z.string()).default(() => [...DEFAULT_IGNORE_FILES]),

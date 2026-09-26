@@ -126,9 +126,11 @@ export type AppState = {
   commitBehind: number;
   commitCursor: string | null;
   commitDraft: string | null;
+  commitDrag: { startHeight: number; startY: number } | null;
   commitEntries: CommitEntry[];
   commitFileView: SidebarView;
   commitHasMore: boolean;
+  commitHeight: number;
   commitLoading: boolean;
   commitOffset: number;
   commitView: { hash: string; file: FileDiff } | null;
@@ -182,9 +184,11 @@ export function initialState(): AppState {
     commitBehind: 0,
     commitCursor: null,
     commitDraft: null,
+    commitDrag: null,
     commitEntries: [],
     commitFileView: SIDEBAR_VIEWS.tree,
     commitHasMore: true,
+    commitHeight: 12,
     commitLoading: false,
     commitOffset: 0,
     commitView: null,

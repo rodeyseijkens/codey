@@ -109,6 +109,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `f` / `F`     | Next / previous file                                          |
 | `Space`       | Expand/collapse commit or folder                              |
 | `t`           | Toggle tree / list view for the commit file list              |
+| `shift+↑/↓`   | Make the commit pane taller / shorter (also `shift+k` / `shift+j`) |
 | `c`           | Open commit input                                             |
 | `p` / `P`     | Pull / push to the remote                                     |
 | `g`           | Edit selected commit (squash/fixup/drop/amend/reword/reset) |

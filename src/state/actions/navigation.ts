@@ -7,6 +7,8 @@ import { DIFF_MODES, SIDEBAR_VIEWS, TOAST_KINDS } from "../../types";
 import { type AppState, getStore, rowKey } from "../store";
 import {
   applySelection,
+  COMMIT_MAX_HEIGHT,
+  COMMIT_MIN_HEIGHT,
   repairSelection,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
@@ -174,6 +176,35 @@ export function resizeSidebar(delta: number): void {
     Math.min(SIDEBAR_MAX_WIDTH, store.getState().sidebarWidth + delta),
   );
   store.set({ sidebarWidth: w });
+}
+
+export function setCommitPaneHeight(height: number): void {
+  const store = getStore();
+  const h = Math.max(COMMIT_MIN_HEIGHT, Math.min(COMMIT_MAX_HEIGHT, height));
+  store.set({ commitHeight: h });
+}
+
+export function resizeCommitPane(delta: number): void {
+  setCommitPaneHeight(getStore().getState().commitHeight + delta);
+}
+
+export function startCommitPaneDrag(y: number): void {
+  const store = getStore();
+  store.set({
+    commitDrag: { startHeight: store.getState().commitHeight, startY: y },
+  });
+}
+
+export function dragCommitPane(y: number): void {
+  const { commitDrag } = getStore().getState();
+  if (!commitDrag) {
+    return;
+  }
+  setCommitPaneHeight(commitDrag.startHeight + (commitDrag.startY - y));
+}
+
+export function endCommitPaneDrag(): void {
+  getStore().set({ commitDrag: null });
 }
 
 export function cycleLayout(): void {

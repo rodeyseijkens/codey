@@ -19,7 +19,11 @@ import {
   toggleAllCommitFolders,
   toggleCommitFileView,
 } from "./actions/commits";
-import { refresh, SIDEBAR_RESIZE_STEP } from "./actions/core";
+import {
+  COMMIT_RESIZE_STEP,
+  refresh,
+  SIDEBAR_RESIZE_STEP,
+} from "./actions/core";
 import {
   closeOverlay,
   openCommitDraft,
@@ -33,6 +37,7 @@ import {
   focusDiff,
   focusPrev,
   focusSidebar,
+  resizeCommitPane,
   resizeSidebar,
   selectNext,
   selectPrev,
@@ -188,6 +193,8 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
   });
   r.set("sidebar-shrink", { run: () => resizeSidebar(-SIDEBAR_RESIZE_STEP) });
   r.set("sidebar-grow", { run: () => resizeSidebar(SIDEBAR_RESIZE_STEP) });
+  r.set("commit-taller", { run: () => resizeCommitPane(COMMIT_RESIZE_STEP) });
+  r.set("commit-shorter", { run: () => resizeCommitPane(-COMMIT_RESIZE_STEP) });
   r.set("visual-select", {
     run: () => visualSelect(),
   });
