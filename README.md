@@ -78,7 +78,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `Space`   | Collapse/expand row (section, folder, commit)        |
 | `b`       | Toggle sidebar                                       |
 | `t`       | Toggle tree / list view for the focused pane         |
-| `<` / `>` | Shrink / grow sidebar                                |
+| `<` / `>` | Shrink / grow sidebar (also `shift+←/→` or `shift+h/l`) |
 | `a` / `A` | Stage file / Stage all files                         |
 | `E`       | Open the selected file in `$EDITOR` (same terminal)  |
 | `u` / `U` | Unstage staged file / discard-all is cursor-aware: `U` unstages all when the cursor is in the staged section, otherwise discards all working-tree changes |
