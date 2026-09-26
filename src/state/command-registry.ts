@@ -162,9 +162,7 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
       const cursorRow = store.commitCursorRow();
       if (
         cursorRow &&
-        (cursorRow.kind === "header" ||
-          cursorRow.kind === "dir" ||
-          cursorRow.kind === "file")
+        (cursorRow.kind === "header" || cursorRow.kind === "file")
       ) {
         store.set({ overlay: { hash: cursorRow.hash, kind: "edit-commit" } });
       }
