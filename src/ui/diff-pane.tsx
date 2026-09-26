@@ -22,8 +22,10 @@ import {
   toInternalDiffFile,
 } from "./diff-viewer/model";
 import { buildLineHighlightPaintIndex } from "./diff-viewer/render/lineHighlightPaint";
+import { dimRailColor, neutralRailColor } from "./diff-viewer/render/rowStyle";
 import type { DiffNote } from "./diff-viewer/types";
 import { EM_SPACE, layoutModeIcon } from "./icons";
+import { resolveTheme } from "./theme/resolve";
 
 function resolveViewMode(
   layoutMode: string,
@@ -196,10 +198,14 @@ function diffSearchCounter(
 function DiffPaneChrome(props: {
   children: ReactNode;
   focused: boolean;
+  railRows: number;
+  theme: ReturnType<typeof resolveTheme>;
   titleLeft: string;
   titleRight?: ReactNode;
 }) {
   const { ui: C } = useColors();
+  const railFg = dimRailColor(neutralRailColor(props.theme), props.theme);
+  const rail = "▌\n".repeat(props.railRows);
   return (
     <box
       onMouseDown={(e) => {
@@ -216,6 +222,18 @@ function DiffPaneChrome(props: {
         width: "100%",
       }}
     >
+      <box
+        style={{
+          backgroundColor: props.theme.panel,
+          height: "100%",
+          left: 0,
+          position: "absolute",
+          top: 0,
+          width: 1,
+        }}
+      >
+        <text style={{ fg: railFg }}>{rail}</text>
+      </box>
       <box
         style={{
           flexDirection: "row",
@@ -246,6 +264,8 @@ export function DiffPane() {
   const store = getStore();
   const dims = useTerminalDimensions();
   const { ui: C } = useColors();
+  const resolvedTheme = resolveTheme(state.theme, null);
+  const railRows = Math.max(0, dims.height - 2);
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const [cursorOffset, setCursorOffset] = useState(0);
   const [scrollMetrics, setScrollMetrics] = useState({
@@ -457,7 +477,12 @@ export function DiffPane() {
 
   if (!(sel && file)) {
     return (
-      <DiffPaneChrome focused={state.focus === "diff"} titleLeft="">
+      <DiffPaneChrome
+        focused={state.focus === "diff"}
+        railRows={railRows}
+        theme={resolvedTheme}
+        titleLeft=""
+      >
         <box
           style={{
             alignItems: "center",
@@ -485,6 +510,8 @@ export function DiffPane() {
     return (
       <DiffPaneChrome
         focused={state.focus === "diff"}
+        railRows={railRows}
+        theme={resolvedTheme}
         titleLeft={file.path}
         titleRight={modeIconNode}
       >
@@ -505,6 +532,8 @@ export function DiffPane() {
     return (
       <DiffPaneChrome
         focused={state.focus === "diff"}
+        railRows={railRows}
+        theme={resolvedTheme}
         titleLeft={file.path}
         titleRight={modeIconNode}
       >
@@ -525,6 +554,8 @@ export function DiffPane() {
     return (
       <DiffPaneChrome
         focused={state.focus === "diff"}
+        railRows={railRows}
+        theme={resolvedTheme}
         titleLeft={file.path}
         titleRight={modeIconNode}
       >
@@ -547,6 +578,8 @@ export function DiffPane() {
     return (
       <DiffPaneChrome
         focused={state.focus === "diff"}
+        railRows={railRows}
+        theme={resolvedTheme}
         titleLeft={file.path}
         titleRight={modeIconNode}
       >
@@ -569,6 +602,8 @@ export function DiffPane() {
     return (
       <DiffPaneChrome
         focused={state.focus === "diff"}
+        railRows={railRows}
+        theme={resolvedTheme}
         titleLeft={file.path}
         titleRight={modeIconNode}
       >
@@ -588,6 +623,8 @@ export function DiffPane() {
   return (
     <DiffPaneChrome
       focused={state.focus === "diff"}
+      railRows={railRows}
+      theme={resolvedTheme}
       titleLeft={
         file.oldPath && file.oldPath !== file.path
           ? `${file.oldPath} -> ${file.path}`
