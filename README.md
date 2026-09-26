@@ -81,7 +81,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `<` / `>` | Shrink / grow sidebar                                |
 | `a` / `A` | Stage file / Stage all files                         |
 | `E`       | Open the selected file in `$EDITOR` (same terminal)  |
-| `u` / `U` | Unstage staged file / Unstage all staged files; discard working-tree changes from the changes scope |
+| `u` / `U` | Unstage staged file / discard-all is cursor-aware: `U` unstages all when the cursor is in the staged section, otherwise discards all working-tree changes |
 | `r`       | Refresh (reload from git)                            |
 | `m`       | Cycle layout (split / stack / auto)                  |
 | `w`       | Toggle line wrapping                                 |

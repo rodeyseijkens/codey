@@ -30,7 +30,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `E`     | edit-file        | Open the selected file in `$EDITOR` (same terminal)      |
 | `shift+a` | stage-all      | Stage all changed files                                  |
 | `u`     | unstage-file     | Unstage selected file (`git restore --staged <file>`); discards working-tree changes in the changes scope |
-| `shift+u` | unstage-all   | Unstage all staged files; discards all working-tree changes in the changes scope |
+| `shift+u` | unstage-all   | Cursor-aware: unstage all staged files when the cursor is in the staged section; otherwise discard all working-tree changes in the changes scope |
 | `r`     | refresh          | Reload changesets from git                               |
 | `m`     | toggle-layout    | Cycle layout mode: split → stack → auto                  |
 | `w`     | wrap-text        | Toggle diff line wrapping                                |
@@ -189,6 +189,11 @@ changes scope `u`/`U` opens a confirm-discard dialog that runs `git restore` and
 `rm` to drop working-tree changes. These keys are exclusive to `codey diff`
 (two-group mode); in `show`, two-file, `patch`, and `pager` modes they are disabled
 with a hint toast.
+
+`U` (`unstage-all`) is cursor-aware: with the cursor anywhere in the staged
+section it unstages every staged file; anywhere else it opens the discard-all
+confirmation for all working-tree changes (falling back to unstaging when there
+are no working-tree changes).
 
 Guard: staging a file that still has pending unsent comments warns first
 (`N comment(s) will be cleared — press again to confirm`). Pressing a stage key again
