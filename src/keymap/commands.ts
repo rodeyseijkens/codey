@@ -288,7 +288,8 @@ export const COMMAND_DEFS = {
   },
   "unstage-all": {
     defaultKey: "shift+u",
-    description: "Unstage all staged files",
+    description:
+      "Cursor in staged: unstage all files; otherwise discard all working-tree changes",
     section: "changes",
   },
   "unstage-file": {
