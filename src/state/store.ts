@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { buildFileTree, commitTreeScope, visibleTreeNodes } from "../lib/tree";
+import { commitTreeScope, visibleFileNodes } from "../lib/tree";
 import type {
   Changeset,
   Comment,
@@ -280,8 +280,11 @@ export class AppStore implements Store {
         continue;
       }
       if (this.state.sidebarView === SIDEBAR_VIEWS.tree) {
-        const tree = buildFileTree(cs.files);
-        const visible = visibleTreeNodes(cs.id, tree, this.state.collapsedTree);
+        const visible = visibleFileNodes(
+          cs.id,
+          cs.files,
+          this.state.collapsedTree,
+        );
         for (const v of visible) {
           if (v.node.type === "dir") {
             out.push({ kind: "dir", path: v.node.path, scope: cs.id });
@@ -299,10 +302,9 @@ export class AppStore implements Store {
   }
 
   private commitTreeRows(entry: CommitEntry): CommitRow[] {
-    const tree = buildFileTree(entry.files);
-    const visible = visibleTreeNodes(
+    const visible = visibleFileNodes(
       commitTreeScope(entry.hash),
-      tree,
+      entry.files,
       this.state.collapsedTree,
     );
     const rows: CommitRow[] = [];

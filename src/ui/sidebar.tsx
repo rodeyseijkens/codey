@@ -1,12 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { MouseEvent, ScrollBoxRenderable } from "@opentui/core";
 
-import {
-  buildFileTree,
-  commitTreeKey,
-  type TreeNode,
-  visibleTreeNodes,
-} from "../lib/tree";
+import { commitTreeKey, type TreeNode, visibleFileNodes } from "../lib/tree";
 import {
   clearCommitView,
   commitRevert,
@@ -324,8 +319,7 @@ function TreeBody(props: {
       </box>
     );
   }
-  const tree = buildFileTree(cs.files);
-  const visible = visibleTreeNodes(cs.id, tree, collapsedTree);
+  const visible = visibleFileNodes(cs.id, cs.files, collapsedTree);
   return (
     <>
       {visible.map((v) => {

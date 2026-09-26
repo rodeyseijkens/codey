@@ -17,9 +17,10 @@ export function treeKey(scope: string, dirPath: string): string {
   return `${scope}:${dirPath}`;
 }
 
-/** Tree scope for a commit's file tree, keeping commit keys separable. */
+const COMMIT_TREE_PREFIX = "commit:";
+
 export function commitTreeScope(hash: string): string {
-  return `commit:${hash}`;
+  return `${COMMIT_TREE_PREFIX}${hash}`;
 }
 
 export function commitTreeKey(hash: string, dirPath: string): string {
@@ -27,7 +28,7 @@ export function commitTreeKey(hash: string, dirPath: string): string {
 }
 
 export function isCommitTreeKey(key: string): boolean {
-  return key.startsWith(commitTreeScope(""));
+  return key.startsWith(COMMIT_TREE_PREFIX);
 }
 
 function sortNodes(nodes: TreeNode[]): void {
@@ -167,4 +168,47 @@ export function isFileHidden(
     }
   }
   return false;
+}
+
+export function visibleFileNodes(
+  scope: string,
+  files: readonly TreeFile[],
+  collapsedTree: Record<string, boolean>,
+): VisibleNode[] {
+  return visibleTreeNodes(scope, buildFileTree(files), collapsedTree);
+}
+
+export function collapseAllTreeKeys(
+  groups: ReadonlyArray<{ files: readonly TreeFile[]; scope: string }>,
+  collapsedTree: Record<string, boolean>,
+  isForeignTreeKey: (key: string) => boolean,
+): Record<string, boolean> {
+  const prepared = groups.map((group) => {
+    const tree = buildFileTree(group.files);
+    return {
+      scope: group.scope,
+      tree,
+      visible: visibleTreeNodes(group.scope, tree, collapsedTree),
+    };
+  });
+  const hasExpandedFolder = prepared.some(({ visible }) =>
+    visible.some((v) => v.node.type === "dir" && !v.collapsed),
+  );
+  const next: Record<string, boolean> = Object.fromEntries(
+    Object.entries(collapsedTree).filter(([key]) => isForeignTreeKey(key)),
+  );
+  if (hasExpandedFolder) {
+    const collect = (scope: string, nodes: TreeNode[]): void => {
+      for (const node of nodes) {
+        if (node.type === "dir") {
+          next[treeKey(scope, node.path)] = true;
+          collect(scope, node.children ?? []);
+        }
+      }
+    };
+    for (const { scope, tree } of prepared) {
+      collect(scope, tree);
+    }
+  }
+  return next;
 }
