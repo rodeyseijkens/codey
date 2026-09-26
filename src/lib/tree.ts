@@ -1,4 +1,6 @@
-import type { FileDiff, Scope } from "../types.js";
+import type { FileDiff } from "../types.js";
+
+export type TreeFile = Pick<FileDiff, "additions" | "deletions" | "path">;
 
 export type TreeNode = {
   additions: number;
@@ -11,8 +13,21 @@ export type TreeNode = {
   type: "dir" | "file";
 };
 
-export function treeKey(scope: Scope, dirPath: string): string {
+export function treeKey(scope: string, dirPath: string): string {
   return `${scope}:${dirPath}`;
+}
+
+/** Tree scope for a commit's file tree, keeping commit keys separable. */
+export function commitTreeScope(hash: string): string {
+  return `commit:${hash}`;
+}
+
+export function commitTreeKey(hash: string, dirPath: string): string {
+  return treeKey(commitTreeScope(hash), dirPath);
+}
+
+export function isCommitTreeKey(key: string): boolean {
+  return key.startsWith(commitTreeScope(""));
 }
 
 function sortNodes(nodes: TreeNode[]): void {
@@ -47,7 +62,7 @@ function compactChains(nodes: TreeNode[]): TreeNode[] {
   });
 }
 
-export function buildFileTree(files: FileDiff[]): TreeNode[] {
+export function buildFileTree(files: readonly TreeFile[]): TreeNode[] {
   const root: TreeNode[] = [];
   for (const [i, file] of files.entries()) {
     if (!file) {
@@ -115,7 +130,7 @@ export type VisibleNode = {
 };
 
 export function visibleTreeNodes(
-  scope: Scope,
+  scope: string,
   nodes: TreeNode[],
   collapsedTree: Record<string, boolean>,
 ): VisibleNode[] {
@@ -138,7 +153,7 @@ export function visibleTreeNodes(
 }
 
 export function isFileHidden(
-  scope: Scope,
+  scope: string,
   path: string,
   collapsedTree: Record<string, boolean>,
 ): boolean {
