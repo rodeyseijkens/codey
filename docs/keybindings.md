@@ -69,6 +69,8 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `F`      | prev-file        | Jump cursor to previous commit file row                  |
 | `space`  | collapse-section | Expand/collapse commit header or folder (or load-more row) |
 | `t`      | toggle-view      | Toggle the commit file list between tree and list        |
+| `shift+up` | commit-taller  | Make the commit pane taller (also `shift+k`)             |
+| `shift+down` | commit-shorter | Make the commit pane shorter (also `shift+j`)          |
 | `tab`    | focus-toggle     | Cycle focus: changes → diff → commits                    |
 | `shift+tab` | focus-prev    | Cycle focus the other way                                |
 | `0`      | focus-diff       | Focus the diff pane                                      |

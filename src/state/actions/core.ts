@@ -14,6 +14,10 @@ export const SIDEBAR_MIN_WIDTH = 16;
 export const SIDEBAR_MAX_WIDTH = 80;
 export const SIDEBAR_RESIZE_STEP = 4;
 
+export const COMMIT_MIN_HEIGHT = 4;
+export const COMMIT_MAX_HEIGHT = 40;
+export const COMMIT_RESIZE_STEP = 2;
+
 export function toastError(store: Store, action: string, err: unknown): void {
   store.showToast(
     TOAST_KINDS.error,

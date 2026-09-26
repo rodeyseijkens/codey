@@ -39,6 +39,16 @@ export const COMMAND_DEFS = {
     description: "Move selected commit up in history (rebase)",
     section: "commits",
   },
+  "commit-shorter": {
+    defaultKey: ["shift+down", "shift+j"],
+    description: "Make the commit pane shorter",
+    section: "commits",
+  },
+  "commit-taller": {
+    defaultKey: ["shift+up", "shift+k"],
+    description: "Make the commit pane taller",
+    section: "commits",
+  },
   copy: {
     defaultKey: "y",
     description: "Copy selection/diff to clipboard",
