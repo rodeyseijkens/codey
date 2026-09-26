@@ -3,6 +3,7 @@ import { isHerdrPlugin } from "../../herdr/env";
 import { copyText, formatCommentsAsMarkdown } from "../../lib/clipboard";
 import {
   buildFileTree,
+  isCommitTreeKey,
   type TreeNode,
   treeKey,
   visibleTreeNodes,
@@ -168,7 +169,10 @@ export function toggleAllTreeFolders(): void {
       (v) => v.node.type === "dir" && !v.collapsed,
     ),
   );
-  const next: Record<string, boolean> = {};
+  const preserved = Object.fromEntries(
+    Object.entries(collapsedTree).filter(([key]) => isCommitTreeKey(key)),
+  );
+  const next: Record<string, boolean> = { ...preserved };
   if (hasExpandedFolder) {
     for (const cs of changesets) {
       const collect = (nodes: TreeNode[]): void => {
