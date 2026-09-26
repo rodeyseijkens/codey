@@ -194,7 +194,12 @@ describe("resolveEditTarget", () => {
 
     const withoutView = new AppStore({
       collapsed: { aaa: true },
-      commitCursor: commitRowKey({ hash: "aaa", index: 0, kind: "header" }),
+      commitCursor: commitRowKey({
+        depth: 0,
+        hash: "aaa",
+        index: 0,
+        kind: "header",
+      }),
       commitEntries: [entry("aaa", [["a.txt", "modified"]])],
       focus: "commits",
     });
