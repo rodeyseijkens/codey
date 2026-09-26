@@ -517,12 +517,14 @@ function CommitDirRow(props: {
   collapsed: boolean;
   depth: number;
   id: string;
-  node: TreeNode;
+  name: string;
   onMouseDown: (e: MouseEvent) => void;
+  path: string;
   selected: boolean;
   width: number;
 }) {
-  const { collapsed, depth, id, node, onMouseDown, selected, width } = props;
+  const { collapsed, depth, id, name, onMouseDown, path, selected, width } =
+    props;
   const { icons, ui: C } = useColors();
   const chevron = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;
   return (
@@ -538,8 +540,8 @@ function CommitDirRow(props: {
       }}
     >
       <text style={{ fg: C.accent, width: 2 }}>{chevron}</text>
-      <text style={{ fg: icons[folderColor(node.path)], width: 2 }}>
-        {folderIcon(node.path)}
+      <text style={{ fg: icons[folderColor(path)], width: 2 }}>
+        {folderIcon(path)}
       </text>
       <text
         style={{
@@ -548,7 +550,7 @@ function CommitDirRow(props: {
           overflow: "hidden",
         }}
       >
-        {truncatePath(node.name, dirNameMax(width, depth))}
+        {truncatePath(name, dirNameMax(width, depth))}
       </text>
       <text style={{ width: 1 }}> </text>
       <text style={{ width: 2 }}> </text>
@@ -796,15 +798,9 @@ function CommitLog(props: { width: number }) {
               depth={row.depth}
               id={key}
               key={key}
-              node={{
-                additions: 0,
-                deletions: 0,
-                fileCount: 0,
-                name: row.path,
-                path: row.path,
-                type: "dir",
-              }}
+              name={row.path}
               onMouseDown={() => handleDirMouseDown(row)}
+              path={row.path}
               selected={selected}
               width={props.width}
             />

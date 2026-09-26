@@ -20,7 +20,7 @@ import {
 export type FocusPane = "sidebar" | "diff" | "commits";
 
 export type CommitRow =
-  | { depth: number; hash: string; index: number; kind: "header" }
+  | { hash: string; index: number; kind: "header" }
   | { depth: number; hash: string; kind: "dir"; path: string }
   | {
       depth: number;
@@ -338,7 +338,7 @@ export class AppStore implements Store {
       if (!entry) {
         continue;
       }
-      out.push({ depth: 0, hash: entry.hash, index, kind: "header" });
+      out.push({ hash: entry.hash, index, kind: "header" });
       if (!collapsed[entry.hash]) {
         continue;
       }
