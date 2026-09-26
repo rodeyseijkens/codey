@@ -16,6 +16,8 @@ import {
   confirmCommitAll,
   confirmGitEdit,
   confirmGitReset,
+  toggleAllCommitFolders,
+  toggleCommitFileView,
 } from "./actions/commits";
 import { refresh, SIDEBAR_RESIZE_STEP } from "./actions/core";
 import {
@@ -160,7 +162,9 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
       const cursorRow = store.commitCursorRow();
       if (
         cursorRow &&
-        (cursorRow.kind === "header" || cursorRow.kind === "file")
+        (cursorRow.kind === "header" ||
+          cursorRow.kind === "dir" ||
+          cursorRow.kind === "file")
       ) {
         store.set({ overlay: { hash: cursorRow.hash, kind: "edit-commit" } });
       }
@@ -231,10 +235,27 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
   });
   r.set("refresh", { run: () => void refresh() });
   r.set("toggle-layout", { run: () => cycleLayout() });
-  r.set("toggle-view", { run: () => toggleSidebarView() });
+  r.set("toggle-view", {
+    run: (_, state) => {
+      if (state.focus === "commits") {
+        toggleCommitFileView();
+      } else {
+        toggleSidebarView();
+      }
+    },
+  });
   r.set("toggle-folders", {
-    guard: (state) => state.sidebarView === SIDEBAR_VIEWS.tree,
-    run: () => toggleAllTreeFolders(),
+    guard: (state) =>
+      state.focus === "commits"
+        ? state.commitFileView === SIDEBAR_VIEWS.tree
+        : state.sidebarView === SIDEBAR_VIEWS.tree,
+    run: (_, state) => {
+      if (state.focus === "commits") {
+        toggleAllCommitFolders();
+      } else {
+        toggleAllTreeFolders();
+      }
+    },
   });
   r.set("wrap-text", {
     run: (store, state) => store.set({ wrapLines: !state.wrapLines }),

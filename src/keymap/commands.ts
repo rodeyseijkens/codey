@@ -25,7 +25,8 @@ export const COMMAND_DEFS = {
   },
   "collapse-section": {
     defaultKey: "space",
-    description: "Collapse/expand the selected row (section or folder)",
+    description:
+      "Collapse/expand the selected row (section, folder, or commit)",
     section: "changes",
   },
   "commit-move-down": {
@@ -267,7 +268,7 @@ export const COMMAND_DEFS = {
   "toggle-folders": {
     defaultKey: [],
     description:
-      "Collapse all tree folders, or expand all when every folder is collapsed",
+      "Collapse all tree folders in the focused pane, or expand all when every folder is collapsed",
     section: "changes",
   },
   "toggle-layout": {
@@ -282,7 +283,7 @@ export const COMMAND_DEFS = {
   },
   "toggle-view": {
     defaultKey: "t",
-    description: "Toggle sidebar view tree / list",
+    description: "Toggle tree / list view for the focused pane",
     section: "changes",
   },
   "unstage-all": {
