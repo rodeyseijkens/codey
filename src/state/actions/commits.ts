@@ -81,7 +81,6 @@ export async function loadMoreCommits(followCursor = false): Promise<void> {
     if (followCursor && first) {
       store.set({
         commitCursor: commitRowKey({
-          depth: 0,
           hash: first.hash,
           index: before,
           kind: "header",
