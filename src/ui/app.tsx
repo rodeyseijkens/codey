@@ -9,6 +9,7 @@ import { getStore, useAppState } from "../state/store";
 import { BottomBar } from "./bottom-bar";
 import { ColorProvider } from "./color-context";
 import { getThemeColors } from "./colors";
+import { CommitPaneDragOverlay } from "./commit-drag-overlay";
 import { DiffPane } from "./diff-pane";
 import { Overlays } from "./overlays";
 import { Sidebar } from "./sidebar";
@@ -75,6 +76,7 @@ export function App({ keymap }: { keymap: Keymap<Renderable, KeyEvent> }) {
             <DiffPane />
           </box>
           <BottomBar />
+          <CommitPaneDragOverlay />
           <Overlays />
         </box>
       </KeymapProvider>

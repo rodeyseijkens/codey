@@ -21,6 +21,7 @@ import {
   selectDir,
   selectFile,
   selectSection,
+  startCommitPaneDrag,
   toggleAllTreeFolders,
   toggleCollapse,
   toggleSidebarView,
@@ -665,6 +666,7 @@ function CommitLog(props: { width: number }) {
     commitBehind,
     commitEntries,
     commitFileView,
+    commitHeight,
     commitLoading,
     commitCursor,
     remoteBusy,
@@ -846,9 +848,24 @@ function CommitLog(props: { width: number }) {
         borderColor: state.focus === "commits" ? C.accent : C.border,
         borderStyle: "single",
         flexDirection: "column",
-        height: 12,
+        height: commitHeight,
       }}
     >
+      <box
+        onMouseDown={(e: MouseEvent) => {
+          if (e.button === 0) {
+            focusCommits();
+            startCommitPaneDrag(e.y);
+          }
+        }}
+        style={{
+          height: 1,
+          left: 0,
+          position: "absolute",
+          right: 0,
+          top: -1,
+        }}
+      />
       <CommitControls treeView={treeView} />
       <box
         style={{
