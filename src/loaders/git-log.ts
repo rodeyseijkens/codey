@@ -165,8 +165,28 @@ async function getCommitFiles(
 > {
   try {
     const [nameStatus, numstat] = await Promise.all([
-      gitThrow(["show", "--name-status", "--format=", "--no-color", hash], cwd),
-      gitThrow(["show", "--numstat", "--format=", "--no-color", hash], cwd),
+      gitThrow(
+        [
+          "show",
+          "--find-renames",
+          "--name-status",
+          "--format=",
+          "--no-color",
+          hash,
+        ],
+        cwd,
+      ),
+      gitThrow(
+        [
+          "show",
+          "--find-renames",
+          "--numstat",
+          "--format=",
+          "--no-color",
+          hash,
+        ],
+        cwd,
+      ),
     ]);
 
     const numByPath = new Map<
