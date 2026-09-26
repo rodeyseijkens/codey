@@ -1,13 +1,7 @@
 import { sendToAgent } from "../../herdr/agent";
 import { isHerdrPlugin } from "../../herdr/env";
 import { copyText, formatCommentsAsMarkdown } from "../../lib/clipboard";
-import {
-  buildFileTree,
-  isCommitTreeKey,
-  type TreeNode,
-  treeKey,
-  visibleTreeNodes,
-} from "../../lib/tree";
+import { collapseAllTreeKeys, isCommitTreeKey, treeKey } from "../../lib/tree";
 import type { Scope, SidebarView } from "../../types";
 import { DIFF_MODES, SIDEBAR_VIEWS, TOAST_KINDS } from "../../types";
 import { type AppState, getStore, rowKey } from "../store";
@@ -164,28 +158,11 @@ export function toggleSidebarView(): void {
 export function toggleAllTreeFolders(): void {
   const store = getStore();
   const { changesets, collapsedTree } = store.getState();
-  const hasExpandedFolder = changesets.some((cs) =>
-    visibleTreeNodes(cs.id, buildFileTree(cs.files), collapsedTree).some(
-      (v) => v.node.type === "dir" && !v.collapsed,
-    ),
+  const next = collapseAllTreeKeys(
+    changesets.map((cs) => ({ files: cs.files, scope: cs.id })),
+    collapsedTree,
+    isCommitTreeKey,
   );
-  const preserved = Object.fromEntries(
-    Object.entries(collapsedTree).filter(([key]) => isCommitTreeKey(key)),
-  );
-  const next: Record<string, boolean> = { ...preserved };
-  if (hasExpandedFolder) {
-    for (const cs of changesets) {
-      const collect = (nodes: TreeNode[]): void => {
-        for (const node of nodes) {
-          if (node.type === "dir") {
-            next[treeKey(cs.id, node.path)] = true;
-            collect(node.children ?? []);
-          }
-        }
-      };
-      collect(buildFileTree(cs.files));
-    }
-  }
   store.set({ collapsedTree: next });
   repairSelection(store);
 }

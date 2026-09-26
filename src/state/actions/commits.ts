@@ -1,11 +1,9 @@
 import { copyText } from "../../lib/clipboard";
 import {
-  buildFileTree,
+  collapseAllTreeKeys,
   commitTreeKey,
   commitTreeScope,
   isCommitTreeKey,
-  type TreeNode,
-  visibleTreeNodes,
 } from "../../lib/tree";
 import {
   getCommitFileDiff,
@@ -137,40 +135,16 @@ export function toggleAllCommitFolders(): void {
     collapsedTree,
     commitEntries,
   } = store.getState();
-  const visible = commitEntries
-    .filter((entry) => expanded[entry.hash])
-    .map((entry) => {
-      const tree = buildFileTree(entry.files);
-      return {
-        hash: entry.hash,
-        tree,
-        visible: visibleTreeNodes(
-          commitTreeScope(entry.hash),
-          tree,
-          collapsedTree,
-        ),
-      };
-    });
-  const hasExpandedFolder = visible.some(({ visible: rows }) =>
-    rows.some((v) => v.node.type === "dir" && !v.collapsed),
+  const next = collapseAllTreeKeys(
+    commitEntries
+      .filter((entry) => expanded[entry.hash])
+      .map((entry) => ({
+        files: entry.files,
+        scope: commitTreeScope(entry.hash),
+      })),
+    collapsedTree,
+    (key) => !isCommitTreeKey(key),
   );
-  const preserved = Object.fromEntries(
-    Object.entries(collapsedTree).filter(([key]) => !isCommitTreeKey(key)),
-  );
-  const next: Record<string, boolean> = { ...preserved };
-  if (hasExpandedFolder) {
-    const collect = (hash: string, nodes: TreeNode[]): void => {
-      for (const node of nodes) {
-        if (node.type === "dir") {
-          next[commitTreeKey(hash, node.path)] = true;
-          collect(hash, node.children ?? []);
-        }
-      }
-    };
-    for (const { hash, tree } of visible) {
-      collect(hash, tree);
-    }
-  }
   store.set({ collapsedTree: next });
   repairCommitCursorIfStale(store);
 }
