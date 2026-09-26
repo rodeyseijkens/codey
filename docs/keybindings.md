@@ -161,7 +161,13 @@ independently.
   status letter.
 
 The commit pane's top border hosts two clickable controls: a collapse-folders
-icon (tree view only) and the current view icon.
+icon (tree view only) and the current view icon. The pane's height is adjustable:
+
+- Drag the pane's top border up or down with the mouse; the height clamps
+  between 4 and 40 rows.
+- Press `shift+up` / `shift+k` to grow the pane and `shift+down` / `shift+j` to
+  shrink it, two rows at a time.
+- Set the initial height with `commitHeight` in `config.toml` (4–40, default 12).
 
 ### Committing
 
