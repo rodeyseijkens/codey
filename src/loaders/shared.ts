@@ -58,7 +58,18 @@ export type NumstatEntry = {
 
 export function resolveNumstatPath(path: string): string {
   const sep = path.indexOf(" => ");
-  return sep >= 0 ? path.slice(sep + 4) : path;
+  if (sep === -1) {
+    return path;
+  }
+  const open = path.indexOf("{");
+  const close = path.lastIndexOf("}");
+  if (open === -1 || close === -1 || open > sep || close < sep) {
+    return path.slice(sep + 4);
+  }
+  const prefix = path.slice(0, open);
+  const suffix = path.slice(close + 1);
+  const destination = path.slice(sep + 4, close);
+  return `${prefix}${destination}${suffix}`;
 }
 
 export function parseNumstat(text: string): NumstatEntry[] {

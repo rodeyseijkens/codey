@@ -367,11 +367,16 @@ describe("commit navigation with dir rows", () => {
 });
 
 describe("commit files from a real repo", () => {
-  test("renames are placed at their destination path", async () => {
+  test("renames are placed at their destination path with numstat counts", async () => {
     const dir = await initRepo();
-    await writeFile(join(dir, "old.txt"), "content\n");
+    const nested = join(dir, "src");
+    await mkdir(nested, { recursive: true });
+    const oldLines = ["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9"];
+    await writeFile(join(nested, "old.txt"), `${oldLines.join("\n")}\n`);
     await commitAll(dir, "first");
-    await gitThrow(["mv", "old.txt", "new.txt"], dir);
+    await gitThrow(["mv", "src/old.txt", "src/new.txt"], dir);
+    const newLines = [...oldLines.slice(0, -1), "x9", "l10"];
+    await writeFile(join(nested, "new.txt"), `${newLines.join("\n")}\n`);
     await commitAll(dir, "rename it");
 
     const store = repoStore(dir);
@@ -380,9 +385,11 @@ describe("commit files from a real repo", () => {
     const [top] = store.getState().commitEntries;
     expect(top?.message).toBe("rename it");
     const file = top?.files[0];
-    expect(file?.path).toBe("new.txt");
+    expect(file?.path).toBe("src/new.txt");
     expect(file?.path.includes("\t")).toBe(false);
     expect(file?.status).toBe("renamed");
+    expect(file?.additions).toBe(2);
+    expect(file?.deletions).toBe(1);
   });
 
   test("tree rows from a real repo nest files under dirs", async () => {
