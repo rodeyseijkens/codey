@@ -312,6 +312,26 @@ export function registerAppLayers(
   });
   disposers.push(offOverlayReset);
 
+  const offOverlayPull = keymap.registerLayer({
+    bindings: ["overlay-pull-rebase", "overlay-pull-force"].flatMap(
+      (cmd: string) => {
+        const keys = mergedKeys(cmd as CommandId, overrides);
+        return expandKeys(cmd, keys).map((b) => ({
+          cmd: b.cmd,
+          desc: b.desc,
+          group: b.group,
+          key: b.key,
+        }));
+      },
+    ),
+    enabled: layerEnabled(store, (s) => {
+      const o = s.overlay;
+      return o !== null && o.kind === "confirm-pull-diverged";
+    }),
+    priority: 30,
+  });
+  disposers.push(offOverlayPull);
+
   const offOverlayEdit = keymap.registerLayer({
     bindings: [
       "overlay-edit-squash",

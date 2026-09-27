@@ -19,6 +19,7 @@ import {
   submitCommitDraft,
 } from "../state/actions/commits";
 import { openRewordDraft } from "../state/actions/drafts";
+import { confirmPullForce, confirmPullRebase } from "../state/actions/remote";
 import { getStore, type OverlayKind, useAppState } from "../state/store";
 import { useColors } from "./color-context";
 import { EM_SPACE } from "./icons";
@@ -223,6 +224,43 @@ function ConfirmForcePushOverlay() {
       <text style={{ fg: C.dim }}>
         Press Esc to cancel, or Enter to confirm.
       </text>
+    </OverlayFrame>
+  );
+}
+
+function PullDivergedOverlay() {
+  const { ui: C } = useColors();
+  return (
+    <OverlayFrame
+      height={11}
+      title="Branches diverged"
+      titleEnd={<text style={{ fg: C.dim }}>esc</text>}
+      width={50}
+    >
+      <text style={{ fg: C.dim }}>
+        Local and remote branches diverged. Choose how to pull, or press esc to
+        cancel:
+      </text>
+      <box style={{ flexDirection: "column" }}>
+        <box
+          onMouseDown={async () => confirmPullRebase()}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>r</text>
+          <text style={{ fg: C.fg }}>Rebase</text>
+          <text style={{ fg: C.dim }}>{EM_SPACE} replay local on remote</text>
+        </box>
+        <box
+          onMouseDown={async () => confirmPullForce()}
+          style={{ flexDirection: "row", gap: 1 }}
+        >
+          <text style={{ fg: C.yellow, width: 3 }}>f</text>
+          <text style={{ fg: C.fg }}>Force</text>
+          <text style={{ fg: C.dim }}>
+            {EM_SPACE} discard local, take remote
+          </text>
+        </box>
+      </box>
     </OverlayFrame>
   );
 }
@@ -489,6 +527,9 @@ export function Overlays() {
   }
   if (overlay.kind === "confirm-force-push") {
     return <ConfirmForcePushOverlay />;
+  }
+  if (overlay.kind === "confirm-pull-diverged") {
+    return <PullDivergedOverlay />;
   }
   if (overlay.kind === "help") {
     return <HelpOverlay />;

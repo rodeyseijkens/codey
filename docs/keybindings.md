@@ -78,7 +78,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `2`      | focus-commits    | Focus the commit log (re-shows the sidebar)              |
 | `g`      | git-edit         | Edit selected commit (squash/fixup/drop/amend/reword/reset) |
 | `E`      | edit-file        | Open the file row under the cursor in `$EDITOR`           |
-| `p`      | git-pull         | Pull from the remote (commit pane only)                  |
+| `p`      | git-pull         | Pull from the remote (commit pane only); diverged branches open a rebase/force overlay |
 | `P`      | git-push         | Push to the remote (commit pane only)                    |
 | `alt+j`  | commit-move-down | Move selected commit down in history (interactive rebase)|
 | `alt+k`  | commit-move-up   | Move selected commit up in history (interactive rebase)  |
@@ -98,6 +98,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | `esc`            | cancel               | Dismiss current overlay                            |
 | `y` / `return`   | overlay-confirm      | Confirm action (force-push, discard, commit-all)   |
 | `m` / `s` / `h`  | overlay-reset-*      | Reset mode: mixed, soft, hard                      |
+| `r` / `f`        | overlay-pull-*       | Diverged pull: rebase, force pull                  |
 | `s` / `f` / `d` / `a` | overlay-edit-*  | Edit commit: squash, fixup, drop, amend            |
 | `r`              | overlay-to-reword    | Switch to reword mode                              |
 | `g`              | overlay-to-reset     | Switch to reset overlay                            |

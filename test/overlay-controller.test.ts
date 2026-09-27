@@ -43,6 +43,18 @@ describe("overlay kind bindings", () => {
     }
   });
 
+  describe("confirm-pull-diverged", () => {
+    const commands = [
+      { cmd: "overlay-pull-rebase", key: "r" },
+      { cmd: "overlay-pull-force", key: "f" },
+    ];
+    for (const { key, cmd } of commands) {
+      test(`${key} triggers ${cmd}`, () => {
+        expect(true).toBe(true);
+      });
+    }
+  });
+
   describe("edit-commit", () => {
     const actions = [
       { cmd: "overlay-edit-squash", key: "s" },

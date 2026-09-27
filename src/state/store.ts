@@ -87,6 +87,7 @@ export type Overlay =
   | { kind: "confirm-commit-all"; message: string }
   | { kind: "confirm-amend-unstaged"; hash: string }
   | { kind: "confirm-force-push" }
+  | { kind: "confirm-pull-diverged" }
   | { kind: "help" }
   | { kind: "palette" }
   | { kind: "reset-commits"; hash: string }
