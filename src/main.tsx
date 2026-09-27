@@ -97,13 +97,14 @@ async function startSession(opts: RunOptions): Promise<void> {
   await resolveThemeAsync(themeId, null);
 
   store.set({
+    commitFileView: config.commitFilesView,
     commitHeight: config.commitHeight,
     editor: config.editor?.trim() || null,
     gutterSign: config.gutterSign,
     ignoreFiles: config.ignoreFiles,
     layoutMode: parseDiffMode(opts.flags.mode) ?? config.mode,
     lineNumbers: config.lineNumbers,
-    sidebarView: parseSidebarView(opts.flags.view) ?? config.view,
+    sidebarView: parseSidebarView(opts.flags.view) ?? config.changesFileView,
     sidebarWidth: config.sidebarWidth,
     tabWidth: opts.flags.tabWidth
       ? Number.parseInt(opts.flags.tabWidth, 10)
@@ -231,7 +232,7 @@ function addCommonFlags(cmd: Command): Command {
     .option("--mode <mode>", "layout mode: split | stack | auto")
     .option("--theme <theme>", "color theme id or auto (see docs/themes.md)")
     .option("--tab-width <n>", "tab width for diff rendering")
-    .option("--view <view>", "sidebar view: tree | list");
+    .option("--view <view>", "changes pane view: tree | list");
 }
 
 addCommonFlags(

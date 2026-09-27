@@ -109,7 +109,7 @@ collapsible **tree** (folders grouped). The default is the tree view. Configure 
 initial view in `~/.config/codey/config.toml`:
 
 ```toml
-view = "list"   # or "tree" (default)
+changesFileView = "list"   # or "tree" (default)
 ```
 
 or pass `--view list` / `--view tree` on the command line. Toggle at runtime with `t`.
@@ -149,7 +149,8 @@ While the commit pane is focused:
 Each expanded commit shows its files either as a flat **list** or as a
 collapsible **tree** — the same grouping used by the sidebar, including
 single-directory chain folding (`src/ui` renders as one node). The default is
-the tree view, and each commit remembers its own collapsed folders
+the list view; set `commitFilesView = "tree"` in `config.toml` to start in the
+tree view. Each commit remembers its own collapsed folders
 independently.
 
 - Toggle with `t` (while the commit pane is focused) or the view icon on the

@@ -186,7 +186,7 @@ export function initialState(): AppState {
     commitDraft: null,
     commitDrag: null,
     commitEntries: [],
-    commitFileView: SIDEBAR_VIEWS.tree,
+    commitFileView: SIDEBAR_VIEWS.list,
     commitHasMore: true,
     commitHeight: 12,
     commitLoading: false,

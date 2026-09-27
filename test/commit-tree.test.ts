@@ -73,7 +73,7 @@ function commitFileEntry(hash: string, paths: string[]): CommitEntry {
 }
 
 function setupStore(init: Partial<AppState> = {}): AppStore {
-  const store = new AppStore(init);
+  const store = new AppStore({ commitFileView: "tree", ...init });
   setStore(store);
   return store;
 }
@@ -98,7 +98,7 @@ function sidebarChangeset(path: string): AppState["changesets"][number] {
 }
 
 function repoStore(dir: string, init: Partial<AppState> = {}): AppStore {
-  const store = new AppStore(init);
+  const store = new AppStore({ commitFileView: "tree", ...init });
   setStore(store);
   store.set({
     ignoreFiles: [],
