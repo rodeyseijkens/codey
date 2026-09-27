@@ -25,8 +25,7 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 
 DEMO_DIR="$WORK_DIR/demo"
 HOME_DIR="$WORK_DIR/home"
-mkdir -p "$HOME_DIR/.config/codey" "$WORK_DIR/bin" "$ASSETS_DIR"
-ln -s "$ASSETS_DIR" "$WORK_DIR/shots"
+mkdir -p "$HOME_DIR/.config/codey" "$WORK_DIR/bin" "$WORK_DIR/shots" "$ASSETS_DIR"
 
 cat > "$WORK_DIR/bin/codey" <<EOF
 #!/usr/bin/env bash
@@ -63,8 +62,9 @@ for tape in "$SCRIPT_DIR"/screenshots/*.tape; do
   )
 done
 
-if [ -f "$ASSETS_DIR/5-tour.gif" ]; then
-  "$SCRIPT_DIR/hero-gif.sh"
+TOUR_GIF="$WORK_DIR/shots/tour.gif"
+if [ -f "$TOUR_GIF" ]; then
+  "$SCRIPT_DIR/hero-gif.sh" "$TOUR_GIF"
 fi
 
 echo "screenshots written to $ASSETS_DIR"
