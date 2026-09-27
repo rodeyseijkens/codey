@@ -7,7 +7,9 @@ import {
   commitSelectNextFile,
   commitSelectPrev,
   commitToggleCursorRow,
+  confirmAmendUnstaged,
   confirmCommitAll,
+  confirmGitEdit,
   loadCommits,
   submitCommitDraft,
 } from "../src/state/actions/commits";
@@ -587,5 +589,66 @@ describe("commit draft", () => {
     await submitCommitDraft("feat: nothing");
     expect(store.getState().commitDraft).toBeNull();
     expect(store.getState().toast?.kind).toBe("info");
+  });
+});
+
+describe("amend edit", () => {
+  test("amend with staged changes runs without a popup", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "base.txt"), "v0\n");
+    await commitAll(dir, "base");
+    await writeFile(join(dir, "a.txt"), "v1\n");
+    await gitThrow(["add", "-A"], dir);
+    const store = setupStore(
+      {
+        changesets: [
+          {
+            files: [diffFile("a.txt")],
+            id: "staged",
+            label: "Staged",
+            stats: { additions: 1, deletions: 0, files: 1 },
+          },
+        ],
+        focus: "commits",
+      },
+      dir,
+    );
+    const head = (await gitThrow(["rev-parse", "HEAD"], dir)).trim();
+    await confirmGitEdit("amend", head);
+    expect(store.getState().overlay).toBeNull();
+    expect((await gitThrow(["status", "--porcelain"], dir)).trim()).toBe("");
+  });
+
+  test("amend with nothing staged asks to amend unstaged changes", async () => {
+    const dir = await initRepo();
+    await writeFile(join(dir, "base.txt"), "v0\n");
+    await commitAll(dir, "base");
+    await writeFile(join(dir, "a.txt"), "v1\n");
+    const store = setupStore(
+      {
+        changesets: [
+          {
+            files: [diffFile("a.txt")],
+            id: "changes",
+            label: "Changes",
+            stats: { additions: 1, deletions: 0, files: 1 },
+          },
+        ],
+        focus: "commits",
+      },
+      dir,
+    );
+    const head = (await gitThrow(["rev-parse", "HEAD"], dir)).trim();
+    await confirmGitEdit("amend", head);
+    expect(store.getState().overlay).toEqual({
+      hash: head,
+      kind: "confirm-amend-unstaged",
+    });
+    await confirmAmendUnstaged();
+    expect(store.getState().overlay).toBeNull();
+    expect((await gitThrow(["status", "--porcelain"], dir)).trim()).toBe("");
+    expect((await gitThrow(["log", "-1", "--format=%s"], dir)).trim()).toBe(
+      "base",
+    );
   });
 });

@@ -85,6 +85,7 @@ export type Overlay =
   | { kind: "confirm-discard"; scope: Scope; paths: string[]; bulk: boolean }
   | { kind: "confirm-discard-all" }
   | { kind: "confirm-commit-all"; message: string }
+  | { kind: "confirm-amend-unstaged"; hash: string }
   | { kind: "confirm-force-push" }
   | { kind: "help" }
   | { kind: "palette" }
