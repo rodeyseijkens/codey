@@ -13,6 +13,7 @@ import {
   commitSelectPrev,
   commitSelectPrevFile,
   commitToggleCursorRow,
+  confirmAmendUnstaged,
   confirmCommitAll,
   confirmGitEdit,
   confirmGitReset,
@@ -323,6 +324,9 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
           break;
         case "confirm-commit-all":
           void confirmCommitAll();
+          break;
+        case "confirm-amend-unstaged":
+          void confirmAmendUnstaged();
           break;
         default:
           break;

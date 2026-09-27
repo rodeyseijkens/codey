@@ -46,6 +46,7 @@ const CONFIRM_OVERLAY_KINDS = new Set([
   "confirm-discard",
   "confirm-discard-all",
   "confirm-commit-all",
+  "confirm-amend-unstaged",
 ]);
 
 function mergedKeys(

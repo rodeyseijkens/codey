@@ -241,6 +241,23 @@ function ConfirmCommitAllOverlay() {
   );
 }
 
+function ConfirmAmendUnstagedOverlay(props: {
+  overlay: OverlayKind<"confirm-amend-unstaged">;
+}) {
+  const { ui: C } = useColors();
+  const shortHash = props.overlay.hash.slice(0, SHORT_HASH_LEN);
+  return (
+    <OverlayFrame height={8} title="No staged changes" width={72}>
+      <text style={{ fg: C.accent }}>
+        Amend {shortHash} with all working-tree changes (stages everything)?
+      </text>
+      <text style={{ fg: C.dim }}>
+        Press Esc to cancel, or Enter to confirm.
+      </text>
+    </OverlayFrame>
+  );
+}
+
 function CommitInputOverlay() {
   const { ui: C } = useColors();
   const textareaRef = useRef<TextareaRenderable | null>(null);
@@ -466,6 +483,9 @@ export function Overlays() {
   }
   if (overlay.kind === "confirm-commit-all") {
     return <ConfirmCommitAllOverlay />;
+  }
+  if (overlay.kind === "confirm-amend-unstaged") {
+    return <ConfirmAmendUnstagedOverlay overlay={overlay} />;
   }
   if (overlay.kind === "confirm-force-push") {
     return <ConfirmForcePushOverlay />;

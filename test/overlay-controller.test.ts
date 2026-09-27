@@ -10,6 +10,7 @@ const confirmOverlays = [
   },
   { kind: "confirm-discard-all" as const },
   { kind: "confirm-commit-all" as const, message: "test" },
+  { hash: "abc1234", kind: "confirm-amend-unstaged" as const },
 ];
 
 // Overlay key resolution is now handled by layer bindings + command-registry.

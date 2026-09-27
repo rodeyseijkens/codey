@@ -398,6 +398,13 @@ export async function confirmGitEdit(
   hash: string,
 ): Promise<void> {
   const store = getStore();
+  if (action === "amend") {
+    const staged = store.changeset("staged");
+    if (!staged || staged.files.length === 0) {
+      store.set({ overlay: { hash, kind: "confirm-amend-unstaged" } });
+      return;
+    }
+  }
   const { repoRoot } = store.getState();
   store.set({ overlay: null });
   if (!repoRoot) {
@@ -412,6 +419,31 @@ export async function confirmGitEdit(
   } catch (err) {
     store.set({ commitLoading: false });
     toastError(store, "edit", err);
+  }
+}
+
+export async function confirmAmendUnstaged(): Promise<void> {
+  const store = getStore();
+  const { overlay } = store.getState();
+  if (overlay?.kind !== "confirm-amend-unstaged") {
+    return;
+  }
+  const { hash } = overlay;
+  store.set({ overlay: null });
+  const { repoRoot } = store.getState();
+  if (!repoRoot) {
+    return;
+  }
+  store.set({ commitLoading: true });
+  try {
+    await gitThrow(["add", "-A"], repoRoot);
+    await editCommit(repoRoot, "amend", hash);
+    store.showToast(TOAST_KINDS.success, `amend ${hash.slice(0, 7)}`);
+    store.set({ commitLoading: false });
+    await refresh();
+  } catch (err) {
+    store.set({ commitLoading: false });
+    toastError(store, "amend", err);
   }
 }
 
