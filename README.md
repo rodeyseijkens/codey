@@ -130,7 +130,7 @@ All keybindings are customizable in `~/.config/codey/config.toml` under `[keybin
 
 ### Configuration
 
-Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, sidebar view, ignored files, the file editor, and custom keybindings live in `~/.config/codey/config.toml`.
+Layouts (`split` / `stack` / `auto`), themes, line numbers, tab width, the changes pane view (`changesFileView`, default `tree`) and the commit file list view (`commitFilesView`, default `list`), ignored files, the file editor, and custom keybindings live in `~/.config/codey/config.toml`.
 
 Set `theme` to any bundled theme id, or leave it at `auto` for the default theme. See [Themes](docs/themes.md) for the list.
 

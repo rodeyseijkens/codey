@@ -7,6 +7,8 @@ export const CONFIG_DIR = `${process.env.HOME ?? "~"}/.config/codey`;
 export const CONFIG_PATH = `${CONFIG_DIR}/config.toml`;
 
 export const ConfigSchema = z.strictObject({
+  changesFileView: z.enum(["tree", "list"]).default("tree"),
+  commitFilesView: z.enum(["tree", "list"]).default("list"),
   commitHeight: z.number().int().min(4).max(40).default(12),
   editor: z.string().optional(),
   gutterSign: z.boolean().default(false),
@@ -17,7 +19,6 @@ export const ConfigSchema = z.strictObject({
   sidebarWidth: z.number().int().min(16).max(80).default(32),
   tabWidth: z.number().int().min(1).max(8).default(4),
   theme: z.string().default("auto"),
-  view: z.enum(["tree", "list"]).default("tree"),
   watch: z.boolean().default(false),
 });
 
