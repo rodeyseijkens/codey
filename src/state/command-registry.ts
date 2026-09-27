@@ -49,7 +49,13 @@ import {
   toggleSidebar,
   toggleSidebarView,
 } from "./actions/navigation";
-import { confirmForcePush, gitPull, gitPush } from "./actions/remote";
+import {
+  confirmForcePush,
+  confirmPullForce,
+  confirmPullRebase,
+  gitPull,
+  gitPush,
+} from "./actions/remote";
 import {
   cancelPendingStage,
   confirmDiscard,
@@ -404,6 +410,12 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
         store.set({ overlay: { hash: o.hash, kind: "reset-commits" } });
       }
     },
+  });
+  r.set("overlay-pull-rebase", {
+    run: () => void confirmPullRebase(),
+  });
+  r.set("overlay-pull-force", {
+    run: () => void confirmPullForce(),
   });
 
   return r;

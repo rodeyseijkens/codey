@@ -174,6 +174,16 @@ export const COMMAND_DEFS = {
     description: "Squash commit into parent",
     section: "overlay",
   },
+  "overlay-pull-force": {
+    defaultKey: "f",
+    description: "Force pull (discard local commits)",
+    section: "overlay",
+  },
+  "overlay-pull-rebase": {
+    defaultKey: "r",
+    description: "Pull with rebase (replay local commits)",
+    section: "overlay",
+  },
   "overlay-reset-hard": {
     defaultKey: "h",
     description: "Git reset --hard",
