@@ -4,11 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ASSETS_DIR="$REPO_ROOT/.github/assets/screenshots"
-SRC="$ASSETS_DIR/5-tour.gif"
+SRC="${1:-}"
 OUT="$ASSETS_DIR/hero.gif"
 
-if [ ! -f "$SRC" ]; then
-  echo "error: $SRC not found; run pnpm screenshots first" >&2
+if [ -z "$SRC" ] || [ ! -f "$SRC" ]; then
+  echo "error: tour gif not found; run pnpm screenshots first" >&2
   exit 1
 fi
 
