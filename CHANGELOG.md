@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.5.0](https://github.com/rodeyseijkens/codey/compare/v0.4.0...v0.5.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `view` config key is no longer accepted.
+
+### Features
+
+* add changesFileView and commitFilesView settings ([0fb6bcf](https://github.com/rodeyseijkens/codey/commit/0fb6bcf1d55427c50084fc1ecc1e6aeaa9720cf0))
+* add collapsible file tree to the commit pane ([6e2db87](https://github.com/rodeyseijkens/codey/commit/6e2db874d6d2285e55fc165bf8ac9b38e34d93f2))
+* add commit pane height resize keys with config ([5bfaca9](https://github.com/rodeyseijkens/codey/commit/5bfaca9f97966df494b62c953644731f26a3d0ad))
+* confirm before amending with no staged changes ([18087fb](https://github.com/rodeyseijkens/codey/commit/18087fb7ec28227acfb41f4d3a45fc8be70adc7e))
+* derive bottom bar key hints from the active keybindings ([bffdea5](https://github.com/rodeyseijkens/codey/commit/bffdea5a64f97aed0ab62f63c60b03f8e7a175d0))
+* drag the commit pane border to resize its height ([2ac48cb](https://github.com/rodeyseijkens/codey/commit/2ac48cb90407893d0be334968bb28ca16a596de8))
+* draw a full-height left rail on the diff pane ([b101da4](https://github.com/rodeyseijkens/codey/commit/b101da4ea17d2d6e4f5b454dc2b2fd90210fbb66))
+* make unstage-all cursor-aware ([a9a9e60](https://github.com/rodeyseijkens/codey/commit/a9a9e60ade88373f2f46be2a9cd874030945fe10))
+* make view and folder toggles focus-aware ([fdba294](https://github.com/rodeyseijkens/codey/commit/fdba294ee3c0bc09a330939f15f486a768aa1906))
+* offer rebase or force pull when branches have diverged ([9d39868](https://github.com/rodeyseijkens/codey/commit/9d398687ff2357d5263d9c1364ed71536eceee9c))
+* resize the sidebar with shift+arrow and shift+h/l keys ([b693cd6](https://github.com/rodeyseijkens/codey/commit/b693cd67eec01e45cddf18b7f61d2300c2709558))
+
+
+### Bug Fixes
+
+* keep git-edit to commit header and file rows ([c391277](https://github.com/rodeyseijkens/codey/commit/c391277874a1b581a6c8426e3648766202363b1b))
+* place commit renames at their destination path ([6d8088a](https://github.com/rodeyseijkens/codey/commit/6d8088ae19f8cd21861dd58a943a7f7ada832dc4))
+* resolve brace-form rename numstat paths ([7437923](https://github.com/rodeyseijkens/codey/commit/7437923b70b8c40d7e6756ef4a25be668c926293))
+
 ## [0.4.0](https://github.com/rodeyseijkens/codey/compare/v0.3.0...v0.4.0) (2026-09-22)
 
 
