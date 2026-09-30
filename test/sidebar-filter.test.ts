@@ -7,7 +7,7 @@ import {
 import { fuzzyMatches } from "../src/state/sidebar-filter";
 import { type AppState, AppStore, setStore } from "../src/state/store";
 import type { Changeset } from "../src/types";
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 
 function file(path: string): Changeset["files"][number] {
   return {
@@ -35,6 +35,10 @@ function storeWith(init: Partial<AppState>): AppStore {
   setStore(store);
   return store;
 }
+
+afterEach(() => {
+  setStore(new AppStore());
+});
 
 describe("fuzzyMatches", () => {
   test("empty query matches everything", () => {
