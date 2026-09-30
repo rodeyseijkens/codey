@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/rodeyseijkens/codey/compare/v0.5.0...v0.6.0) (2026-09-30)
+
+
+### Features
+
+* add fuzzy match helpers for sidebar file filtering ([4855682](https://github.com/rodeyseijkens/codey/commit/4855682f5fb120569b4754b8cc23f40deaab635e))
+* add open-changes-search command for the changes pane ([89716d2](https://github.com/rodeyseijkens/codey/commit/89716d239ba4d198951bf02fa986832634a66a8d))
+* filter sidebar rows by query ([e521a96](https://github.com/rodeyseijkens/codey/commit/e521a96b14d70d0f4d12d027c0f0e6873bdaee9c))
+* render changes pane file filter input ([6a55092](https://github.com/rodeyseijkens/codey/commit/6a55092762037429946e2d8bf7d498fd018c8b5d))
+
+
+### Bug Fixes
+
+* expand collapsed sections while the file filter is active ([d008efe](https://github.com/rodeyseijkens/codey/commit/d008efebbf123a213fdba688b9eb5af49c67e0ad))
+
 ## [0.5.0](https://github.com/rodeyseijkens/codey/compare/v0.4.0...v0.5.0) (2026-09-29)
 
 
