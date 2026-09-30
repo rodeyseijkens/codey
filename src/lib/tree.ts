@@ -63,10 +63,19 @@ function compactChains(nodes: TreeNode[]): TreeNode[] {
   });
 }
 
-export function buildFileTree(files: readonly (TreeFile | null)[]): TreeNode[] {
+export type FileTreeFilter<T extends TreeFile> = {
+  /** Files to skip while building; `fileIndex` keeps the original index. */
+  keep?: (file: T, index: number) => boolean;
+};
+
+export function buildFileTree<T extends TreeFile>(
+  files: readonly T[],
+  filter?: FileTreeFilter<T>,
+): TreeNode[] {
+  const keep = filter?.keep;
   const root: TreeNode[] = [];
   for (const [i, file] of files.entries()) {
-    if (!file) {
+    if (keep && !keep(file, i)) {
       continue;
     }
     const segments = file.path.split("/");
@@ -170,12 +179,13 @@ export function isFileHidden(
   return false;
 }
 
-export function visibleFileNodes(
+export function visibleFileNodes<T extends TreeFile>(
   scope: string,
-  files: readonly (TreeFile | null)[],
+  files: readonly T[],
   collapsedTree: Record<string, boolean>,
+  filter?: FileTreeFilter<T>,
 ): VisibleNode[] {
-  return visibleTreeNodes(scope, buildFileTree(files), collapsedTree);
+  return visibleTreeNodes(scope, buildFileTree(files, filter), collapsedTree);
 }
 
 export function collapseAllTreeKeys(

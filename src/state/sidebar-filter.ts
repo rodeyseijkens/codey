@@ -26,15 +26,12 @@ export function fileMatchesFilter(file: FileDiff, query: string): boolean {
 }
 
 /**
- * Files kept by the filter, padded with nulls so array indices (used as
- * `fileIndex` by buildFileTree) still point at the original changeset files.
+ * Collapse state to use for a given filter query: while a query is active,
+ * sections and folders render expanded so every match stays reachable.
  */
-export function filterTreeFiles(
-  files: readonly FileDiff[],
+export function collapseDuringFilter(
+  collapsed: Record<string, boolean>,
   query: string,
-): readonly (FileDiff | null)[] {
-  if (!query) {
-    return files;
-  }
-  return files.map((file) => (fileMatchesFilter(file, query) ? file : null));
+): Record<string, boolean> {
+  return query ? {} : collapsed;
 }
