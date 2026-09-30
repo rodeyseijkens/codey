@@ -29,7 +29,7 @@ import {
   setDiffSearchQuery,
   setSidebarFilterQuery,
 } from "../state/search-actions";
-import type { Store } from "../state/store";
+import type { AppState, QueryCapture, Store } from "../state/store";
 import {
   COMMAND_DEFS,
   COMMAND_SECTIONS,
@@ -115,6 +115,70 @@ function layerEnabled(
   );
 }
 
+/** True when no inline text capture (draft, search, or filter input) is open. */
+function noCaptureActive(s: AppState): boolean {
+  return (
+    s.commitDraft === null &&
+    s.rewordDraft === null &&
+    s.commentDraft === null &&
+    s.diffSearch?.open !== true &&
+    s.sidebarFilter?.open !== true
+  );
+}
+
+type QueryCaptureHandlers = {
+  accept: () => void;
+  close: () => void;
+  get: () => QueryCapture | null;
+  setQuery: (query: string) => void;
+};
+
+/**
+ * Registers a key intercept that turns typing into query edits while a
+ * capture input is open: enter accepts, escape closes, other characters
+ * append (mirroring the diff search input).
+ */
+function registerQueryInputIntercept(
+  keymap: Keymap<Renderable, KeyEvent>,
+  store: Store,
+  focused: (state: AppState) => boolean,
+  capture: QueryCaptureHandlers,
+): () => void {
+  return keymap.intercept("key", (ctx: KeyInputContext<KeyEvent>) => {
+    const state = store.getState();
+    const active = capture.get();
+    if (active?.open !== true || !focused(state)) {
+      return;
+    }
+    const { name } = ctx.event;
+    switch (name) {
+      case "escape":
+        capture.close();
+        ctx.consume();
+        break;
+      case "enter":
+      case "return":
+        capture.accept();
+        ctx.consume();
+        break;
+      case "backspace":
+        capture.setQuery(active.query.slice(0, -1));
+        ctx.consume();
+        break;
+      case "space":
+        capture.setQuery(`${active.query} `);
+        ctx.consume();
+        break;
+      default:
+        if (!(ctx.event.ctrl || ctx.event.meta) && name.length === 1) {
+          capture.setQuery(active.query + name);
+          ctx.consume();
+        }
+        break;
+    }
+  });
+}
+
 export function registerAppLayers(
   keymap: Keymap<Renderable, KeyEvent>,
   store: Store,
@@ -148,15 +212,7 @@ export function registerAppLayers(
         return true;
       },
     })),
-    enabled: layerEnabled(
-      store,
-      (s) =>
-        s.commitDraft === null &&
-        s.rewordDraft === null &&
-        s.commentDraft === null &&
-        !(s.diffSearch?.open ?? false) &&
-        !(s.sidebarFilter?.open ?? false),
-    ),
+    enabled: layerEnabled(store, noCaptureActive),
     priority: 0,
   });
   disposers.push(offNormal);
@@ -168,14 +224,7 @@ export function registerAppLayers(
     ).map((b) => ({ cmd: b.cmd, desc: b.desc, group: b.group, key: b.key })),
     enabled: layerEnabled(
       store,
-      (s) =>
-        s.focus === "sidebar" &&
-        s.overlay === null &&
-        s.commitDraft === null &&
-        s.rewordDraft === null &&
-        s.commentDraft === null &&
-        !(s.diffSearch?.open ?? false) &&
-        !(s.sidebarFilter?.open ?? false),
+      (s) => s.focus === "sidebar" && s.overlay === null && noCaptureActive(s),
     ),
     priority: 10,
   });
@@ -448,76 +497,28 @@ export function registerAppLayers(
   });
   disposers.push(offDiffSearch);
 
-  const offDiffSearchIntercept = keymap.intercept(
-    "key",
-    (ctx: KeyInputContext<KeyEvent>) => {
-      const s = store.getState();
-      if (!s.diffSearch?.open || s.focus !== "diff") {
-        return;
-      }
-      const { name } = ctx.event;
-      switch (name) {
-        case "escape":
-          closeDiffSearch();
-          ctx.consume();
-          break;
-        case "enter":
-        case "return":
-          void acceptDiffSearch();
-          ctx.consume();
-          break;
-        case "backspace":
-          setDiffSearchQuery(s.diffSearch.query.slice(0, -1));
-          ctx.consume();
-          break;
-        case "space":
-          setDiffSearchQuery(`${s.diffSearch.query} `);
-          ctx.consume();
-          break;
-        default:
-          if (!(ctx.event.ctrl || ctx.event.meta) && name.length === 1) {
-            setDiffSearchQuery(s.diffSearch.query + name);
-            ctx.consume();
-          }
-          break;
-      }
+  const offDiffSearchIntercept = registerQueryInputIntercept(
+    keymap,
+    store,
+    (s) => s.focus === "diff",
+    {
+      accept: acceptDiffSearch,
+      close: closeDiffSearch,
+      get: () => store.getState().diffSearch,
+      setQuery: setDiffSearchQuery,
     },
   );
   disposers.push(offDiffSearchIntercept);
 
-  const offSidebarFilterIntercept = keymap.intercept(
-    "key",
-    (ctx: KeyInputContext<KeyEvent>) => {
-      const s = store.getState();
-      if (!s.sidebarFilter?.open || s.focus !== "sidebar") {
-        return;
-      }
-      const { name } = ctx.event;
-      switch (name) {
-        case "escape":
-          closeSidebarFilter();
-          ctx.consume();
-          break;
-        case "enter":
-        case "return":
-          acceptSidebarFilter();
-          ctx.consume();
-          break;
-        case "backspace":
-          setSidebarFilterQuery(s.sidebarFilter.query.slice(0, -1));
-          ctx.consume();
-          break;
-        case "space":
-          setSidebarFilterQuery(`${s.sidebarFilter.query} `);
-          ctx.consume();
-          break;
-        default:
-          if (!(ctx.event.ctrl || ctx.event.meta) && name.length === 1) {
-            setSidebarFilterQuery(s.sidebarFilter.query + name);
-            ctx.consume();
-          }
-          break;
-      }
+  const offSidebarFilterIntercept = registerQueryInputIntercept(
+    keymap,
+    store,
+    (s) => s.focus === "sidebar",
+    {
+      accept: acceptSidebarFilter,
+      close: closeSidebarFilter,
+      get: () => store.getState().sidebarFilter,
+      setQuery: setSidebarFilterQuery,
     },
   );
   disposers.push(offSidebarFilterIntercept);
