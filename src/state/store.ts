@@ -16,6 +16,7 @@ import {
   type SidebarView,
   type ToastKind,
 } from "../types";
+import { fileMatchesFilter, filterTreeFiles } from "./sidebar-filter";
 
 export type FocusPane = "sidebar" | "diff" | "commits";
 
@@ -101,6 +102,11 @@ export type DiffSearch = {
   query: string;
 };
 
+export type SidebarFilter = {
+  open: boolean;
+  query: string;
+};
+
 /** An in-progress inline comment being typed into the diff body. */
 export type CommentDraft = {
   commentId?: string;
@@ -162,6 +168,7 @@ export type AppState = {
   repoRoot: string | null;
   selection: Selection | null;
   rewordDraft: string | null;
+  sidebarFilter: SidebarFilter | null;
   sidebarView: SidebarView;
   sidebarVisible: boolean;
   sidebarWidth: number;
@@ -220,6 +227,7 @@ export function initialState(): AppState {
     repoRoot: null,
     rewordDraft: null,
     selection: null,
+    sidebarFilter: null,
     sidebarView: SIDEBAR_VIEWS.tree,
     sidebarVisible: true,
     sidebarWidth: 32,
@@ -278,28 +286,36 @@ export class AppStore implements Store {
     return this.state.changesets.find((c) => c.id === scope);
   }
 
+  private pushTreeRows(out: SidebarRow[], cs: Changeset, query: string): void {
+    const visible = visibleFileNodes(
+      cs.id,
+      filterTreeFiles(cs.files, query),
+      query ? {} : this.state.collapsedTree,
+    );
+    for (const v of visible) {
+      if (v.node.type === "dir") {
+        out.push({ kind: "dir", path: v.node.path, scope: cs.id });
+      } else if (v.node.fileIndex !== undefined) {
+        out.push({ index: v.node.fileIndex, kind: "file", scope: cs.id });
+      }
+    }
+  }
+
   sidebarRows(): SidebarRow[] {
     const out: SidebarRow[] = [];
+    const query = this.state.sidebarFilter?.query ?? "";
     for (const cs of this.state.changesets) {
       out.push({ kind: "section", scope: cs.id });
       if (this.state.collapsed[cs.id]) {
         continue;
       }
       if (this.state.sidebarView === SIDEBAR_VIEWS.tree) {
-        const visible = visibleFileNodes(
-          cs.id,
-          cs.files,
-          this.state.collapsedTree,
-        );
-        for (const v of visible) {
-          if (v.node.type === "dir") {
-            out.push({ kind: "dir", path: v.node.path, scope: cs.id });
-          } else if (v.node.fileIndex !== undefined) {
-            out.push({ index: v.node.fileIndex, kind: "file", scope: cs.id });
-          }
-        }
+        this.pushTreeRows(out, cs, query);
       } else {
-        cs.files.forEach((_, index) => {
+        cs.files.forEach((file, index) => {
+          if (!fileMatchesFilter(file, query)) {
+            return;
+          }
           out.push({ index, kind: "file", scope: cs.id });
         });
       }

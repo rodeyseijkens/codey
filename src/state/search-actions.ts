@@ -1,4 +1,5 @@
 import { currentDiffRows } from "../ui/diff-pane-runtime";
+import { applySelection } from "./actions/core";
 import {
   acceptSearch,
   computeMatches,
@@ -65,4 +66,42 @@ function applyStep(dir: 1 | -1): void {
     return;
   }
   store.set({ cursorRow: result.targetRow, diffSearch: result.search });
+}
+
+export function openSidebarFilter(): void {
+  const store = getStore();
+  const current = store.getState().sidebarFilter;
+  store.set({
+    focus: "sidebar",
+    sidebarFilter: { open: true, query: current?.query ?? "" },
+    sidebarVisible: true,
+  });
+}
+
+export function closeSidebarFilter(): void {
+  getStore().set({ sidebarFilter: null });
+}
+
+export function setSidebarFilterQuery(query: string): void {
+  const store = getStore();
+  const current = store.getState().sidebarFilter;
+  if (!current?.open) {
+    return;
+  }
+  store.set({ sidebarFilter: { open: true, query } });
+}
+
+/** Accept the filter: jump to the first visible file and close the input. */
+export function acceptSidebarFilter(): void {
+  const store = getStore();
+  const current = store.getState().sidebarFilter;
+  if (!current?.open) {
+    return;
+  }
+  const firstFile = store.sidebarRows().find((row) => row.kind === "file");
+  if (!firstFile) {
+    return;
+  }
+  applySelection(store, firstFile);
+  store.set({ sidebarFilter: { open: false, query: current.query } });
 }
