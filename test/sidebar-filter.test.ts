@@ -100,6 +100,18 @@ describe("sidebarRows with filter", () => {
     );
   });
 
+  test("filter expands collapsed sections", () => {
+    const store = storeWith({
+      changesets: [changeset("changes", ["docs/readme.md"])],
+      collapsed: { changes: true },
+      sidebarFilter: { open: true, query: "readme" },
+    });
+    const rows = store.sidebarRows();
+    expect(rows.some((row) => row.kind === "file" && row.index === 0)).toBe(
+      true,
+    );
+  });
+
   test("empty query shows all files", () => {
     const store = storeWith({
       changesets: [changeset("changes", ["a.ts", "b.ts"])],

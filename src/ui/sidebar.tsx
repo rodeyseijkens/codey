@@ -436,7 +436,8 @@ function Section(props: { cs: Changeset; width: number }) {
   const { cs, width } = props;
   const state = useAppState();
   const { ui: C } = useColors();
-  const collapsed = Boolean(state.collapsed[cs.id]);
+  const filterQuery = state.sidebarFilter?.query ?? "";
+  const collapsed = !filterQuery && Boolean(state.collapsed[cs.id]);
   const sel = state.selection;
   const selected = sel?.kind === "section" && sel.scope === cs.id;
   const chevron = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;

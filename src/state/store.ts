@@ -306,9 +306,10 @@ export class AppStore implements Store {
   sidebarRows(): SidebarRow[] {
     const out: SidebarRow[] = [];
     const query = this.state.sidebarFilter?.query ?? "";
+    const collapsed = collapseDuringFilter(this.state.collapsed, query);
     for (const cs of this.state.changesets) {
       out.push({ kind: "section", scope: cs.id });
-      if (this.state.collapsed[cs.id]) {
+      if (collapsed[cs.id]) {
         continue;
       }
       if (this.state.sidebarView === SIDEBAR_VIEWS.tree) {
