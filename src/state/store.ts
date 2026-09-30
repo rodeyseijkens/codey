@@ -95,17 +95,18 @@ export type Overlay =
   | { kind: "edit-commit"; hash: string }
   | { kind: "reword-commit"; hash: string };
 
-export type DiffSearch = {
-  index: number;
-  matches: number[];
+/** A text-capture input state, shared by diff search and the sidebar filter. */
+export type QueryCapture = {
   open: boolean;
   query: string;
 };
 
-export type SidebarFilter = {
-  open: boolean;
-  query: string;
+export type DiffSearch = QueryCapture & {
+  index: number;
+  matches: number[];
 };
+
+export type SidebarFilter = QueryCapture;
 
 /** An in-progress inline comment being typed into the diff body. */
 export type CommentDraft = {
