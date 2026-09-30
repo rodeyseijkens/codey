@@ -74,7 +74,6 @@ export function openSidebarFilter(): void {
   store.set({
     focus: "sidebar",
     sidebarFilter: { open: true, query: current?.query ?? "" },
-    sidebarVisible: true,
   });
 }
 
