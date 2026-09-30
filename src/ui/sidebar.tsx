@@ -27,7 +27,10 @@ import {
   toggleSidebarView,
   toggleTreeFolder,
 } from "../state/actions/navigation";
-import { fileMatchesFilter, filterTreeFiles } from "../state/sidebar-filter";
+import {
+  collapseDuringFilter,
+  fileMatchesFilter,
+} from "../state/sidebar-filter";
 import {
   type CommitRow,
   commitRowKey,
@@ -269,6 +272,15 @@ function DirRow(props: {
   );
 }
 
+function NoMatch() {
+  const { ui: C } = useColors();
+  return (
+    <box style={{ height: 1, paddingLeft: 3 }}>
+      <text style={{ fg: C.faint }}>no match</text>
+    </box>
+  );
+}
+
 function ListBody(props: {
   cs: Changeset;
   filterQuery: string;
@@ -289,11 +301,7 @@ function ListBody(props: {
     .map((file, index) => ({ file, index }))
     .filter(({ file }) => fileMatchesFilter(file, filterQuery));
   if (shown.length === 0) {
-    return (
-      <box style={{ height: 1, paddingLeft: 3 }}>
-        <text style={{ fg: C.faint }}>no match</text>
-      </box>
-    );
+    return <NoMatch />;
   }
   return (
     <>
@@ -336,15 +344,12 @@ function TreeBody(props: {
   }
   const visible = visibleFileNodes(
     cs.id,
-    filterTreeFiles(cs.files, filterQuery),
-    filterQuery ? {} : collapsedTree,
+    cs.files,
+    collapseDuringFilter(collapsedTree, filterQuery),
+    { keep: (file) => fileMatchesFilter(file, filterQuery) },
   );
   if (filterQuery && visible.length === 0) {
-    return (
-      <box style={{ height: 1, paddingLeft: 3 }}>
-        <text style={{ fg: C.faint }}>no match</text>
-      </box>
-    );
+    return <NoMatch />;
   }
   return (
     <>

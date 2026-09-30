@@ -16,7 +16,7 @@ import {
   type SidebarView,
   type ToastKind,
 } from "../types";
-import { fileMatchesFilter, filterTreeFiles } from "./sidebar-filter";
+import { collapseDuringFilter, fileMatchesFilter } from "./sidebar-filter";
 
 export type FocusPane = "sidebar" | "diff" | "commits";
 
@@ -290,8 +290,9 @@ export class AppStore implements Store {
   private pushTreeRows(out: SidebarRow[], cs: Changeset, query: string): void {
     const visible = visibleFileNodes(
       cs.id,
-      filterTreeFiles(cs.files, query),
-      query ? {} : this.state.collapsedTree,
+      cs.files,
+      collapseDuringFilter(this.state.collapsedTree, query),
+      { keep: (file) => fileMatchesFilter(file, query) },
     );
     for (const v of visible) {
       if (v.node.type === "dir") {
