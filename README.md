@@ -10,7 +10,7 @@ A review-first Git TUI for agentic coding workflows. Two-section staged/unstaged
 
 ## Screenshots
 
-![codey feature tour: diff search, line comments, staging, line wrap, layouts, commit file tree, commit creation, rebase and push overlays, help, and theme switching](.github/assets/screenshots/hero.gif)
+![codey feature tour: diff search, changes file filter, line comments, staging, line wrap, layouts, commit file tree, commit creation, rebase and push overlays, help, and theme switching](.github/assets/screenshots/hero.gif)
 
 codey ships 57+ bundled themes. See [Themes](docs/themes.md) for the full list.
 
