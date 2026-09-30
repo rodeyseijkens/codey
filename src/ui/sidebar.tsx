@@ -27,11 +27,13 @@ import {
   toggleSidebarView,
   toggleTreeFolder,
 } from "../state/actions/navigation";
+import { fileMatchesFilter, filterTreeFiles } from "../state/sidebar-filter";
 import {
   type CommitRow,
   commitRowKey,
   getStore,
   rowKey,
+  type SidebarFilter,
   useAppState,
 } from "../state/store";
 import {
@@ -269,11 +271,12 @@ function DirRow(props: {
 
 function ListBody(props: {
   cs: Changeset;
+  filterQuery: string;
   focused: boolean;
   sel: ReturnType<typeof useAppState>["selection"];
   width: number;
 }) {
-  const { cs, focused, sel, width } = props;
+  const { cs, filterQuery, focused, sel, width } = props;
   const { ui: C } = useColors();
   if (cs.files.length === 0) {
     return (
@@ -282,9 +285,19 @@ function ListBody(props: {
       </box>
     );
   }
+  const shown = cs.files
+    .map((file, index) => ({ file, index }))
+    .filter(({ file }) => fileMatchesFilter(file, filterQuery));
+  if (shown.length === 0) {
+    return (
+      <box style={{ height: 1, paddingLeft: 3 }}>
+        <text style={{ fg: C.faint }}>no match</text>
+      </box>
+    );
+  }
   return (
     <>
-      {cs.files.map((file, index) => (
+      {shown.map(({ file, index }) => (
         <FileRow
           commentCount={getStore().commentsFor(cs.id, file.path).length}
           depth={0}
@@ -305,13 +318,14 @@ function ListBody(props: {
 }
 
 function TreeBody(props: {
-  cs: Changeset;
   collapsedTree: Record<string, boolean>;
+  cs: Changeset;
+  filterQuery: string;
   focused: boolean;
   sel: ReturnType<typeof useAppState>["selection"];
   width: number;
 }) {
-  const { cs, collapsedTree, focused, sel, width } = props;
+  const { collapsedTree, cs, filterQuery, focused, sel, width } = props;
   const { ui: C } = useColors();
   if (cs.files.length === 0) {
     return (
@@ -320,7 +334,18 @@ function TreeBody(props: {
       </box>
     );
   }
-  const visible = visibleFileNodes(cs.id, cs.files, collapsedTree);
+  const visible = visibleFileNodes(
+    cs.id,
+    filterTreeFiles(cs.files, filterQuery),
+    filterQuery ? {} : collapsedTree,
+  );
+  if (filterQuery && visible.length === 0) {
+    return (
+      <box style={{ height: 1, paddingLeft: 3 }}>
+        <text style={{ fg: C.faint }}>no match</text>
+      </box>
+    );
+  }
   return (
     <>
       {visible.map((v) => {
@@ -378,11 +403,13 @@ function sectionBody(
   if (collapsed) {
     return null;
   }
+  const filterQuery = state.sidebarFilter?.query ?? "";
   if (state.sidebarView === SIDEBAR_VIEWS.tree) {
     return (
       <TreeBody
         collapsedTree={state.collapsedTree}
         cs={cs}
+        filterQuery={filterQuery}
         focused={state.focus === "sidebar"}
         sel={sel}
         width={width}
@@ -392,6 +419,7 @@ function sectionBody(
   return (
     <ListBody
       cs={cs}
+      filterQuery={filterQuery}
       focused={state.focus === "sidebar"}
       sel={sel}
       width={width}
@@ -971,9 +999,6 @@ function SidebarControls(props: { treeView: boolean }) {
       style={{
         backgroundColor: C.bg,
         flexDirection: "row",
-        position: "absolute",
-        right: 0,
-        top: -1,
       }}
     >
       {props.treeView ? (
@@ -999,6 +1024,51 @@ function SidebarControls(props: { treeView: boolean }) {
       <text selectable={false} style={{ fg: C.dim }}>
         {EM_SPACE}
       </text>
+    </box>
+  );
+}
+
+function SidebarFilterInput(props: { filter: SidebarFilter }) {
+  const state = useAppState();
+  const { ui: C } = useColors();
+  const { filter } = props;
+  let total = 0;
+  let matched = 0;
+  for (const cs of state.changesets) {
+    total += cs.files.length;
+    for (const file of cs.files) {
+      if (fileMatchesFilter(file, filter.query)) {
+        matched += 1;
+      }
+    }
+  }
+  return (
+    <box
+      style={{
+        backgroundColor: C.selection,
+        flexGrow: 1,
+        marginRight: 1,
+        overflow: "hidden",
+        paddingLeft: 1,
+        paddingRight: 1,
+      }}
+    >
+      <box style={{ flexDirection: "row", overflow: "hidden" }}>
+        <text
+          selectable={false}
+          style={{ fg: C.fg, flexGrow: 1, overflow: "hidden" }}
+        >
+          {`\uf422 ${filter.query}${filter.open ? "\u258c" : ""}`}
+        </text>
+        {filter.query.length > 0 ? (
+          <text
+            selectable={false}
+            style={{ fg: matched > 0 ? C.accent : C.red, marginLeft: 1 }}
+          >
+            {`${matched}/${total}`}
+          </text>
+        ) : null}
+      </box>
     </box>
   );
 }
@@ -1043,7 +1113,22 @@ export function Sidebar() {
         ))}
       </scrollbox>
       <CommitLog width={state.sidebarWidth} />
-      <SidebarControls treeView={state.sidebarView === SIDEBAR_VIEWS.tree} />
+      <box
+        style={{
+          flexDirection: "row",
+          left: 0,
+          position: "absolute",
+          right: 0,
+          top: -1,
+        }}
+      >
+        {state.sidebarFilter ? (
+          <SidebarFilterInput filter={state.sidebarFilter} />
+        ) : (
+          <box style={{ flexGrow: 1 }} />
+        )}
+        <SidebarControls treeView={state.sidebarView === SIDEBAR_VIEWS.tree} />
+      </box>
     </box>
   );
 }

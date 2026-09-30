@@ -73,6 +73,7 @@ function bottomBarContent(
     return {
       color: C.dim,
       content: joinHints([
+        hint(keymap, ["open-changes-search"], "filter"),
         hint(keymap, ["collapse-section"], "collapse"),
         hint(keymap, ["stage-file"], "stage"),
         hint(keymap, ["stage-all"], "stage all"),
