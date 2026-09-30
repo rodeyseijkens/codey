@@ -1,6 +1,6 @@
-# codey README hero demo: full feature tour in one take (search, comments,
-# staging, layouts, wrap, sidebar views and sizing, commits with pane resizing,
-# overlays, help) followed by theme switches via relaunch with --theme
+# codey README hero demo: full feature tour in one take (search, file filter,
+# comments, staging, layouts, wrap, sidebar views and sizing, commits with pane
+# resizing, overlays, help) followed by theme switches via relaunch with --theme
 # shot: tour.gif
 # theme: gruvbox-dark-hard
 # demo: long-lines diverge
@@ -68,6 +68,19 @@ Type "n"
 Sleep 1s
 Type "N"
 Sleep 1s
+Escape
+Sleep 800ms
+
+# filter the changes pane (fzf-style): typing hides non-matching files and
+# enter jumps the highlight to the first match, escape restores the list
+Type "1"
+Sleep 800ms
+Type "/"
+Sleep 800ms
+Type "roll"
+Sleep 1.5s
+Enter
+Sleep 2s
 Escape
 Sleep 800ms
 
