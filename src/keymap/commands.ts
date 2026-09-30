@@ -142,6 +142,11 @@ export const COMMAND_DEFS = {
   },
 
   // Search commands
+  "open-changes-search": {
+    defaultKey: "/",
+    description: "Filter files in the changes pane (fzf-style)",
+    section: "changes",
+  },
   "open-diff-search": {
     defaultKey: "/",
     description: "Open diff search",

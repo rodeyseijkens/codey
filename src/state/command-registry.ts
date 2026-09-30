@@ -74,9 +74,11 @@ import {
 } from "./comment-actions";
 import { quit } from "./lifecycle";
 import {
+  closeSidebarFilter,
   diffSearchNext,
   diffSearchPrev,
   openDiffSearch,
+  openSidebarFilter,
 } from "./search-actions";
 import { type AppState, getStore, type Store } from "./store";
 
@@ -105,6 +107,10 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
       }
       if (state.overlay) {
         closeOverlay();
+        return;
+      }
+      if (state.sidebarFilter) {
+        closeSidebarFilter();
         return;
       }
       if (state.anchorRow !== null) {
@@ -273,10 +279,14 @@ function buildRegistry(): Map<CommandId, CommandHandler> {
     run: (store, state) => store.set({ wrapLines: !state.wrapLines }),
   });
 
-  // Diff search commands
+  // Search commands
   r.set("open-diff-search", {
     guard: (state) => state.focus === "diff",
     run: () => openDiffSearch(),
+  });
+  r.set("open-changes-search", {
+    guard: (state) => state.focus === "sidebar",
+    run: () => openSidebarFilter(),
   });
   r.set("diff-search-next", {
     run: () => diffSearchNext(),

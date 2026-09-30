@@ -21,10 +21,13 @@ import { dispatchCommand } from "../state/command-registry";
 import { cancelCommentDraft } from "../state/comment-actions";
 import {
   acceptDiffSearch,
+  acceptSidebarFilter,
   closeDiffSearch,
+  closeSidebarFilter,
   diffSearchNext,
   diffSearchPrev,
   setDiffSearchQuery,
+  setSidebarFilterQuery,
 } from "../state/search-actions";
 import type { Store } from "../state/store";
 import {
@@ -39,6 +42,14 @@ const STAGE_COMMANDS: ReadonlySet<string> = new Set([
   "stage-all",
   "unstage-file",
   "unstage-all",
+]);
+
+/**
+ * Commands excluded from the normal layer's key bindings because their default
+ * key collides with another command; they bind in their own focus-gated layer.
+ */
+const NORMAL_LAYER_SKIPPED: ReadonlySet<string> = new Set([
+  "open-changes-search",
 ]);
 
 const CONFIRM_OVERLAY_KINDS = new Set([
@@ -86,7 +97,7 @@ function allNormalCommandsBindings(
   >;
   for (const cmd of Object.keys(all)) {
     const def = all[cmd];
-    if (def?.section === "overlay") {
+    if (def?.section === "overlay" || NORMAL_LAYER_SKIPPED.has(cmd)) {
       continue;
     }
     const keys = mergedKeys(cmd as CommandId, overrides);
@@ -143,11 +154,32 @@ export function registerAppLayers(
         s.commitDraft === null &&
         s.rewordDraft === null &&
         s.commentDraft === null &&
-        !(s.diffSearch?.open ?? false),
+        !(s.diffSearch?.open ?? false) &&
+        !(s.sidebarFilter?.open ?? false),
     ),
     priority: 0,
   });
   disposers.push(offNormal);
+
+  const offChangesSearch = keymap.registerLayer({
+    bindings: expandKeys(
+      "open-changes-search",
+      mergedKeys("open-changes-search", overrides),
+    ).map((b) => ({ cmd: b.cmd, desc: b.desc, group: b.group, key: b.key })),
+    enabled: layerEnabled(
+      store,
+      (s) =>
+        s.focus === "sidebar" &&
+        s.overlay === null &&
+        s.commitDraft === null &&
+        s.rewordDraft === null &&
+        s.commentDraft === null &&
+        !(s.diffSearch?.open ?? false) &&
+        !(s.sidebarFilter?.open ?? false),
+    ),
+    priority: 10,
+  });
+  disposers.push(offChangesSearch);
 
   const offStage = keymap.registerLayer({
     bindings: [
@@ -175,6 +207,9 @@ export function registerAppLayers(
         return;
       }
       if (s.diffSearch?.open) {
+        return;
+      }
+      if (s.sidebarFilter?.open) {
         return;
       }
       if (
@@ -449,6 +484,43 @@ export function registerAppLayers(
     },
   );
   disposers.push(offDiffSearchIntercept);
+
+  const offSidebarFilterIntercept = keymap.intercept(
+    "key",
+    (ctx: KeyInputContext<KeyEvent>) => {
+      const s = store.getState();
+      if (!s.sidebarFilter?.open || s.focus !== "sidebar") {
+        return;
+      }
+      const { name } = ctx.event;
+      switch (name) {
+        case "escape":
+          closeSidebarFilter();
+          ctx.consume();
+          break;
+        case "enter":
+        case "return":
+          acceptSidebarFilter();
+          ctx.consume();
+          break;
+        case "backspace":
+          setSidebarFilterQuery(s.sidebarFilter.query.slice(0, -1));
+          ctx.consume();
+          break;
+        case "space":
+          setSidebarFilterQuery(`${s.sidebarFilter.query} `);
+          ctx.consume();
+          break;
+        default:
+          if (!(ctx.event.ctrl || ctx.event.meta) && name.length === 1) {
+            setSidebarFilterQuery(s.sidebarFilter.query + name);
+            ctx.consume();
+          }
+          break;
+      }
+    },
+  );
+  disposers.push(offSidebarFilterIntercept);
 
   return () => {
     for (const dispose of disposers.reverse()) {
