@@ -63,7 +63,7 @@ function compactChains(nodes: TreeNode[]): TreeNode[] {
   });
 }
 
-export function buildFileTree(files: readonly TreeFile[]): TreeNode[] {
+export function buildFileTree(files: readonly (TreeFile | null)[]): TreeNode[] {
   const root: TreeNode[] = [];
   for (const [i, file] of files.entries()) {
     if (!file) {
@@ -172,7 +172,7 @@ export function isFileHidden(
 
 export function visibleFileNodes(
   scope: string,
-  files: readonly TreeFile[],
+  files: readonly (TreeFile | null)[],
   collapsedTree: Record<string, boolean>,
 ): VisibleNode[] {
   return visibleTreeNodes(scope, buildFileTree(files), collapsedTree);
