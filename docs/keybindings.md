@@ -19,6 +19,7 @@ Keys are grouped by the pane they act on, matching the help overlay.
 | ------- | ---------------- | -------------------------------------------------------- |
 | `j`     | select-next      | Move selection down (changes/commit list; diff row)      |
 | `k`     | select-prev      | Move selection up                                        |
+| `/`     | open-changes-search | Filter files in the changes pane (fzf-style; enter jumps to the first match) |
 | `f`     | next-file        | Jump to next file (diff pane; commit log files)          |
 | `F`     | prev-file        | Jump to previous file (diff pane; commit log files)      |
 | `space` | collapse-section | Collapse/expand the selected row (section, folder, commit header/dir, load more) |
